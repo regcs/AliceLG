@@ -75,8 +75,6 @@ import atexit
 ## load wrapper module
 #import libHoloPlayCore as hpc
 
-print("Just a test")
-
 # TODO: Make this a class method
 def set_defaults():
 	''' Returns the file path of the configuration utility shipping with the addon '''
