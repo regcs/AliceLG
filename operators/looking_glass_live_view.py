@@ -56,7 +56,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# SETTINGS VARIABLES
 	standard_preset = 1
 	qs = []
-	
+
 	# DRAWING OPERATION VARIABLES
 	modal_redraw = True
 	updateQuilt = True
@@ -64,7 +64,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	preset = standard_preset
 	last_preset = 3
 	viewportViewMatrix = None
-	
+
 	# HANDLER IDENTIFIERS
 	_handle_viewDrawing = []
 	_handle_lightfieldDrawing = None
@@ -73,7 +73,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	_handle_trackFrameChanges = None
 	_handle_trackActiveSpaceView3D = None
 	_handle_drawCameraFrustum = None
-	
+
 	# DEBUGING VARIABLES
 	start_multi_view = 0
 
@@ -99,15 +99,15 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
     # poll method
 	@classmethod
 	def poll(self, context):
-		
+
 		print("POLLING: ", LookingGlassAddon.lightfieldWindow)
-		
+
 		# if the lightfield window exists
 		if LookingGlassAddon.lightfieldWindow != None:
-			
+
 			# return True, so the operator is executed
 			return True
-		
+
 		else:
 
 			print("FAILED INITIALIZING THE LIVE VIEW!")
@@ -265,8 +265,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 						# ADJUST VIEWPORT SETTINGS
 						# set space to WIREFRAME
-						space.shading.type = 'WIREFRAME'
-						
+						# space.shading.type = 'WIREFRAME'
+
 						# set FOV to 14° as suggested by the LookingGlassFactory documentation
 						# we calculate the field of view from the projection matrix
 						self.viewportViewMatrix = space.region_3d.view_matrix.inverted()
@@ -294,10 +294,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 						# if a camera is selected
 						if context.window_manager.lookingglassCamera != None:
-	
+
 							# set view mode to "CAMERA"
 							space.region_3d.view_perspective = 'CAMERA'
-						
+
 						# hide header
 						space.show_region_header = False
 						space.show_region_tool_header = False
@@ -307,7 +307,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						space.show_gizmo_tool = False
 
 					break
-			
+
 				break
 
 
@@ -366,7 +366,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		
+
 
 		# Check, whether the lightfield window still exists
 		################################################################
@@ -382,7 +382,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# cancel the operator
 			return self.cancel()
-		
+
 
 		# Control lightfield redrawing in viewport mode
 		################################################################
@@ -392,7 +392,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# if something has changed
 			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.liveview_manual_refresh == True):
-
+				print("context.window_manager.liveview_manual_refresh: ", context.window_manager.liveview_manual_refresh)
 				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.liveview_manual_refresh == True):
 
 					# set to the currently chosen quality
@@ -404,19 +404,22 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					# reset time variable
 					self.depsgraph_update_time = 0.000
 
+				# reset status variable for manual refreshes
+				context.window_manager.liveview_manual_refresh = False
+
 				# update the viewport settings
 				self.updateViewportSettings()
 
 				# running modal
 				return {'RUNNING_MODAL'}
-			
-			
+
+
 		# Control events in the viewport
 		################################################################
 		if event.type == 'LEFTMOUSE':
 
 			print("Event: ", event.type, event.mouse_x, event.mouse_region_x)
-			
+
 			return {'PASS_THROUGH'}
 
 
@@ -434,7 +437,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# Application handler that continously checks for changes of the
 	# Multiview used for Looking Glass rendering
 	def trackViewportUpdates(self, context):
-	
+
 		# if this call belongs to the lightfield window
 		if context.window == LookingGlassAddon.lightfieldWindow:
 
@@ -450,7 +453,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# invoke an update of the Looking Glass viewport
 					self.modal_redraw = True
-					self.updateQuilt = True
+					#self.updateQuilt = True
 
 					# remember time of last depsgraph update
 					self.depsgraph_update_time = time.time()
@@ -466,14 +469,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# Application handler that continously checks for changes of the
 	# Multiview used for Looking Glass rendering
 	def trackDepsgraphUpdates(self, scene, depsgraph):
-	
+
 		# if automatic live view is activated AND something in the scene has changed
 		if (int(self.window_manager.renderMode) == 0 and int(self.window_manager.liveMode) == 0) and len(depsgraph.updates.values()) > 0:
 			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), self.preset)
 
 			# invoke an update of the Looking Glass viewport
 			self.modal_redraw = True
-			self.updateQuilt = True
+			#self.updateQuilt = True
 
 			# remember time of last depsgraph update
 			self.depsgraph_update_time = time.time()
@@ -489,7 +492,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# this function is called as a draw handler to enable the Looking Glass Addon
 	# to keep track of the SpaceView3D which is currently manipulated by the User
 	def trackActiveSpaceView3D(self, context):
-		
+
 		# if the space data exists
 		if context.space_data != None and LookingGlassAddon.BlenderWindow != LookingGlassAddon.lightfieldWindow:
 
@@ -573,7 +576,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# create a GPUOffscreen for the quilt / lightfield
 			self.qs[i]["quiltOffscreen"] = gpu.types.GPUOffScreen(self.qs[i]["width"], self.qs[i]["height"])
-			
+
 			# create a list for the GPUOffscreens of the different views
 			for view in range(0, self.qs[i]["totalViews"], 1):
 
@@ -615,7 +618,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			layout (location = 0)
 			in vec2 vertPos_data;
-			
+
 			void main()
 			{
 				gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
@@ -627,7 +630,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			out vec4 fragColor;
 
 			in vec2 texCoords;
-			
+
 			uniform sampler2D blitTex;
 			void main()
 			{
@@ -736,7 +739,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				if (debug == 1)
 				{
-					
+
 					fragColor = texture(screenTex, texCoords.xy);
 
 				}
@@ -766,7 +769,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# Compile lightfield shader via GPU module
 		self.lightFieldShader = gpu.types.GPUShader(self.lightfieldVertexShaderSource, self.lightfieldFragmentShaderSource)
-		
+
 		# prepare a batch used for drawing the lightfield into a texture of correct size
 		self.lightFieldShaderBatch = batch_for_shader(
 			self.lightFieldShader, 'TRI_FAN',
@@ -788,7 +791,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# get the calibration data from the deviceList
 			for device in LookingGlassAddon.deviceList:
-				
+
 				if device['index'] == int(self.window_manager.activeDisplay):
 
 					# obtain information from the connected Looking Glass and
@@ -851,7 +854,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
 					# NOTE 2: - we take the angle directly from the projection matrix
 					fov = 2.0 * atan(1 / projectionMatrix[1][1])
-					
+
 					# calculate cameraSize from its distance to the focal plane and the FOV
 					# NOTE: - we take an arbitrary distance of 5 m (TODO: IS THERE A SPECIFIC BETTER VALUE FOR THE VIEWPORT CAM?)
 					cameraDistance = self.window_manager.focalPlane #camera.data.dof.focus_distance
@@ -1188,11 +1191,11 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# we use our own vertex shader, which basically is the Blender internal '3D_UNIFORM_COLOR',
 		# but which has additional uniforms that we can use to parse the frustum vertices
-		
+
 		frustum_vertex_shader = '''
-		
+
 			uniform mat4 ModelViewProjectionMatrix;
-			
+
 			// the variables defining the frustum and focal plane
 			uniform float clipStart;
 			uniform float clipEnd;
@@ -1209,8 +1212,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			void main()
 			{
 				// calculate
-			
-			
+
+
 				gl_Position = ModelViewProjectionMatrix * vec4(pos, 1.0);
 
 			#ifdef USE_WORLD_CLIP_PLANES
@@ -1249,14 +1252,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		self.frustum_indices_focalplane_outline = (
 			(8, 9), (9, 10), (10, 11), (11, 8))
-			
+
 		self.frustum_indices_focalplane_face = (
 				# focal plane
 				(8, 9, 10),
 				(10, 11, 8)
 			)
-			
-			
+
+
 		# compile the shader that will be used for drawing
 		self.frustum_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
@@ -1296,7 +1299,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				wNear = hNear * aspectRatio
 				hFar = clipEnd * tan(angle)
 				wFar = hFar * aspectRatio
-				
+
 				# define coordinates of the focal plane
 				hFocal = self.window_manager.focalPlane * tan(angle)
 				wFocal = hFocal * aspectRatio

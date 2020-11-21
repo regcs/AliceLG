@@ -17,9 +17,9 @@
 # ##### END GPL LICENSE BLOCK #####
 
 bl_info = {
-	"name": "Looking Glass Addon",
+	"name": "Alice",
 	"author": "Christian Stolze", # This addon uses parts of the first Looking Glass addon created by Gottfried Hofmann and Kyle Appelgate
-	"version": (1, 0),
+	"version": (1, 0, 0),
 	"blender": (2, 90, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Enables the utilization of the Looking Glass holographic displays, including a fully functional holographic Blender viewport as well as options to render quilts from within Blender.",
@@ -32,7 +32,7 @@ bl_info = {
 if "bpy" in locals():
 	import importlib
 	importlib.reload(operators.looking_glass_live_view)
-	
+
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(operators.looking_glass_global_variables)
 
@@ -108,7 +108,7 @@ def LookingGlassDeviceList():
 
 	# allocate a memory buffer for string information send by the Holoplay Service
 	buffer = ctypes.create_string_buffer(1000)
-	
+
 	# Query the Holoplay Service to update the device information
 	hpc.RefreshState()
 
@@ -117,32 +117,32 @@ def LookingGlassDeviceList():
 
 		#
 		print(" ### Display ", dev_index, ":")
-				
+
 		# get device name
 		hpc.GetDeviceHDMIName(dev_index, buffer, 1000)
 		dev_name = buffer.value.decode('ascii').strip()
-					
+
 		# get device serial
 		hpc.GetDeviceType(dev_index, buffer, 1000)
 		dev_serial = buffer.value.decode('ascii').strip()
-		
+
 		# get device type
 		hpc.GetDeviceType(dev_index, buffer, 1000)
 		dev_type = buffer.value.decode('ascii').strip()
 		if dev_type == "standard":
-		
+
 			dev_type = "8.9'' Looking Glass"
-		
+
 		elif dev_type == "large":
-		
+
 			dev_type = "15.6'' Looking Glass"
 
 		elif dev_type == "pro":
-		
+
 			dev_type = "15.6'' Pro Looking Glass"
 
 		if dev_type == "8k":
-		
+
 			dev_type = "8k Looking Glass"
 
 		# make an entry in the deviceList
@@ -170,7 +170,7 @@ def LookingGlassDeviceList():
 											'ri': hpc.GetDevicePropertyRi(dev_index),
 											'bi': hpc.GetDevicePropertyBi(dev_index),
 											'invView': hpc.GetDevicePropertyInvView(dev_index),
-											
+
 											# viewcone
 											'viewCone': hpc.GetDevicePropertyFloat(dev_index, b"/calibration/viewCone/value")
 										}
@@ -181,13 +181,13 @@ def LookingGlassDeviceList():
 class LookingGlassPreferences(AddonPreferences):
 	# this must match the addon name
 	bl_idname = __name__
-	
+
 	filepath: bpy.props.StringProperty(
 									   name="Location of the HoloPlayCore library",
 									   subtype='FILE_PATH',
 									   default = set_defaults()
 									   )
-		
+
 	def draw(self, context):
 		layout = self.layout
 		layout.prop(self, "filepath")
@@ -203,9 +203,9 @@ def exit_callback():
 	#unregister()
 
 atexit.register(exit_callback)
-					
 
-			
+
+
 # ------------- Define update, getter, and setter functions ---------
 # update function for property updates in the panels
 def update_func(self, context):
@@ -217,7 +217,7 @@ def update_func(self, context):
 def camera_selection_poll(self, object):
 
 	return object.type == 'CAMERA'
-	
+
 # Update the Boolean property that creates the hologram rendering window
 def ShowLightfieldWindow_update(self, context):
 
@@ -226,14 +226,14 @@ def ShowLightfieldWindow_update(self, context):
 
 		# Create a new main window
 		bpy.ops.wm.window_new_main()
-		
+
 		# assume the last window in the screen list is the created window
 		LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows[-1]
 
 		# Change the area type of the last area of the looking glass window to SpaceView3D
 		area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
 		area.type = "VIEW_3D"
-		
+
 		# hide all panels in the image editor and make the area full screen
 		bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
 
@@ -258,15 +258,15 @@ def ShowLightfieldWindow_update(self, context):
 		print("TEESSSSSSST")
 
 
-		
+
 # update function for the viewport mode
 def update_track_viewport(self, context):
 
 	if context != None:
-	
+
 		# if the settings shall be taken from the current viewport
 		if context.window_manager.viewportMode == 'BLENDER':
-			
+
 			# if the viewport tracking is not active
 			if context.window_manager.blender_track_viewport == False:
 
@@ -281,7 +281,7 @@ def update_track_viewport(self, context):
 
 		# if the settings shall be taken from the current viewport
 		elif context.window_manager.viewportMode == 'CUSTOM':
-			
+
 			# reset the global variable
 			LookingGlassAddon.BlenderViewport = None
 
@@ -292,10 +292,10 @@ def update_track_viewport(self, context):
 def update_workspace_selection(self, context):
 
 	if context != None:
-	
+
 		# if the settings shall be taken from the current viewport
 		if context.window_manager.viewportMode == 'BLENDER':
-			
+
 			# if the viewport tracking is not active
 			if context.window_manager.blender_track_viewport == False:
 
@@ -336,7 +336,7 @@ def update_workspace_selection(self, context):
 
 					# update the viewport selection
 					context.window_manager.blender_view3d = "None"
-				
+
 					# fall back to the use of the custom settings
 					LookingGlassAddon.BlenderViewport = None
 
@@ -347,10 +347,10 @@ def update_workspace_selection(self, context):
 def update_viewport_selection(self, context):
 
 	if context != None:
-	
+
 		# if the settings shall be taken from the current viewport
 		if context.window_manager.viewportMode == 'BLENDER':
-			
+
 			# if the viewport tracking is not active
 			if context.window_manager.blender_track_viewport == False:
 
@@ -361,21 +361,21 @@ def update_viewport_selection(self, context):
 					for screen in bpy.data.workspaces[context.window_manager.blender_workspace].screens:
 						for area in screen.areas:
 							for space in area.spaces:
-							
+
 								# if this is the correct space
 								if str(space) == str(context.window_manager.blender_view3d):
-					
+
 									# save the space object in the global variable
 									LookingGlassAddon.BlenderViewport = space
 									break
 				else:
-				
+
 					# fall back to the use of the custom settings
 					LookingGlassAddon.BlenderViewport = None
 
 	return None
-	
-	
+
+
 # update function for property updates concerning camera clipping in the livew view
 def update_camera_setting(self, context):
 
@@ -433,7 +433,7 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 
 		# update the global list of all connected devices
 		LookingGlassDeviceList()
-		
+
 		return {'FINISHED'}
 
 
@@ -458,10 +458,10 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 		camera.data.angle_y = radians(14)
 		camera.data.clip_start = context.window_manager.clip_start
 		camera.data.clip_end = context.window_manager.clip_end
-		
+
 		# if currently no camera is selected
 		if context.window_manager.lookingglassCamera == None:
-		
+
 			# use the new camera as the Looking Glass Camera
 			context.window_manager.lookingglassCamera = camera
 
@@ -469,7 +469,7 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 
 
 class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
-	
+
 	""" Looking Glass Addon Tools """
 	bl_idname = "LOOKINGGLASS_PT_panel_tools" # unique identifier for buttons and menu items to reference.
 	bl_label = "Looking Glass Tools" # display name in the interface.
@@ -488,7 +488,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 
 			# then for each display in the device list
 			for device in LookingGlassAddon.deviceList:
-			
+
 				# add an entry in the item list
 				items.append((str(device['index']), 'Display ' + str(device['index']) + ': ' + device['type'], 'Use this Looking Glass for lightfield rendering.'))
 
@@ -497,7 +497,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 			# add an entry to notify the user about the missing Looking Glass
 			items.append(('-1', 'No Looking Glass Found', 'Please connect a Looking Glass.'))
 
-		
+
 
 		# return the item list
 		return items
@@ -526,7 +526,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 														 default = False,
 														 update=ShowLightfieldWindow_update
 														 )
-				
+
 	bpy.types.WindowManager.debug_view = bpy.props.BoolProperty(
 															name="Debug View",
 															description="If enabled, the Looking Glass displays all quilts in the debug view",
@@ -538,7 +538,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		column = layout.column()
-				
+
 		row_1 = column.row()
 		row_1.prop(context.window_manager, "activeDisplay", text="")
 		row_1.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
@@ -549,10 +549,10 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 			row_2 = column.row()
 			row_2.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
 			row_2.operator("object.add_lookingglass_camera", text="", icon='ADD')
-					
+
 			row_3 = column.row()
 			row_3.prop(context.window_manager, "ShowLightfieldWindow", toggle=True, icon='WINDOW')
-											
+
 			row_4 = column.row()
 			row_4.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
 
@@ -565,7 +565,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 
 			# if no lightfield window is existing
 			if context.window_manager.ShowLightfieldWindow == False:
-				
+
 				# disable the button for the debug view
 				row_4.enabled = False
 
@@ -581,21 +581,21 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 
 		# refresh the Looking Glass
 		context.window_manager.liveview_manual_refresh = True
-		
+
 		return {'FINISHED'}
 
 class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
-	
+
 	""" Lightfield Viewport Settings """
 	bl_idname = "LOOKINGGLASS_PT_panel_lightfield" # unique identifier for buttons and menu items to reference.
 	bl_label = "Lightfield Window" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
-	
+
 	# exposed parameters stored in WindowManager as global props so they
 	# can be changed even when loading the addon (due to config file parsing)
-	
+
 	# the virtual distance of the plane, which represents the focal plane of the Looking Glass
 	bpy.types.WindowManager.focalPlane = FloatProperty(
 												   name = "Focal Plane",
@@ -619,7 +619,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 															  max = 80.0,
 															  description = "View Cone",
 															  )
-															  
+
 	bpy.types.WindowManager.screenW = bpy.props.FloatProperty(
 															 name = "Screen Width",
 															 default = 2560.0,
@@ -657,7 +657,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 														 type=bpy.types.Image,
 														 description = "Quilt for display in the Looking Glass"
 														 )
-	
+
 	bpy.types.WindowManager.viewResolution = bpy.props.EnumProperty(
 															items = [('0', '512 x 256', '2k quilt, 32 views'),
 																	 ('1', '819 x 455', '4k quilt, 45 views'),
@@ -699,9 +699,9 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
 			return False
-		
+
 		else:
-		
+
 			# this panel is needed, so return True:
 			# the panel will be drawn
 			return True
@@ -721,7 +721,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 		# If no LookingGlass is selected
 		if int(context.window_manager.activeDisplay) == -1:
-			
+
 			# ... then disable all UI elements except for the drop down menu and the refresh button
 			column.enabled = False
 			row.enabled = False
@@ -731,29 +731,29 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			# display all settings for the live view mode
 			column.prop(context.window_manager, "viewResolution")
-						
+
 			column.separator()
 
 			# Automatic Live View or Manual Liveview?
 			row = column.row()
 			row.prop(context.window_manager, "liveMode", expand=True)
-						
+
 			# if the automatic LiveView Mode is selected
 			if int(context.window_manager.liveMode) == 0:
-				
+
 				# Show the options for resolution adjustment
 				row = column.row()
 				row.prop(context.window_manager, "liveview_use_lowres_preview", expand=True, icon='IMAGE_ZDEPTH')
 				row = column.row()
 				row.prop(context.window_manager, "liveview_use_solid_preview", expand=True, icon='SHADING_SOLID')
-			
+
 			# if the manual LiveView Mode is selected
 			elif int(context.window_manager.liveMode) == 1:
-				
+
 				# Show the button for refresh
 				row = column.row()
 				row.operator("lookingglass.refresh_lightfield", text="Refresh Lightfield", icon='IMAGE_BACKGROUND')
-		
+
 		# else, if a single quilt shall be displayed
 		elif context.window_manager.renderMode == '1':
 
@@ -763,12 +763,12 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			row = column.row(align = True)
 			row.template_ID(context.window_manager, "quiltImage", open="image.open")
-		
+
 
 
 # ------------- Sub-Panel for overlay settings ----------------
 class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
-	
+
 	""" Looking Glass Properties """
 	#bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
 	bl_label = "Shading & Overlays Settings" # display name in the interface.
@@ -786,7 +786,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 		# check if the space still exists
 		for workspace in bpy.data.workspaces.keys():
-		
+
 			# add an entry to notify the user about the missing Looking Glass
 			items.append((workspace, workspace, 'The workspace the desired viewport is found.'))
 
@@ -800,7 +800,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 		# prepare a item list with entries of the form "identifier, name, description" for the EnumProperty
 		items = []
-		
+
 		# check if the space still exists
 		if context.window_manager.blender_workspace in bpy.data.workspaces:
 
@@ -841,14 +841,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															default = True,
 															update = update_track_viewport
 															)
-		
+
 	bpy.types.WindowManager.blender_workspace = bpy.props.EnumProperty(
 														name="Workspace",
 														items = workspaces_list_callback,
 														default=0,
 														update = update_workspace_selection
 														)
-		
+
 	bpy.types.WindowManager.blender_view3d = bpy.props.EnumProperty(
 														name="3D View",
 														items = view3D_list_callback,
@@ -881,7 +881,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															  step = 1,
 															  description = "Amount of alpha to use",
 															  )
-															  
+
 	bpy.types.WindowManager.liveview_use_dof = bpy.props.BoolProperty(
 															name="Depth of Field",
 															description="If enabled, the lightfield is rendered using the depth of field settings of the multiview cameras",
@@ -964,7 +964,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															description="If enabled, the face edges wires are displayed in the Looking Glass",
 															default = False,
 															)
-															
+
 	bpy.types.WindowManager.liveview_wireframe_threshold = bpy.props.FloatProperty(
 															name="Wireframe",
 															min=0,
@@ -996,14 +996,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 			# if the render mode is "Live View"
 			if int(context.window_manager.renderMode) == 0:
-							
+
 				# this panel is  needed, so return True:
 				# the panel will be drawn
 				return True
 
 			# else, if the render mode is "Quilt view"
 			elif int(context.window_manager.renderMode) == 1:
-				
+
 				# this panel is not needed, so return False:
 				# the panel will NOT be drawn
 				return False
@@ -1018,11 +1018,11 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 		# if the LiveView is active
 		if int(context.window_manager.renderMode) == 0:
-					
+
 			# TABS to swap between "Custom Viewport" and a "Blender Viewport"
 			row = column.row(align = True)
 			row.prop(context.window_manager, "viewportMode", expand=True)
-														
+
 			# if the current mode is "BLENDER"
 			if context.window_manager.viewportMode == "BLENDER":
 
@@ -1030,10 +1030,10 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 				row = column.row(align = True)
 				row.prop(context.window_manager, "blender_track_viewport")
-								
+
 				# if the viewport tracking is not activated
 				if context.window_manager.blender_track_viewport == False:
-				
+
 					column = layout.column(align = True)
 					row = column.row(align = True)
 					row.prop(context.window_manager, "blender_workspace")
@@ -1042,10 +1042,10 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 					# if the chosen workspace has no 3D View
 					if context.window_manager.blender_view3d == "None":
-					
+
 						# disable the manual selection options
 						row.enabled = False
-														
+
 			# if the current mode is "CUSTOM"
 			elif context.window_manager.viewportMode == "CUSTOM":
 
@@ -1061,17 +1061,17 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				column_1.prop(context.window_manager, "liveview_show_xray")
 				column_2 = row.column(align=True)
 				column_2.prop(context.window_manager, "liveview_xray_alpha", slider=True)
-				
+
 				# if x-ray is deactivated
 				if context.window_manager.liveview_show_xray == False:
 					# disable the slider
 					column_2.enabled = False
-				
+
 				row = column.row(align = True)
 				row.prop(context.window_manager, "liveview_use_dof")
-			
+
 				column.separator()
-			
+
 				row = column.row(align = True)
 				row.label(text="Guides")
 				row = column.row(align = True)
@@ -1080,9 +1080,9 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				column.separator()
 				row = column.row(align = True)
 				row.prop(context.window_manager, "liveview_grid_scale")
-															
+
 				column.separator()
-				
+
 				row = column.row(align = True)
 				row.label(text="Objects")
 				row = column.row(align = True)
@@ -1090,15 +1090,15 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				column_1.prop(context.window_manager, "liveview_show_extras")
 				column_1.prop(context.window_manager, "liveview_show_relationship_lines")
 				column_1.prop(context.window_manager, "liveview_show_outline_selected")
-							
+
 				column_2 = row.column(align = True)
 				column_2.prop(context.window_manager, "liveview_show_bones")
 				column_2.prop(context.window_manager, "liveview_show_motion_paths")
 				column_2.prop(context.window_manager, "liveview_show_origins")
 				column_2.prop(context.window_manager, "liveview_show_origins_all")
-								
+
 				column.separator()
-				
+
 				row = column.row(align = True)
 				row = row.label(text="Geometry")
 				row = column.row(align = True)
@@ -1108,16 +1108,16 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				column_2.prop(context.window_manager, "liveview_wireframe_threshold", slider=True)
 				row = column.row(align = True)
 				row.prop(context.window_manager, "liveview_show_face_orientation")
-				
+
 				# if no wireframes shall be displayed
 				if context.window_manager.liveview_show_wireframes == False:
 					# disable the slider
 					column_2.enabled = False
-				
+
 
 # ------------- The Camera Settings Panel ----------------
 class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
-	
+
 	""" Looking Glass Properties """
 	#bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
 	bl_idname = "LOOKINGGLASS_PT_panel_camera" # unique identifier for buttons and menu items to reference.
@@ -1148,7 +1148,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 															  description = "Near clipping plane of the multiview cameras",
 															  update = update_camera_setting,
 															  )
-													
+
 	bpy.types.WindowManager.clip_end = bpy.props.FloatProperty(
 															  name = "Clip End",
 															  default = 6.5,
@@ -1165,7 +1165,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 															description = "Use this object to define the depth of field focal point",
 															update = update_camera_setting,
 															)
-													
+
 	bpy.types.WindowManager.focus_distance = bpy.props.FloatProperty(
 															name = "Focus Distance",
 															default = 5.1,
@@ -1177,7 +1177,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 															description = "Distance to the focus point for depth of field",
 															update = update_camera_setting,
 															)
-													
+
 	bpy.types.WindowManager.f_stop = bpy.props.FloatProperty(
 															name = "F-Stop",
 															default = 1,
@@ -1205,14 +1205,14 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 
 			# if the render mode is "Live View"
 			if int(context.window_manager.renderMode) == 0:
-							
+
 				# this panel is  needed, so return True:
 				# the panel will be drawn
 				return True
 
 			# else, if the render mode is "Quilt view"
 			elif int(context.window_manager.renderMode) == 1:
-				
+
 				# this panel is not needed, so return False:
 				# the panel will NOT be drawn
 				return False
@@ -1223,13 +1223,13 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 
 		# define a column of UI elements
 		column = layout.column(align = True)
-		
+
 		# display frustum and focal plane settings
 		row = column.row(align = True)
 		row.prop(context.window_manager, "showFrustum")
 		row = column.row(align = True)
 		row.prop(context.window_manager, "showFocalPlane")
-		
+
 		column.separator()
 
 		# display the clipping settings
@@ -1252,14 +1252,14 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 
 		# if depth of field rendering is deactivated
 		if context.window_manager.liveview_use_dof == False:
-			
+
 			# ... then disable all UI elements connected to depth of field
 			row_focus_object.enabled = False
 			row_focus_distance.enabled = False
 			row_f_stop.enabled = False
-		
+
 		else:
-		
+
 			# check if a focus object is chosen and if so,
 			if context.window_manager.focus_object != None:
 
@@ -1318,29 +1318,29 @@ def register():
 		print("Initialized the Looking Glass Addon.")
 
 	else:
-	
+
 		# prepare the error string from the error code
 		if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
 			errstr = "HoloPlay Service not running"
-	
+
 		elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
 			errstr = "Client message could not be serialized"
-	
+
 		elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
 			errstr = "Incompatible version of HoloPlay Service";
-	
+
 		elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
 			errstr = "Interprocess pipe broken"
-	
+
 		elif (errco == hpc.client_error.CLIERR_SENDTIMEOUT.value):
 			errstr = "Interprocess pipe send timeout"
-	
+
 		elif (errco == hpc.client_error.CLIERR_RECVTIMEOUT.value):
 			errstr = "Interprocess pipe receive timeout"
-	
+
 		else:
 			errstr = "Unknown error";
-		
+
 		# print the error
 		print(" # Client access error (code = ", errco, "):", errstr)
 
@@ -1361,11 +1361,11 @@ def unregister():
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
-		
+
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
-		
+
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
 
 
