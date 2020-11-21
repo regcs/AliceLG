@@ -65,15 +65,7 @@ from bpy.props import FloatProperty, PointerProperty
 
 import atexit
 
-# ------------ LOAD HOLOPLAY CORE WRAPPER ---------------
-# append directory of the addon to the sys-path
-#script_file = os.path.realpath(__file__)
-#script_directory = os.path.dirname(script_file)
-#if not script_directory in sys.path:
-#	sys.path.append(script_directory)
 
-## load wrapper module
-#import libHoloPlayCore as hpc
 
 # TODO: Make this a class method
 def set_defaults():
