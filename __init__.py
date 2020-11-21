@@ -75,7 +75,7 @@ import atexit
 ## load wrapper module
 #import libHoloPlayCore as hpc
 
-
+print("Just a test")
 
 # TODO: Make this a class method
 def set_defaults():
