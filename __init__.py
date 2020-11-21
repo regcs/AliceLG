@@ -42,6 +42,7 @@ else:
 	from .operators import libHoloPlayCore as hpc
 
 	from .operators.looking_glass_live_view import *
+	from .operators.looking_glass_render_quilt import *
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	from .operators.looking_glass_global_variables import *
@@ -500,23 +501,6 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 														name="Please select a Looking Glass."
 														)
 
-	# pointer property that can be used to load a pre-rendered quilt image
-	bpy.types.WindowManager.lookingglassCamera = bpy.props.PointerProperty(
-														 name="",
-														 type=bpy.types.Object,
-														 description = "Camera object, which defines the Looking Glass content",
-														 poll = camera_selection_poll,
-														 update = update_camera_setting
-														 )
-
-	# a boolean to toogle the render window on or off
-	bpy.types.WindowManager.ShowLightfieldWindow = bpy.props.BoolProperty(
-														 name="Lightfield Window",
-														 description = "Creates a window for the lightfield rendering. The window needs to be moved to the Looking Glass manually",
-														 default = False,
-														 update=ShowLightfieldWindow_update
-														 )
-
 	bpy.types.WindowManager.debug_view = bpy.props.BoolProperty(
 															name="Debug View",
 															description="If enabled, the Looking Glass displays all quilts in the debug view",
@@ -537,14 +521,10 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 		if int(context.window_manager.activeDisplay) > -1:
 
 			row_2 = column.row()
-			row_2.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
-			row_2.operator("object.add_lookingglass_camera", text="", icon='ADD')
+			row_2.operator("render.quilt", text="Render quilt")
 
 			row_3 = column.row()
-			row_3.prop(context.window_manager, "ShowLightfieldWindow", toggle=True, icon='WINDOW')
-
-			row_4 = column.row()
-			row_4.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
+			row_3.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
 
 			# if no camera was selected for the looking glass
 			#if context.window_manager.lookingglassCamera == None:
@@ -557,7 +537,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 			if context.window_manager.ShowLightfieldWindow == False:
 
 				# disable the button for the debug view
-				row_4.enabled = False
+				row_3.enabled = False
 
 
 
@@ -625,6 +605,15 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 															 max = 10000.0,
 															 description = "Screen height of looking glass display in pixels",
 															 )
+
+	# a boolean to toogle the render window on or off
+	bpy.types.WindowManager.ShowLightfieldWindow = bpy.props.BoolProperty(
+														 name="Lightfield Window",
+														 description = "Creates a window for the lightfield rendering. The window needs to be moved to the Looking Glass manually",
+														 default = False,
+														 update=ShowLightfieldWindow_update
+														 )
+
 	# UI elements for user control
 	bpy.types.WindowManager.renderMode = bpy.props.EnumProperty(
 															items = [('0', 'Viewport', 'Viewport rendering of the current scene within the Looking Glass'),
@@ -684,7 +673,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.window_manager.activeDisplay) == -1 or LookingGlassAddon.lightfieldWindow == None:
+		if int(context.window_manager.activeDisplay) == -1:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -700,6 +689,9 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	# draw the IntProperties for the tiles in the panel
 	def draw(self, context):
 		layout = self.layout
+
+		row = layout.row()
+		row.prop(context.window_manager, "ShowLightfieldWindow", toggle=True, icon='WINDOW')
 
 		# TABS to swap between "live preview" and a "loaded quilt image"
 		row = layout.row()
@@ -976,7 +968,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.window_manager.activeDisplay) == -1 or LookingGlassAddon.lightfieldWindow == None:
+		if int(context.window_manager.activeDisplay) == -1:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1117,6 +1109,15 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 	bl_category = "Looking Glass"
 	#bl_options = {'DEFAULT_CLOSED'}
 
+	# pointer property that can be used to load a pre-rendered quilt image
+	bpy.types.WindowManager.lookingglassCamera = bpy.props.PointerProperty(
+														 name="",
+														 type=bpy.types.Object,
+														 description = "Camera object, which defines the Looking Glass content",
+														 poll = camera_selection_poll,
+														 update = update_camera_setting
+														 )
+
 	bpy.types.WindowManager.showFocalPlane = bpy.props.BoolProperty(
 															name="Show Focal Plane",
 															description="If enabled, the focal plane of the Looking Glass is shown in the viewport",
@@ -1214,6 +1215,10 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		# define a column of UI elements
 		column = layout.column(align = True)
 
+		row = column.row(align = True)
+		row.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
+		row.operator("object.add_lookingglass_camera", text="", icon='ADD')
+
 		# display frustum and focal plane settings
 		row = column.row(align = True)
 		row.prop(context.window_manager, "showFrustum")
@@ -1284,8 +1289,11 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 
-		# Looking Glass rendering
+		# Looking Glass viewport
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
+
+		# Looking Glass quilt rendering
+		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
 		# allocate string buffer
 		buffer = ctypes.create_string_buffer(1000)
@@ -1357,6 +1365,7 @@ def unregister():
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
 
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
 
 	print("########################################################################")
