@@ -100,7 +100,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	@classmethod
 	def poll(self, context):
 
-		print("POLLING: ", LookingGlassAddon.lightfieldWindow)
+		# print("POLLING: ", LookingGlassAddon.lightfieldWindow)
 
 		# if the lightfield window exists
 		if LookingGlassAddon.lightfieldWindow != None:
@@ -381,7 +381,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if self.WindowCheck == False:
 
 			# cancel the operator
-			return self.cancel()
+			return self.cancel(context)
 
 
 		# Control lightfield redrawing in viewport mode
@@ -392,7 +392,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# if something has changed
 			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.liveview_manual_refresh == True):
-				print("context.window_manager.liveview_manual_refresh: ", context.window_manager.liveview_manual_refresh)
+
 				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.liveview_manual_refresh == True):
 
 					# set to the currently chosen quality
@@ -418,14 +418,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		################################################################
 		if event.type == 'LEFTMOUSE':
 
-			print("Event: ", event.type, event.mouse_x, event.mouse_region_x)
+			# print("Event: ", event.type, event.mouse_x, event.mouse_region_x)
 
 			return {'PASS_THROUGH'}
 
 
 		# if the live view mode is inactive
 		elif int(self.window_manager.liveMode) != 0:
-			print("EVENT BLOCKED!")
+
 			# we prevent any event handling by Blender in the lightfield viewport
 			return {'RUNNING_MODAL'}
 
@@ -446,7 +446,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# if no camera is selected for the Looking Glass AND the viewport perspective matrix has changed
 				if LookingGlassAddon.lightfieldSpace.camera == None and (LookingGlassAddon.lightfieldSpace.region_3d.view_matrix != self.viewportViewMatrix):
-					print("VIEWPORT UPDATE: ", self.viewportViewMatrix)
+					# print("VIEWPORT UPDATE: ", self.viewportViewMatrix)
 
 					# update the control variable
 					self.viewportViewMatrix = LookingGlassAddon.lightfieldSpace.region_3d.view_matrix.copy()
@@ -824,8 +824,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# The field of view set by the camera
 					# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
-					# NOTE 2: - we use angle_y; Blender seems to use angle = angle_x as default.
-					fov = camera.data.angle_y
+					# NOTE 2: - we take the angle directly from the projection matrix
+					fov = 2.0 * atan(1 / projectionMatrix[1][1])
 
 					# calculate cameraSize from its distance to the focal plane and the FOV
 					# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
@@ -834,7 +834,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# start at viewCone * 0.5 and go up to -viewCone * 0.5
 					# TODO: The Looking Glass Factory dicumentation suggests to use a viewcone of 35°, but the device calibration has 40° by default.
-					# TODO: Which one should we take?
+					#		Which one should we take?
 					offsetAngle = (0.5 - view / (self.qs[self.preset]["totalViews"] - 1)) * radians(device['viewCone'])
 
 					# calculate the offset that the camera should move
@@ -1005,7 +1005,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					# pass quilt settings to the lightfield shader
 					self.passQuiltSettingsToShader()
 
-			print("copyViewToQuilt start (view: ", view, ": ", time.time() - self.start_multi_view, (self.qs[self.preset]["viewOffscreens"][view].width, self.qs[self.preset]["viewOffscreens"][view].height))
+			# print("copyViewToQuilt start (view: ", view, ": ", time.time() - self.start_multi_view, (self.qs[self.preset]["viewOffscreens"][view].width, self.qs[self.preset]["viewOffscreens"][view].height))
 
 			# Render the current view into an offscreen
 			######################################################
@@ -1020,7 +1020,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# get camera's modelview matrix
 				view_matrix = camera.matrix_world.copy()
 
-				# corect for the camera scaling
+				# correct for the camera scaling
 				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
 				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
 				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
@@ -1064,8 +1064,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix,
 				projection_matrix)
 
-			print("draw_view3d (view: ", view, "): ", time.time() - start_test)
-			print("copyViewToQuilt end: ", time.time() - self.start_multi_view)
+			#print("draw_view3d (view: ", view, "): ", time.time() - start_test)
+			# print("copyViewToQuilt end: ", time.time() - self.start_multi_view)
 
 			# if this was the last view
 			if view == self.qs[self.preset]["totalViews"] - 1:
@@ -1088,7 +1088,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# if this call belongs to the lightfield window
 		if context.window == LookingGlassAddon.lightfieldWindow:
 
-			print("drawQuilt ", self.updateQuilt)
+			#print("drawQuilt ", self.updateQuilt)
 
 			# if the live view mode is active
 			if int(self.window_manager.renderMode) == 0:
@@ -1121,14 +1121,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 								# normalized device coordinates before that
 								draw_texture_2d(self.qs[self.preset]["viewOffscreens"][view].color_texture, (2 * x / self.qs[self.preset]["width"] - 1, 2 * y / self.qs[self.preset]["height"] - 1), 2 * self.qs[self.preset]["viewWidth"] / self.qs[self.preset]["width"], 2 * self.qs[self.preset]["viewHeight"] / self.qs[self.preset]["height"])
 
-								print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
+								# print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
 
 			# if the quilt view mode is active AND an image is loaded
 			elif int(self.window_manager.renderMode) == 1 and context.window_manager.quiltImage != None:
 
 				# copy the image that is in the quilt view to the quilt offscreen
-				print("Quilt view mode: ")
-				print(" # ", context.window_manager.quiltImage)
+				# print("Quilt view mode: ")
+				# print(" # ", context.window_manager.quiltImage)
 
 				# if the image is a multiview image
 				if context.window_manager.quiltImage.is_multiview == True:

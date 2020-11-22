@@ -525,6 +525,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 
 			row_3 = column.row()
 			row_3.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
+			row_3.enabled = True
 
 			# if no camera was selected for the looking glass
 			#if context.window_manager.lookingglassCamera == None:
@@ -536,8 +537,8 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 			# if no lightfield window is existing
 			if context.window_manager.ShowLightfieldWindow == False:
 
-				# disable the button for the debug view
-				row_3.enabled = False
+			   # disable the button for the debug view
+			   row_3.enabled = False
 
 
 
@@ -545,7 +546,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 # Operator for manual redrawing of the Looking Glass (for manual Live View Mode)
 class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_lightfield"
-	bl_label = "Button"
+	bl_label = "Refresh the lightfield in the Looking Glass."
 
 	def execute(self, context):
 
