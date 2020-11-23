@@ -520,12 +520,19 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 		# if a Looking Glass is selected
 		if int(context.window_manager.activeDisplay) > -1:
 
+			# button to start rendering a quilt using the current render settings
 			row_2 = column.row()
-			row_2.operator("render.quilt", text="Render quilt")
+			render_quilt = row_2.operator("render.quilt", text="Render Quilt")
+			render_quilt.animation = False
 
+			# button to start rendering an animation quilt using the current render settings
 			row_3 = column.row()
-			row_3.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
-			row_3.enabled = True
+			render_quilt = row_3.operator("render.quilt", text="Render Animation Quilt")
+			render_quilt.animation = True
+
+			row_4 = column.row()
+			row_4.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
+			row_4.enabled = True
 
 			# if no camera was selected for the looking glass
 			#if context.window_manager.lookingglassCamera == None:
@@ -538,7 +545,7 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 			if context.window_manager.ShowLightfieldWindow == False:
 
 			   # disable the button for the debug view
-			   row_3.enabled = False
+			   row_4.enabled = False
 
 
 
