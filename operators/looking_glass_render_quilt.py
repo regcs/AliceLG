@@ -51,7 +51,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 													('CANCEL_RENDER', '', ''),
 													('IDLE', '', '')
 													],
-											default='IDLE'
+											default='INVOKE_RENDER'
 											)
 
 
@@ -295,10 +295,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# START THE MODAL OPERATOR
 		# ++++++++++++++++++++++++++++++++++
 		# add the modal operator handler
+		# NOTE: - since the operator state is set to INVOKE_RENDER by default
+		#		  the rendering will directly start after this call
 		context.window_manager.modal_handler_add(self)
-
-		# set the operator state to invoke new render job
-		self.operator_state = "INVOKE_RENDER"
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
