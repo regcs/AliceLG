@@ -459,11 +459,11 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
+class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 
-	""" Looking Glass Addon Tools """
-	bl_idname = "LOOKINGGLASS_PT_panel_tools" # unique identifier for buttons and menu items to reference.
-	bl_label = "Looking Glass Tools" # display name in the interface.
+	""" Looking Glass Addon """
+	bl_idname = "LOOKINGGLASS_PT_panel_general" # unique identifier for buttons and menu items to reference.
+	bl_label = "Looking Glass" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
@@ -501,11 +501,30 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 														name="Please select a Looking Glass."
 														)
 
+
+	# a boolean to toogle the render window on or off
+	bpy.types.WindowManager.ShowLightfieldWindow = bpy.props.BoolProperty(
+														name="Lightfield Window",
+														description = "Creates a window for the lightfield rendering. You need to move the window manually to the Looking Glass screen and toogle it fullscreen",
+														default = False,
+														update=ShowLightfieldWindow_update
+														)
+
+
+	bpy.types.WindowManager.viewResolution = bpy.props.EnumProperty(
+														items = [
+																('0', 'Resolution: 512 x 256 px', '2k quilt, 32 views'),
+																('1', 'Resolution: 819 x 455 px', '4k quilt, 45 views'),
+																('2', 'Resolution: 1638 x 910 px', '8k quilt, 45 views')],
+														default='1',
+														name="View Resolution"
+														)
+
 	bpy.types.WindowManager.debug_view = bpy.props.BoolProperty(
-															name="Debug View",
-															description="If enabled, the Looking Glass displays all quilts in the debug view",
-															default = False,
-															)
+														name="Debug View",
+														description="If enabled, the Looking Glass displays all quilts in the debug view",
+														default = False,
+														)
 
 
 	# Draw handler for the panel layout
@@ -516,36 +535,32 @@ class LOOKINGGLASS_PT_panel_tools(bpy.types.Panel):
 		row_1 = column.row()
 		row_1.prop(context.window_manager, "activeDisplay", text="")
 		row_1.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
+		row_1.prop(context.window_manager, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
 
 		# if a Looking Glass is selected
 		if int(context.window_manager.activeDisplay) > -1:
 
-			# button to start rendering a quilt using the current render settings
+			# display all settings for the live view mode
 			row_2 = column.row()
-			render_quilt = row_2.operator("render.quilt", text="Render Quilt")
+			row_2.prop(context.window_manager, "viewResolution", text="")
+			row_2.prop(context.window_manager, "debug_view", expand=True, text="", icon='PLUGIN')
+			column.separator()
+
+			# button to start rendering a quilt using the current render settings
+			row_3 = column.row()
+			render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
 			render_quilt.animation = False
 
 			# button to start rendering an animation quilt using the current render settings
-			row_3 = column.row()
-			render_quilt = row_3.operator("render.quilt", text="Render Animation Quilt")
-			render_quilt.animation = True
-
 			row_4 = column.row()
-			row_4.prop(context.window_manager, "debug_view", expand=True, icon='PLUGIN')
-			row_4.enabled = True
-
-			# if no camera was selected for the looking glass
-			#if context.window_manager.lookingglassCamera == None:
-
-			#	# disable the buttons to open the lightfield window and for the debugging view
-			#	row_3.enabled = False
-			#	row_4.enabled = False
-
-			# if no lightfield window is existing
-			if context.window_manager.ShowLightfieldWindow == False:
-
-			   # disable the button for the debug view
-			   row_4.enabled = False
+			render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+			render_quilt.animation = True
+			#
+			# # if no lightfield window is existing
+			# if context.window_manager.ShowLightfieldWindow == False:
+			#
+			#    # disable the button for the debug view
+			#    row_5.enabled = False
 
 
 
@@ -614,18 +629,10 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 															 description = "Screen height of looking glass display in pixels",
 															 )
 
-	# a boolean to toogle the render window on or off
-	bpy.types.WindowManager.ShowLightfieldWindow = bpy.props.BoolProperty(
-														 name="Lightfield Window",
-														 description = "Creates a window for the lightfield rendering. The window needs to be moved to the Looking Glass manually",
-														 default = False,
-														 update=ShowLightfieldWindow_update
-														 )
-
 	# UI elements for user control
 	bpy.types.WindowManager.renderMode = bpy.props.EnumProperty(
-															items = [('0', 'Viewport', 'Viewport rendering of the current scene within the Looking Glass'),
-																	 ('1', 'Rendered', 'Load and display a prerendered quilt in the Looking Glass')],
+															items = [('0', 'Viewport', 'Viewport rendering of the current scene within the Looking Glass', 'VIEW3D', 0),
+																	 ('1', 'Quilt Viewer', 'Display a prerendered quilt image in the Looking Glass', 'RENDER_RESULT', 1)],
 															default='0',
 															name="Render Mode",
 															)
@@ -642,16 +649,8 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	bpy.types.WindowManager.quiltImage = bpy.props.PointerProperty(
 														 name="Quilt",
 														 type=bpy.types.Image,
-														 description = "Quilt for display in the Looking Glass"
+														 description = "Quilt image for display in the Looking Glass"
 														 )
-
-	bpy.types.WindowManager.viewResolution = bpy.props.EnumProperty(
-															items = [('0', '512 x 256', '2k quilt, 32 views'),
-																	 ('1', '819 x 455', '4k quilt, 45 views'),
-																	 ('2', '1638 x 910', '8k quilt, 45 views')],
-															default='1',
-															name="View"
-															)
 
 
 	bpy.types.WindowManager.liveview_use_lowres_preview = bpy.props.BoolProperty(
@@ -681,7 +680,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.window_manager.activeDisplay) == -1:
+		if int(context.window_manager.activeDisplay) == -1 or context.window_manager.ShowLightfieldWindow == False:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -697,9 +696,6 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	# draw the IntProperties for the tiles in the panel
 	def draw(self, context):
 		layout = self.layout
-
-		row = layout.row()
-		row.prop(context.window_manager, "ShowLightfieldWindow", toggle=True, icon='WINDOW')
 
 		# TABS to swap between "live preview" and a "loaded quilt image"
 		row = layout.row()
@@ -718,11 +714,6 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 		# if the LiveView is active
 		if context.window_manager.renderMode == '0':
-
-			# display all settings for the live view mode
-			column.prop(context.window_manager, "viewResolution")
-
-			column.separator()
 
 			# Automatic Live View or Manual Liveview?
 			row = column.row()
@@ -749,7 +740,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			# display all settings for the quilt view mode
 			row = column.row(align = True)
-			row.label(text="Quilt or Multiview for Display:")
+			row.label(text="Select a Quilt Image to Display:")
 
 			row = column.row(align = True)
 			row.template_ID(context.window_manager, "quiltImage", open="image.open")
@@ -976,7 +967,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.window_manager.activeDisplay) == -1:
+		if int(context.window_manager.activeDisplay) == -1 or context.window_manager.ShowLightfieldWindow == False:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1194,7 +1185,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected
-		if int(context.window_manager.activeDisplay) == -1 or LookingGlassAddon.lightfieldWindow == None:
+		if int(context.window_manager.activeDisplay) == -1:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1292,7 +1283,7 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
 
 		# UI elements
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_tools)
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
@@ -1363,7 +1354,7 @@ def unregister():
 		hpc.CloseApp()
 
 		bpy.utils.unregister_class(LookingGlassPreferences)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_tools)
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
