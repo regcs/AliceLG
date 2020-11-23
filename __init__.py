@@ -244,10 +244,6 @@ def ShowLightfieldWindow_update(self, context):
 			# close this window
 			bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
 
-#			# set variable to default state
-#			LookingGlassAddon.lightfieldWindow = None
-		print("TEESSSSSSST")
-
 
 
 # update function for the viewport mode
@@ -414,7 +410,8 @@ def update_camera_setting(self, context):
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_display_list"
-	bl_label = "Button"
+	bl_label = "Detect connected Looking Glass devices"
+	bl_description = "Refreshes the list of connected Looking Glass deviced from the HoloPlay Service"
 	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
 	def execute(self, context):
@@ -428,7 +425,8 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 	bl_idname = "object.add_lookingglass_camera"
-	bl_label = "Button"
+	bl_label = "Add Looking Glass Camera"
+	bl_description = "Creates a new camera object with settings optimized for the Looking Glass"
 	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
 	def execute(self, context):
@@ -529,10 +527,12 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		layout = self.layout
 		column = layout.column()
 
-		row_1 = column.row()
+		row_1 = column.row(align = True)
 		row_1.prop(context.window_manager, "activeDisplay", text="")
 		row_1.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
+		row_1.separator()
 		row_1.prop(context.window_manager, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
+		row_1.prop(context.window_manager, "debug_view", expand=True, text="", icon='PLUGIN')
 
 		# if a Looking Glass is selected
 		if int(context.window_manager.activeDisplay) > -1:
@@ -540,7 +540,6 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 			# display all settings for the live view mode
 			row_2 = column.row()
 			row_2.prop(context.window_manager, "viewResolution", text="")
-			row_2.prop(context.window_manager, "debug_view", expand=True, text="", icon='PLUGIN')
 			column.separator()
 
 			# button to start rendering a quilt using the current render settings
@@ -585,7 +584,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 
 	bpy.types.WindowManager.showFrustum = bpy.props.BoolProperty(
 											name="Show Camera Frustum",
-											description="If enabled, the frustum of the camera is shown in the viewport",
+											description="If enabled, the render volume of the Looking Glass is shown in the viewport",
 											default = True,
 											)
 
@@ -656,27 +655,30 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		# define a column of UI elements
 		column = layout.column(align = True)
 
-		row = column.row(align = True)
-		row.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
-		row.operator("object.add_lookingglass_camera", text="", icon='ADD')
+		row_1 = column.row(align = True)
+		row_1.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
+		row_1.operator("object.add_lookingglass_camera", text="", icon='ADD')
+		row_1.separator()
+		row_1.prop(context.window_manager, "showFrustum", text="", icon='MESH_CUBE')
+		row_1.prop(context.window_manager, "showFocalPlane", text="", icon='MESH_PLANE')
 
 		column.separator()
 
 		# display the clipping settings
-		row = column.row(align = True)
-		row.prop(context.window_manager, "clip_start")
-		row = column.row(align = True)
-		row.prop(context.window_manager, "clip_end")
-		row = column.row(align = True)
-		row.prop(context.window_manager, "focalPlane")
+		row_2 = column.row(align = True)
+		row_2.prop(context.window_manager, "clip_start")
+		row_3 = column.row(align = True)
+		row_3.prop(context.window_manager, "clip_end")
+		row_4 = column.row(align = True)
+		row_4.prop(context.window_manager, "focalPlane")
 
-		column.separator()
+		# if no camera is Selected
+		if context.window_manager.lookingglassCamera == None:
 
-		# display frustum and focal plane settings
-		row = column.row(align = True)
-		row.prop(context.window_manager, "showFrustum")
-		row = column.row(align = True)
-		row.prop(context.window_manager, "showFocalPlane")
+			# disable clipping and focal plane modifieres
+			row_2.enabled = False
+			row_3.enabled = False
+			row_4.enabled = False
 
 
 
@@ -894,7 +896,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															)
 
 	bpy.types.WindowManager.blender_track_viewport = bpy.props.BoolProperty(
-															name="Track Active Viewport",
+															name="Use Viewport Settings",
 															description="If enabled, the Looking Glass automatically adjusts to the settings of the currently used Blender viewport",
 															default = True,
 															update = update_track_viewport
