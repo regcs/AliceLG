@@ -238,12 +238,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.window_manager = context.window_manager
 
 		# get the calibration data of the selected Looking Glass from the deviceList
-		for device in LookingGlassAddon.deviceList:
-
-			if device['index'] == int(self.window_manager.activeDisplay):
-
-				# store the current device calibration data for later access
-				self.device_current = device
+		self.device_current = LookingGlassAddon.deviceList[int(self.window_manager.activeDisplay)]
 
 
 		# RENDER SETTINGS
