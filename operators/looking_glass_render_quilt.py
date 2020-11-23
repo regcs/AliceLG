@@ -164,7 +164,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	@classmethod
 	def poll(self, context):
 
-		print("POLLING: ", LookingGlassAddon.lightfieldWindow)
+		# print("POLLING: ", LookingGlassAddon.lightfieldWindow)
 
 		# if the lightfield window exists
 		if LookingGlassAddon.lightfieldWindow != None:
@@ -182,7 +182,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# cancel modal operator
 	def cancel(self, context):
 
-		print("[INFO] Rendering operator cancelled.")
+		print("[INFO] Rendering operator clean-up.")
 
 		# REMOVE APP HANDLERS
 		# +++++++++++++++++++++++++
@@ -270,6 +270,18 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.pixel_aspect_y = 1 / self.rendering_aspectRatio
 
 
+		# if the operator was called with the animation flag set
+		if self.animation == True:
+
+			# set the rendering frame variable to the first frame of the scene
+			self.rendering_frame = self.render_setting_scene.frame_start
+
+		else:
+
+			# set the rendering frame variable to the currently active frame
+			self.rendering_frame = self.render_setting_scene.frame_current
+
+
 
 		# REGISTER ALL HANDLERS FOR THE QUILT RENDERING
 		################################################################
@@ -289,10 +301,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# START THE MODAL OPERATOR
 		# ++++++++++++++++++++++++++++++++++
+		# set the INVOKE_RENDER state to directly start the rendering_view
+		self.operator_state == "INVOKE_RENDER"
+
 		# add the modal operator handler
-		# NOTE: - since the operator state is set to INVOKE_RENDER by default
-		#		  the rendering will directly start after this call
 		context.window_manager.modal_handler_add(self)
+
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
@@ -329,20 +343,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# remember active camera as well as its original location and shift value
 				self.camera_active = self.render_setting_scene.camera
 
+				# if this is the first view of the current frame
+				# NOTE: - we do it this way in case the camera is animated and its position changes each frame
+				if self.rendering_view == 0:
+
+					# remember current camera settings
+					self.camera_original_location = self.camera_active.location.copy()
+					self.camera_original_shift_x = self.camera_active.data.shift_x
+					self.camera_original_sensor_fit = self.camera_active.data.sensor_fit
+
 				# if an animation shall be rendered
 				if self.animation == True:
-
-					# set the rendering frame variable to the first frame
-					self.rendering_frame = self.render_setting_scene.frame_start
 
 					# set the file path to the current frame path
 					self.rendering_filepath = self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
 
 				# if a single frame shall be rendered
 				elif self.animation == False:
-
-					# set the rendering frame variable to the first frame
-					self.rendering_frame = self.render_setting_scene.frame_current
 
 					# set the file path to the current render path
 					self.rendering_filepath = self.render_setting_filepath
@@ -390,18 +407,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
 				# +++++++++++++++++++++++++++++++++++++++++++++++
 
-				# if this is the first view of the current frame
-				# NOTE: - we do it this way in case the camera is animated and its position changes each frame
-				if self.rendering_view == 0:
-
-					# remember current camera settings
-					self.camera_original_location = self.camera_active.location.copy()
-					self.camera_original_shift_x = self.camera_active.data.shift_x
-					self.camera_original_sensor_fit = self.camera_active.data.sensor_fit
-
-				# set sensor fit to Vertical
-				#self.camera_active.data.sensor_fit = 'VERTICAL'
-
 				# get camera's modelview matrix
 				view_matrix = self.camera_active.matrix_world.copy()
 
@@ -434,6 +439,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# calculate the offset that the camera should move
 				offset = cameraDistance * tan(offsetAngle)
+
+				print("view_matrix: ", view_matrix)
+				print("view_matrix_inv: ", view_matrix_inv)
+				print("camera_original_location: ", self.camera_original_location)
 
 				# translate the camera by the calculated offset in x-direction
 				# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
@@ -558,11 +567,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# cancel the operator
 						# NOTE: - this includes recovering all original user settings
+						# reset the operator state to IDLE
 						self.cancel(context)
 
 						# notify user
 						self.report({"INFO"},"Complete quilt rendered.")
-						return {"FINISHED"}
+						return {"CANCELLED"}
 
 				# if an animation shall be rendered
 				elif self.animation == True:
@@ -585,7 +595,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					elif self.rendering_view == 44:
 
 						# if this was not the last frame
-						if self.rendering_frame < self.render_setting_scene.frame_current:
+						if self.rendering_frame < self.render_setting_scene.frame_end:
 
 							# restore original camera settings of this frame
 							self.camera_active.location = self.camera_original_location
@@ -596,7 +606,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 							self.rendering_view = 0
 
 							# increase frame count
-							self.rendering_frame = self.render_setting_scene.frame_current + 1
+							self.rendering_frame = self.rendering_frame + 1
+
+							# clear the pixel data
+							self.viewImagesPixels.clear()
 
 							# reset the operator state to IDLE
 							self.operator_state = "INVOKE_RENDER"
@@ -612,7 +625,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 							# notify user
 							self.report({"INFO"},"Complete animation quilt rendered.")
-							return {"FINISHED"}
+							return {"CANCELLED"}
 
 
 
