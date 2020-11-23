@@ -819,7 +819,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# calculate cameraSize from its distance to the focal plane and the FOV
 					# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-					cameraDistance = self.window_manager.focalPlane # TODO: would camera.data.dof.focus_distance be better?
+					cameraDistance = self.window_manager.focalPlane
 					cameraSize = cameraDistance * tan(fov / 2)
 
 					# start at viewCone * 0.5 and go up to -viewCone * 0.5
@@ -847,7 +847,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# calculate cameraSize from its distance to the focal plane and the FOV
 					# NOTE: - we take an arbitrary distance of 5 m (TODO: IS THERE A SPECIFIC BETTER VALUE FOR THE VIEWPORT CAM?)
-					cameraDistance = self.window_manager.focalPlane #camera.data.dof.focus_distance
+					cameraDistance = self.window_manager.focalPlane
 					cameraSize = cameraDistance * tan(fov / 2)
 
 					# start at viewCone * 0.5 and go up to -viewCone * 0.5
@@ -1129,7 +1129,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				else:
 
 					# Todo: How can I access the views of a multiview to copy them into the quilt?
-					print(" # QUILT IMAGE")
+					#print(" # QUILT IMAGE")
 
 					# assume that we have a 45 view quilt image and load it into a OpenGL texture
 					# TODO: Integrate a setting for quilts with 32 images
