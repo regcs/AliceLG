@@ -399,6 +399,9 @@ def update_camera_setting(self, context):
 
 			print("SPACE SETTINGS UPDATED: ", LookingGlassAddon.lightfieldSpace, LookingGlassAddon.lightfieldSpace.camera)
 
+		# Invoke modal operator for the camera frustum rendering
+		bpy.ops.render.frustum('INVOKE_DEFAULT')
+
 	else:
 
 		# if a valid space is existing
@@ -1288,8 +1291,9 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 
-		# Looking Glass viewport
+		# Looking Glass viewport & camera frustum
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
+		bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
 
 		# Looking Glass quilt rendering
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
@@ -1363,6 +1367,7 @@ def unregister():
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
 
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 

@@ -72,7 +72,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
 	_handle_trackActiveSpaceView3D = None
-	_handle_drawCameraFrustum = None
 
 	# DEBUGING VARIABLES
 	start_multi_view = 0
@@ -153,9 +152,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# remove the draw handler for the lightfield window
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
 
-		# remove the handler for the frustum drawing
-		if self._handle_drawCameraFrustum: bpy.types.SpaceView3D.draw_handler_remove(self._handle_drawCameraFrustum, 'WINDOW')
-
 		print("Free quilt and view offscreens.")
 
 		# iterate through all presets
@@ -218,9 +214,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# pass quilt settings to the lightfield shader
 		self.passQuiltSettingsToShader()
-
-		# setup the frustum drawing operations
-		self.setupCameraFrustumShader()
 
 
 
@@ -334,9 +327,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# HANDLERS FOR DRAWING PURPOSES
 		# ++++++++++++++++++++++++++++++
-		# draw handler to display the frustum of the Looking Glass camera
-		self._handle_drawCameraFrustum = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
-
 		# TODO: this needs to be adjusted to enable switching between resolutions with different numbers of views
 		# draw handler for rendering the views
 		# NOTE: - we use 45 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
@@ -1186,6 +1176,115 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
+
+
+
+
+# ------------ CAMERA FRUSTUM RENDERING -------------
+# Modal operator for rendering a camera frustum reprsenting the Looking Glass
+# in Blenders 3D viewport
+class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
+
+	bl_idname = "render.frustum"
+	bl_label = "Looking Glass Frustum Rendering"
+	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+	# WINDOW RELATED VARIABLES
+	window_manager = None
+
+	# HANDLER IDENTIFIERS
+	_handle_drawCameraFrustum = None
+
+
+
+	# Inititalize the Looking Glass
+	@classmethod
+	def __init__(self):
+
+		print("Initializing the frustum rendering operator ...")
+
+
+
+	# delete all objects
+	@classmethod
+	def __del__(self):
+
+		print("Stopped the frustum rendering operator ...")
+
+
+
+
+    # poll method
+	@classmethod
+	def poll(self, context):
+
+		# return True, so the operator is executed
+		return True
+
+
+
+
+	# cancel the modal operator
+	def cancel(self, context):
+
+		print("Removing draw handler: ")
+
+		# remove the handler for the frustum drawing
+		if self._handle_drawCameraFrustum: bpy.types.SpaceView3D.draw_handler_remove(self._handle_drawCameraFrustum, 'WINDOW')
+
+		print("Everything is done.")
+
+
+		# return None since this is expected by the operator
+		return None
+
+
+
+
+	def invoke(self, context, event):
+		start = time.time()
+
+		# make an internal variable for the window_manager,
+		# which can be accessed from methods that have no "context" parameter
+		self.window_manager = context.window_manager
+
+
+
+		# SETUP THE FRUSTUM
+		################################################################
+
+		# setup the frustum & shader
+		self.setupCameraFrustumShader()
+
+
+
+
+		# REGISTER ALL HANDLERS FOR THE FRUSTUM RENDERING
+		################################################################
+
+		# HANDLERS FOR DRAWING PURPOSES
+		# ++++++++++++++++++++++++++++++
+		# draw handler to display the frustum of the Looking Glass camera
+		self._handle_drawCameraFrustum = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
+
+		print("Invoked modal operator: ", time.time() - start)
+
+		# add the modal handler
+		self.window_manager.modal_handler_add(self)
+
+		# keep the modal operator running
+		return {'RUNNING_MODAL'}
+
+
+
+	# modal operator for controlled redrawing of the lightfield
+	def modal(self, context, event):
+
+		# pass event through
+		return {'PASS_THROUGH'}
+
+
+
 	# setup the camera frustum shader
 	def setupCameraFrustumShader(self):
 
@@ -1271,7 +1370,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def drawCameraFrustum(self, context):
 
 		# if a camera is selected AND the space is not in camera mode
-		if self.window_manager.lookingglassCamera != None and context.space_data != LookingGlassAddon.lightfieldSpace and context.space_data.region_3d.view_perspective != 'CAMERA':
+		if self.window_manager.lookingglassCamera != None and context.space_data.region_3d.view_perspective != 'CAMERA':
 
 			# currently selected camera
 			camera = self.window_manager.lookingglassCamera
