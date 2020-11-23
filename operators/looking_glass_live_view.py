@@ -1372,62 +1372,42 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 		# if a camera is selected AND the space is not in camera mode
 		if self.window_manager.lookingglassCamera != None and context.space_data.region_3d.view_perspective != 'CAMERA':
 
+			# currently selected device and its calibration data
+			device = LookingGlassAddon.deviceList[int(self.window_manager.activeDisplay)]
+
 			# currently selected camera
 			camera = self.window_manager.lookingglassCamera
 
-			# get the position of the camera eye point
-			pixelAspectRatio = bpy.context.scene.render.pixel_aspect_x / bpy.context.scene.render.pixel_aspect_y
-			renderAspectRatio = bpy.context.scene.render.resolution_x / bpy.context.scene.render.resolution_y
-			aspectRatio = renderAspectRatio * pixelAspectRatio
+			# get modelview matrix
+			view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
 
-			# field of view defined by the camera settings
-			angle = camera.data.angle / 2
+			# we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
+			# based on the intercept theorems
+			view_frame = camera.data.view_frame(scene=bpy.context.scene)
+			view_frame_upper_right = view_frame[0]
+			view_frame_lower_right = view_frame[1]
+			view_frame_lower_left = view_frame[2]
+			view_frame_upper_left = view_frame[3]
+			view_frame_distance = abs(view_frame_upper_right[2])
 
 			# get the clipping settings
 			clipStart = camera.data.clip_start
 			clipEnd = camera.data.clip_end
 
-			# get modelview matrix
-			view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
-
-			# calculate the width and height of the near and far planes of the camera frustum
-			if camera.data.sensor_fit == 'VERTICAL':
-
-				# define coordinates
-				hNear = clipStart * tan(angle)
-				wNear = hNear * aspectRatio
-				hFar = clipEnd * tan(angle)
-				wFar = hFar * aspectRatio
-
-				# define coordinates of the focal plane
-				hFocal = self.window_manager.focalPlane * tan(angle)
-				wFocal = hFocal * aspectRatio
-
-			else:
-
-				# define coordinates
-				hNear = clipStart * tan(angle) / aspectRatio
-				wNear = hNear * aspectRatio
-				hFar = clipEnd * tan(angle) / aspectRatio
-				wFar = hFar * aspectRatio
-
-				# define coordinates of the focal plane
-				hFocal = self.window_manager.focalPlane * tan(angle) / aspectRatio
-				wFocal = hFocal * aspectRatio
-
 			# TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
 			# define the vertices of the camera frustum in camera coordinates
 			# NOTE: - the z-value is negative, because the Blender camera always looks into negative z-direction
 			coords_local = [
-				# near clipping plane
-				(-wNear, -hNear, -clipStart), (wNear, -hNear, -clipStart),
-				(wNear, hNear, -clipStart), (-wNear, hNear, -clipStart),
-				# far clipping plane
-				(-wFar, -hFar, -clipEnd), (wFar, -hFar, -clipEnd),
-				(wFar, hFar, -clipEnd), (-wFar, hFar, -clipEnd),
-				# focal plane
-				(-wFocal, -hFocal, -self.window_manager.focalPlane), (wFocal, -hFocal, -self.window_manager.focalPlane),
-				(wFocal, hFocal, -self.window_manager.focalPlane), (-wFocal, hFocal, -self.window_manager.focalPlane),]
+							# near clipping plane
+							(view_frame_lower_right[0] / view_frame_distance * clipStart, view_frame_lower_right[1] / view_frame_distance * clipStart, -clipStart), (view_frame_lower_left[0] / view_frame_distance * clipStart, view_frame_lower_left[1] / view_frame_distance * clipStart, -clipStart),
+							(view_frame_upper_left[0] / view_frame_distance * clipStart, view_frame_upper_left[1] / view_frame_distance * clipStart, -clipStart), (view_frame_upper_right[0] / view_frame_distance * clipStart, view_frame_upper_right[1] / view_frame_distance * clipStart, -clipStart),
+							# far clipping plane
+							(view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
+							(view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
+							# focal plane
+							(view_frame_lower_right[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_lower_right[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane), (view_frame_lower_left[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_lower_left[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane),
+							(view_frame_upper_left[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_upper_left[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane), (view_frame_upper_right[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_upper_right[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane),
+							]
 
 			# if the camera fustum shall be drawn
 			if self.window_manager.showFrustum == True:
