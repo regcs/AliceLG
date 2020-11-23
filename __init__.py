@@ -380,12 +380,6 @@ def update_camera_setting(self, context):
 		camera.data.clip_start = context.window_manager.clip_start
 		camera.data.clip_end = context.window_manager.clip_end
 
-		# Depth of field settings
-		camera.data.dof.use_dof = context.window_manager.liveview_use_dof
-		camera.data.dof.focus_object = context.window_manager.focus_object
-		camera.data.dof.focus_distance = context.window_manager.focus_distance
-		camera.data.dof.aperture_fstop = context.window_manager.f_stop
-
 		# if a valid space is existing
 		if LookingGlassAddon.lightfieldSpace != None:
 
@@ -558,12 +552,132 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 			row_4 = column.row()
 			render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
 			render_quilt.animation = True
-			#
-			# # if no lightfield window is existing
-			# if context.window_manager.ShowLightfieldWindow == False:
-			#
-			#    # disable the button for the debug view
-			#    row_5.enabled = False
+
+
+
+
+# ------------- The Camera Settings Panel ----------------
+class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
+
+	""" Looking Glass Properties """
+	#bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
+	bl_idname = "LOOKINGGLASS_PT_panel_camera" # unique identifier for buttons and menu items to reference.
+	bl_label = "Camera Settings" # display name in the interface.
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+	bl_category = "Looking Glass"
+	#bl_options = {'DEFAULT_CLOSED'}
+
+	# pointer property that can be used to load a pre-rendered quilt image
+	bpy.types.WindowManager.lookingglassCamera = bpy.props.PointerProperty(
+										 name="",
+										 type=bpy.types.Object,
+										 description = "Camera object, which defines the Looking Glass content",
+										 poll = camera_selection_poll,
+										 update = update_camera_setting
+										 )
+
+	bpy.types.WindowManager.showFocalPlane = bpy.props.BoolProperty(
+											name="Show Focal Plane",
+											description="If enabled, the focal plane of the Looking Glass is shown in the viewport",
+											default = True,
+											)
+
+	bpy.types.WindowManager.showFrustum = bpy.props.BoolProperty(
+											name="Show Camera Frustum",
+											description="If enabled, the frustum of the camera is shown in the viewport",
+											default = True,
+											)
+
+	bpy.types.WindowManager.clip_start = bpy.props.FloatProperty(
+											  name = "Clip Start",
+											  default = 4.2,
+											  min = 0,
+											  precision = 1,
+											  step = 10,
+											  description = "Far clipping plane of the Looking Glass frustum.",
+											  update = update_camera_setting,
+											  )
+
+	bpy.types.WindowManager.clip_end = bpy.props.FloatProperty(
+											  name = "Clip End",
+											  default = 6.5,
+											  min = 0,
+											  precision = 1,
+											  step = 10,
+											  description = "Far clipping plane of the Looking Glass frustum.",
+											  update = update_camera_setting,
+											  )
+
+	# the virtual distance of the plane, which represents the focal plane of the Looking Glass
+	bpy.types.WindowManager.focalPlane = bpy.props.FloatProperty(
+											  name = "Focal Plane",
+											  default = 5,
+											  min = 0,
+											  precision = 1,
+											  step = 10,
+											  description = "Virtual distance to the focal plane. (This plane is directly mapped to the LCD display of the Looking Glass)",
+											  update = update_camera_setting,
+											  )
+
+
+
+	# define own poll method to be able to hide / show the panel on demand
+	@classmethod
+	def poll(self, context):
+
+		# if no Looking Glass is selected
+		if int(context.window_manager.activeDisplay) == -1:
+
+			# this panel is not needed, so return False:
+			# the panel will not be drawn
+			return False
+
+		else:
+
+			# if the render mode is "Live View"
+			if int(context.window_manager.renderMode) == 0:
+
+				# this panel is  needed, so return True:
+				# the panel will be drawn
+				return True
+
+			# else, if the render mode is "Quilt view"
+			elif int(context.window_manager.renderMode) == 1:
+
+				# this panel is not needed, so return False:
+				# the panel will NOT be drawn
+				return False
+
+	# draw the IntProperties for the tiles in the panel
+	def draw(self, context):
+		layout = self.layout
+
+		# define a column of UI elements
+		column = layout.column(align = True)
+
+		row = column.row(align = True)
+		row.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
+		row.operator("object.add_lookingglass_camera", text="", icon='ADD')
+
+		column.separator()
+
+		# display the clipping settings
+		row = column.row(align = True)
+		row.prop(context.window_manager, "clip_start")
+		row = column.row(align = True)
+		row.prop(context.window_manager, "clip_end")
+		row = column.row(align = True)
+		row.prop(context.window_manager, "focalPlane")
+
+		column.separator()
+
+		# display frustum and focal plane settings
+		row = column.row(align = True)
+		row.prop(context.window_manager, "showFrustum")
+		row = column.row(align = True)
+		row.prop(context.window_manager, "showFocalPlane")
+
 
 
 
@@ -591,46 +705,6 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 	# exposed parameters stored in WindowManager as global props so they
 	# can be changed even when loading the addon (due to config file parsing)
-
-	# the virtual distance of the plane, which represents the focal plane of the Looking Glass
-	bpy.types.WindowManager.focalPlane = FloatProperty(
-												   name = "Focal Plane",
-												   default = 5,
-												   min = 0,
-												   description = "Distance of the focal plane of the Looking Glass",
-												   )
-
-	bpy.types.WindowManager.center = FloatProperty(
-												   name = "Center",
-												   default = 0.47,
-												   min = -1.0,
-												   max = 1.0,
-												   description = "Center",
-												   )
-
-	bpy.types.WindowManager.viewCone = bpy.props.FloatProperty(
-															  name = "View Cone",
-															  default = 40.0,
-															  min = 20.0,
-															  max = 80.0,
-															  description = "View Cone",
-															  )
-
-	bpy.types.WindowManager.screenW = bpy.props.FloatProperty(
-															 name = "Screen Width",
-															 default = 2560.0,
-															 min = 1000.0,
-															 max = 10000.0,
-															 description = "Screen width of looking glass display in pixels",
-															 )
-
-	bpy.types.WindowManager.screenH = bpy.props.FloatProperty(
-															 name = "Screen Height",
-															 default = 1600.0,
-															 min = 1000.0,
-															 max = 10000.0,
-															 description = "Screen height of looking glass display in pixels",
-															 )
 
 	# UI elements for user control
 	bpy.types.WindowManager.renderMode = bpy.props.EnumProperty(
@@ -1099,171 +1173,6 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 					column_2.enabled = False
 
 
-# ------------- The Camera Settings Panel ----------------
-class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
-
-	""" Looking Glass Properties """
-	#bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
-	bl_idname = "LOOKINGGLASS_PT_panel_camera" # unique identifier for buttons and menu items to reference.
-	bl_label = "Camera Settings" # display name in the interface.
-	bl_space_type = "VIEW_3D"
-	bl_region_type = "UI"
-	bl_category = "Looking Glass"
-	#bl_options = {'DEFAULT_CLOSED'}
-
-	# pointer property that can be used to load a pre-rendered quilt image
-	bpy.types.WindowManager.lookingglassCamera = bpy.props.PointerProperty(
-														 name="",
-														 type=bpy.types.Object,
-														 description = "Camera object, which defines the Looking Glass content",
-														 poll = camera_selection_poll,
-														 update = update_camera_setting
-														 )
-
-	bpy.types.WindowManager.showFocalPlane = bpy.props.BoolProperty(
-															name="Show Focal Plane",
-															description="If enabled, the focal plane of the Looking Glass is shown in the viewport",
-															default = True,
-															)
-
-	bpy.types.WindowManager.showFrustum = bpy.props.BoolProperty(
-															name="Show Camera Frustum",
-															description="If enabled, the frustum of the camera is shown in the viewport",
-															default = True,
-															)
-
-	bpy.types.WindowManager.clip_start = bpy.props.FloatProperty(
-															  name = "Clip Start",
-															  default = 4.2,
-															  min = 0,
-															  precision = 1,
-															  step = 10,
-															  description = "Near clipping plane of the multiview cameras",
-															  update = update_camera_setting,
-															  )
-
-	bpy.types.WindowManager.clip_end = bpy.props.FloatProperty(
-															  name = "Clip End",
-															  default = 6.5,
-															  min = 0,
-															  precision = 1,
-															  step = 10,
-															  description = "Far clipping plane of the multiview cameras",
-															  update = update_camera_setting,
-															  )
-
-	bpy.types.WindowManager.focus_object = bpy.props.PointerProperty(
-															name = "Focus on Object",
-															type=bpy.types.Object,
-															description = "Use this object to define the depth of field focal point",
-															update = update_camera_setting,
-															)
-
-	bpy.types.WindowManager.focus_distance = bpy.props.FloatProperty(
-															name = "Focus Distance",
-															default = 5.1,
-															min = 0,
-															precision = 2,
-															step = 10,
-															subtype = 'DISTANCE',
-															#unit = 'LENGTH',
-															description = "Distance to the focus point for depth of field",
-															update = update_camera_setting,
-															)
-
-	bpy.types.WindowManager.f_stop = bpy.props.FloatProperty(
-															name = "F-Stop",
-															default = 1,
-															min = 0.1,
-															max = 128,
-															precision = 1,
-															step = 10,
-															description = "F-Stop ratio (lower numbers give more defocus, higher numbers give a sharper image)",
-															update = update_camera_setting,
-															)
-
-
-	# define own poll method to be able to hide / show the panel on demand
-	@classmethod
-	def poll(self, context):
-
-		# if no Looking Glass is selected
-		if int(context.window_manager.activeDisplay) == -1:
-
-			# this panel is not needed, so return False:
-			# the panel will not be drawn
-			return False
-
-		else:
-
-			# if the render mode is "Live View"
-			if int(context.window_manager.renderMode) == 0:
-
-				# this panel is  needed, so return True:
-				# the panel will be drawn
-				return True
-
-			# else, if the render mode is "Quilt view"
-			elif int(context.window_manager.renderMode) == 1:
-
-				# this panel is not needed, so return False:
-				# the panel will NOT be drawn
-				return False
-
-	# draw the IntProperties for the tiles in the panel
-	def draw(self, context):
-		layout = self.layout
-
-		# define a column of UI elements
-		column = layout.column(align = True)
-
-		row = column.row(align = True)
-		row.prop(context.window_manager, "lookingglassCamera", icon='VIEW_CAMERA')
-		row.operator("object.add_lookingglass_camera", text="", icon='ADD')
-
-		# display frustum and focal plane settings
-		row = column.row(align = True)
-		row.prop(context.window_manager, "showFrustum")
-		row = column.row(align = True)
-		row.prop(context.window_manager, "showFocalPlane")
-
-		column.separator()
-
-		# display the clipping settings
-		row = column.row(align = True)
-		row.prop(context.window_manager, "clip_start")
-		row = column.row(align = True)
-		row.prop(context.window_manager, "clip_end")
-
-		column.separator()
-
-		# define a row of UI elements
-		row = column.row(align = True)
-		row.label(text="Depth of Field")
-		row_focus_object = layout.column(align = True)
-		row_focus_object.prop(context.window_manager, "focus_object")
-		row_focus_distance = layout.column(align = True)
-		row_focus_distance.prop(context.window_manager, "focus_distance")
-		row_f_stop = layout.column(align = True)
-		row_f_stop.prop(context.window_manager, "f_stop")
-
-		# if depth of field rendering is deactivated
-		if context.window_manager.liveview_use_dof == False:
-
-			# ... then disable all UI elements connected to depth of field
-			row_focus_object.enabled = False
-			row_focus_distance.enabled = False
-			row_f_stop.enabled = False
-
-		else:
-
-			# check if a focus object is chosen and if so,
-			if context.window_manager.focus_object != None:
-
-				# ... then disable the focus distance selector
-				row_focus_distance.enabled = False
-
-
 # ------------- Register classes ----------------
 def register():
 
@@ -1287,9 +1196,9 @@ def register():
 
 		# UI elements
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 
 		# Looking Glass viewport & camera frustum
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
@@ -1359,9 +1268,9 @@ def unregister():
 
 		bpy.utils.unregister_class(LookingGlassPreferences)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
