@@ -209,7 +209,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		if self.camera_active != None and self.camera_active.type == 'CAMERA':
 
 			# restore original camera settings
-			self.camera_active.location = self.camera_original_location
+			self.camera_active.location = self.camera_original_location.copy()
 			self.camera_active.data.shift_x = self.camera_original_shift_x
 			self.camera_active.data.sensor_fit = self.camera_original_sensor_fit
 
@@ -327,19 +327,24 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				print("[INFO] Invoking new render job.")
 
-				# reset the operator state to IDLE
-				self.operator_state = "INIT_RENDER"
+				# FRAME AND VIEW
+				# ++++++++++++++++++++++
+				# set the current frame to be rendered
+				self.render_setting_scene.frame_set(self.rendering_frame, subframe=self.rendering_subframe)
 
-				# start rendering the next view
-				bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True)
+				# get the subframe, that will be rendered
+				self.rendering_subframe = self.render_setting_scene.frame_subframe
+
+				# set the filepath so that the filename adheres to:
+				# filepath + "_view_XX_YYYY"
+				self.rendering_filepath
 
 
-			# INIT STEP
-			# ++++++++++++++++++++++++++++++++++
-			elif self.operator_state == "INIT_RENDER":
 
-				print("[INFO] Rendering job initialized.")
-
+				# STORE USER CAMERA SETTINGS
+				# ++++++++++++++++++++++++++++++++++
+				# NOTE: - we do this here, since each frame could contain a different
+				#		 camera setting
 				# remember active camera as well as its original location and shift value
 				self.camera_active = self.render_setting_scene.camera
 
@@ -351,57 +356,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					self.camera_original_location = self.camera_active.location.copy()
 					self.camera_original_shift_x = self.camera_active.data.shift_x
 					self.camera_original_sensor_fit = self.camera_active.data.sensor_fit
-
-				# if an animation shall be rendered
-				if self.animation == True:
-
-					# set the file path to the current frame path
-					self.rendering_filepath = self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
-
-				# if a single frame shall be rendered
-				elif self.animation == False:
-
-					# set the file path to the current render path
-					self.rendering_filepath = self.render_setting_filepath
-
-					# if this path is a directory and not a file
-					if os.path.isdir(self.rendering_filepath) == True or os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
-
-						# define the frame number as the filename
-						self.render_setting_scene.render.filepath = self.rendering_filepath + "####"
-						self.rendering_filepath = self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
-
-					# if this path + extension is a file
-					elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
-
-						# add the file file_extension
-						self.rendering_filepath = self.rendering_filepath + self.render_setting_scene.render.file_extension
-
-				# reset the operator state to IDLE
-				self.operator_state = "IDLE"
-
-
-			# PRE-RENDER STEP
-			# ++++++++++++++++++++++++++++++++++
-
-			# if nothing is rendering, but the last view is not yet rendered
-			elif self.operator_state == "PRE_RENDER":
-
-				print("[INFO] Rendering view is going to be prepared.")
-
-				# FRAME AND VIEW
-				# ++++++++++++++++++++++
-
-				# set the current frame to be rendered
-				self.render_setting_scene.frame_set(self.rendering_frame, subframe=self.rendering_subframe)
-
-				# get the subframe, that will be rendered
-				self.rendering_subframe = self.render_setting_scene.frame_subframe
-
-				# set the filepath so that the filename adheres to:
-				# filepath + "_view_XX_YYYY"
-				self.rendering_filepath
-
 
 
 				# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
@@ -440,22 +394,76 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# calculate the offset that the camera should move
 				offset = cameraDistance * tan(offsetAngle)
 
-				print("view_matrix: ", view_matrix)
-				print("view_matrix_inv: ", view_matrix_inv)
-				print("camera_original_location: ", self.camera_original_location)
-
 				# translate the camera by the calculated offset in x-direction
 				# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
 				#		then we apply the offset and transform back to the normal world coordinates
-				self.camera_active.location = view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (view_matrix_inv @ self.camera_original_location))
+				self.camera_active.location = view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (view_matrix_inv @ self.camera_original_location.copy()))
 
 				# modify the projection matrix, relative to the camera size.
 				# NOTE: - we need to take into account the view aspect ratio and the pixel aspect ratio
 				self.camera_active.data.shift_x = self.camera_original_shift_x + offset / (cameraSize * self.rendering_viewWidth / self.rendering_viewHeight * self.render_setting_scene.render.pixel_aspect_x * self.render_setting_scene.render.pixel_aspect_y)
 
+				print("view_matrix: ", view_matrix)
+				print("view_matrix_inv: ", view_matrix_inv)
+				print("camera_location: ", self.camera_active.location)
+				print("camera_original_location: ", self.camera_original_location)
 
 
 
+
+
+
+
+				# reset the operator state to IDLE
+				self.operator_state = "INIT_RENDER"
+
+				# start rendering the next view
+				bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True, use_viewport=True)
+
+
+			# INIT STEP
+			# ++++++++++++++++++++++++++++++++++
+			elif self.operator_state == "INIT_RENDER":
+
+				print("[INFO] Rendering job initialized.")
+
+				# if an animation shall be rendered
+				if self.animation == True:
+
+					# set the file path to the current frame path
+					self.rendering_filepath = self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
+
+				# if a single frame shall be rendered
+				elif self.animation == False:
+
+					# set the file path to the current render path
+					self.rendering_filepath = self.render_setting_filepath
+
+					# if this path is a directory and not a file
+					if os.path.isdir(self.rendering_filepath) == True or os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+
+						# define the frame number as the filename
+						self.render_setting_scene.render.filepath = self.rendering_filepath + "####"
+						self.rendering_filepath = self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
+
+					# if this path + extension is a file
+					elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
+
+						# add the file file_extension
+						self.rendering_filepath = self.rendering_filepath + self.render_setting_scene.render.file_extension
+
+				# reset the operator state to IDLE
+				self.operator_state = "IDLE"
+
+
+
+			# PRE-RENDER STEP
+			# ++++++++++++++++++++++++++++++++++
+
+			# if nothing is rendering, but the last view is not yet rendered
+			elif self.operator_state == "PRE_RENDER":
+
+				print("[INFO] Rendering view is going to be prepared.")
 
 				# output current status
 				print(" # active camera: ", self.camera_active)
@@ -598,7 +606,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						if self.rendering_frame < self.render_setting_scene.frame_end:
 
 							# restore original camera settings of this frame
-							self.camera_active.location = self.camera_original_location
+							self.camera_active.location = self.camera_original_location.copy()
 							self.camera_active.data.shift_x = self.camera_original_shift_x
 							self.camera_active.data.sensor_fit = self.camera_original_sensor_fit
 
