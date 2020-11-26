@@ -34,7 +34,8 @@ from .looking_glass_global_variables import *
 class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	bl_idname = "render.quilt"
-	bl_label = "Render a quilt using the current scene and active camera."
+	bl_label = "Render"
+	bl_description = "Render a quilt (animation) using the current scene and active camera."
 	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
 	# OPERATOR ARGUMENTS
@@ -164,18 +165,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	@classmethod
 	def poll(self, context):
 
-		# print("POLLING: ", LookingGlassAddon.lightfieldWindow)
-
-		# if the lightfield window exists
-		if LookingGlassAddon.lightfieldWindow != None:
-
-			# return True, so the operator is executed
-			return True
-
-		else:
-
-			# return False, so the operator is NOT executed
-			return False
+		# return True, so the operator is executed
+		return True
 
 
 

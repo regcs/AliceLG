@@ -17,7 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 bl_info = {
-	"name": "Alice",
+	"name": "Looking Glass Addon",
 	"author": "Christian Stolze", # This addon uses parts of the first Looking Glass addon created by Gottfried Hofmann and Kyle Appelgate
 	"version": (1, 0, 0),
 	"blender": (2, 90, 0),
@@ -411,7 +411,7 @@ def update_camera_setting(self, context):
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_display_list"
-	bl_label = "Detect connected Looking Glass devices"
+	bl_label = "Refresh list"
 	bl_description = "Refreshes the list of connected Looking Glass deviced from the HoloPlay Service"
 	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
@@ -528,31 +528,49 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		layout = self.layout
 		column = layout.column()
 
+		# Device selection
 		row_1 = column.row(align = True)
-		row_1.prop(context.window_manager, "activeDisplay", text="")
-		row_1.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
+		column_1 = row_1.column(align=True)
+		row_1a = column_1.row(align = True)
+		row_1a.prop(context.window_manager, "activeDisplay", text="")
+		row_1a.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
 		row_1.separator()
-		row_1.prop(context.window_manager, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
-		row_1.prop(context.window_manager, "debug_view", expand=True, text="", icon='PLUGIN')
 
-		# if a Looking Glass is selected
-		if int(context.window_manager.activeDisplay) > -1:
+		# Lightfield window & debug button
+		column_2 = row_1.column(align=True)
+		row_1b = column_2.row(align = True)
+		row_1b.prop(context.window_manager, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
+		row_1b.prop(context.window_manager, "debug_view", expand=True, text="", icon='PLUGIN')
 
-			# display all settings for the live view mode
-			row_2 = column.row()
-			row_2.prop(context.window_manager, "viewResolution", text="")
-			column.separator()
+		# Resolution selection of the quilt views
+		row_2 = column.row()
+		row_2.prop(context.window_manager, "viewResolution", text="")
+		column.separator()
 
-			# button to start rendering a quilt using the current render settings
-			row_3 = column.row()
-			render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
-			render_quilt.animation = False
+		# Button to start rendering a single quilt using the current render settings
+		row_3 = column.row()
+		render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+		#render_quilt.animation = False
+		#row_3.enabled = True
 
-			# button to start rendering an animation quilt using the current render settings
-			row_4 = column.row()
-			render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
-			render_quilt.animation = True
+		# Button to start rendering a animation quilt using the current render settings
+		row_4 = column.row()
+		render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+		render_quilt.animation = True
+		row_4.enabled = True
 
+
+		# if the HoloPlay Service is NOT available
+		if LookingGlassAddon.Initialized == False:
+
+			# deactivate the looking glass selection
+			row_1a.enabled = False
+
+		# if NO Looking Glass is selected or detected
+		if int(context.window_manager.activeDisplay) == -1:
+
+			# deactivate the lightfield window button and debug button
+			row_1b.enabled = False
 
 
 
@@ -560,13 +578,11 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 
 	""" Looking Glass Properties """
-	#bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
 	bl_idname = "LOOKINGGLASS_PT_panel_camera" # unique identifier for buttons and menu items to reference.
 	bl_label = "Camera Settings" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
-	#bl_options = {'DEFAULT_CLOSED'}
 
 	# pointer property that can be used to load a pre-rendered quilt image
 	bpy.types.WindowManager.lookingglassCamera = bpy.props.PointerProperty(
@@ -626,28 +642,8 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 	@classmethod
 	def poll(self, context):
 
-		# if no Looking Glass is selected
-		if int(context.window_manager.activeDisplay) == -1:
-
-			# this panel is not needed, so return False:
-			# the panel will not be drawn
-			return False
-
-		else:
-
-			# if the render mode is "Live View"
-			if int(context.window_manager.renderMode) == 0:
-
-				# this panel is  needed, so return True:
-				# the panel will be drawn
-				return True
-
-			# else, if the render mode is "Quilt view"
-			elif int(context.window_manager.renderMode) == 1:
-
-				# this panel is not needed, so return False:
-				# the panel will NOT be drawn
-				return False
+		# the panel should always be drawn
+		return True
 
 	# draw the IntProperties for the tiles in the panel
 	def draw(self, context):
@@ -698,7 +694,6 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 		return {'FINISHED'}
 
 class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
-
 	""" Lightfield Viewport Settings """
 	bl_idname = "LOOKINGGLASS_PT_panel_lightfield" # unique identifier for buttons and menu items to reference.
 	bl_label = "Lightfield Window" # display name in the interface.
@@ -1184,31 +1179,33 @@ def register():
 	# initialize HoloPlay Core SDK
 	errco = hpc.InitializeApp(b"Blender Addon v2.0", hpc.license_type.LICENSE_NONCOMMERCIAL.value)
 
+	# register all classes of the addon
+	# Preferences
+	bpy.utils.register_class(LookingGlassPreferences)
+	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
+	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
+	bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
+
+	# Looking Glass quilt rendering
+	bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
+
+	# Looking Glass viewport & camera frustum
+	bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
+	bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
+
+	# UI elements
+	bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
+	bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
+	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
+	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
+
+
+
 	# if no errors were detected
 	if errco == 0:
 
 		# set status variable
 		LookingGlassAddon.Initialized = True
-
-		# register all classes of the addon
-		# Preferences
-		bpy.utils.register_class(LookingGlassPreferences)
-		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
-		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
-		bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
-
-		# UI elements
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
-
-		# Looking Glass viewport & camera frustum
-		bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
-		bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
-
-		# Looking Glass quilt rendering
-		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
 		# allocate string buffer
 		buffer = ctypes.create_string_buffer(1000)
@@ -1258,7 +1255,7 @@ def register():
 		print(" # Client access error (code = ", errco, "):", errstr)
 
 		print("########################################################################")
-		print("Looking Glass Addon failed to initalize.")
+		print("Looking Glass Connection failed. No lightfield viewport available.")
 
 
 def unregister():

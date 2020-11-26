@@ -42,6 +42,7 @@ from .looking_glass_global_variables import *
 # ------------ LIGHTFIELD RENDERING -------------
 # Modal operator for controlled redrawing of the lightfield window.
 class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
+
 	bl_idname = "render.lightfield"
 	bl_label = "Looking Glass Lightfield Rendering"
 	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
@@ -96,8 +97,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	@classmethod
 	def poll(self, context):
 
-		# print("POLLING: ", LookingGlassAddon.lightfieldWindow)
-
 		# if the lightfield window exists
 		if LookingGlassAddon.lightfieldWindow != None:
 
@@ -105,8 +104,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			return True
 
 		else:
-
-			print("FAILED INITIALIZING THE VIEWPORT!")
 
 			# return False, so the operator is NOT executed
 			return False
@@ -1285,40 +1282,6 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	# setup the camera frustum shader
 	def setupCameraFrustumShader(self):
 
-		# we use our own vertex shader, which basically is the Blender internal '3D_UNIFORM_COLOR',
-		# but which has additional uniforms that we can use to parse the frustum vertices
-
-		frustum_vertex_shader = '''
-
-			uniform mat4 ModelViewProjectionMatrix;
-
-			// the variables defining the frustum and focal plane
-			uniform float clipStart;
-			uniform float clipEnd;
-			uniform float focalPlane;
-			uniform float angle;
-			uniform float aspectRatio;
-
-			#ifdef USE_WORLD_CLIP_PLANES
-			uniform mat4 ModelMatrix;
-			#endif
-
-			in vec3 pos;
-
-			void main()
-			{
-				// calculate
-
-
-				gl_Position = ModelViewProjectionMatrix * vec4(pos, 1.0);
-
-			#ifdef USE_WORLD_CLIP_PLANES
-			  world_clip_planes_calc_clip_distance((ModelMatrix * vec4(pos, 1.0)).xyz);
-			#endif
-			}
-		'''
-
-
 		# we predefine the indices because these never change
 		self.frustum_indices_lines = (
 			(0, 1), (0, 3), (1, 2), (3, 2),
@@ -1368,9 +1331,6 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		# if a camera is selected AND the space is not in camera mode
 		if self.window_manager.lookingglassCamera != None and context.space_data.region_3d.view_perspective != 'CAMERA':
-
-			# currently selected device and its calibration data
-			device = LookingGlassAddon.deviceList[int(self.window_manager.activeDisplay)]
 
 			# currently selected camera
 			camera = self.window_manager.lookingglassCamera
