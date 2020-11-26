@@ -570,6 +570,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# ++++++++++++++++++++++++++++++++++++++++++++
 					for window in context.window_manager.windows:
 						for area in window.screen.areas:
+
 							if area.type == 'IMAGE_EDITOR':
 								if area.spaces.active.image.name == "Render Result":
 
