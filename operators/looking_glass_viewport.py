@@ -40,11 +40,8 @@ from .looking_glass_global_variables import *
 
 
 # ------------ LIGHTFIELD RENDERING -------------
-# Modal operator for controlled redrawing of the image object
-# NOTE: This code is only for a more conveniant testing of the draw function
-#	   If you want to stop the test, press 'ESC'
+# Modal operator for controlled redrawing of the lightfield window.
 class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
-
 	bl_idname = "render.lightfield"
 	bl_label = "Looking Glass Lightfield Rendering"
 	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
@@ -109,7 +106,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		else:
 
-			print("FAILED INITIALIZING THE LIVE VIEW!")
+			print("FAILED INITIALIZING THE VIEWPORT!")
 
 			# return False, so the operator is NOT executed
 			return False
@@ -377,13 +374,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# Control lightfield redrawing in viewport mode
 		################################################################
 
-		# if the TIMER event for the lightfield rendering is called AND the live view is active
+		# if the TIMER event for the lightfield rendering is called AND the automatic render mode is active
 		if event.type == 'TIMER' and int(self.window_manager.renderMode) == 0:
 
 			# if something has changed
-			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.liveview_manual_refresh == True):
+			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.viewport_manual_refresh == True):
 
-				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.liveview_manual_refresh == True):
+				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.viewport_manual_refresh == True):
 
 					# set to the currently chosen quality
 					self.preset = int(context.window_manager.viewResolution)
@@ -395,7 +392,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					self.depsgraph_update_time = 0.000
 
 				# reset status variable for manual refreshes
-				context.window_manager.liveview_manual_refresh = False
+				context.window_manager.viewport_manual_refresh = False
 
 				# update the viewport settings
 				self.updateViewportSettings()
@@ -449,7 +446,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					self.depsgraph_update_time = time.time()
 
 					# if the low quality quilt settings are inactive, but should be active
-					if self.preset < 3 and self.window_manager.liveview_use_lowres_preview == True:
+					if self.preset < 3 and self.window_manager.viewport_use_lowres_preview == True:
 
 						# activate them
 						self.preset = 3
@@ -472,7 +469,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.depsgraph_update_time = time.time()
 
 			# if the low quality quilt settings are inactive, but should be active
-			if self.preset < 3 and self.window_manager.liveview_use_lowres_preview == True:
+			if self.preset < 3 and self.window_manager.viewport_use_lowres_preview == True:
 
 				# activate them
 				self.preset = 3
@@ -937,30 +934,30 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# APPLY THE CURRENT USER SETTINGS FOR THE LIGHTFIELD RENDERING
 			# SHADING ATTRIBUTES
 			self.override['space_data'].shading.type = self.window_manager.shadingMode
-			self.override['space_data'].shading.show_xray = bool(self.window_manager.liveview_show_xray)
-			self.override['space_data'].shading.xray_alpha = float(self.window_manager.liveview_xray_alpha)
-			self.override['space_data'].shading.use_dof = bool(int(self.window_manager.liveview_use_dof))
+			self.override['space_data'].shading.show_xray = bool(self.window_manager.viewport_show_xray)
+			self.override['space_data'].shading.xray_alpha = float(self.window_manager.viewport_xray_alpha)
+			self.override['space_data'].shading.use_dof = bool(int(self.window_manager.viewport_use_dof))
 
 			# OVERLAY ATTRIBUTES: Guides
-			self.override['space_data'].overlay.show_floor = bool(int(self.window_manager.liveview_show_floor))
-			self.override['space_data'].overlay.show_axis_x = bool(int(self.window_manager.liveview_show_axes[0]))
-			self.override['space_data'].overlay.show_axis_y = bool(int(self.window_manager.liveview_show_axes[1]))
-			self.override['space_data'].overlay.show_axis_z = bool(int(self.window_manager.liveview_show_axes[2]))
-			self.override['space_data'].overlay.grid_scale = float(self.window_manager.liveview_grid_scale)
+			self.override['space_data'].overlay.show_floor = bool(int(self.window_manager.viewport_show_floor))
+			self.override['space_data'].overlay.show_axis_x = bool(int(self.window_manager.viewport_show_axes[0]))
+			self.override['space_data'].overlay.show_axis_y = bool(int(self.window_manager.viewport_show_axes[1]))
+			self.override['space_data'].overlay.show_axis_z = bool(int(self.window_manager.viewport_show_axes[2]))
+			self.override['space_data'].overlay.grid_scale = float(self.window_manager.viewport_grid_scale)
 			# OVERLAY ATTRIBUTES: Objects
-			self.override['space_data'].overlay.show_extras = bool(int(self.window_manager.liveview_show_extras))
-			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.window_manager.liveview_show_relationship_lines))
-			self.override['space_data'].overlay.show_outline_selected = bool(int(self.window_manager.liveview_show_outline_selected))
-			self.override['space_data'].overlay.show_bones = bool(int(self.window_manager.liveview_show_bones))
-			self.override['space_data'].overlay.show_motion_paths = bool(int(self.window_manager.liveview_show_motion_paths))
-			self.override['space_data'].overlay.show_object_origins = bool(int(self.window_manager.liveview_show_origins))
-			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.window_manager.liveview_show_origins_all))
+			self.override['space_data'].overlay.show_extras = bool(int(self.window_manager.viewport_show_extras))
+			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.window_manager.viewport_show_relationship_lines))
+			self.override['space_data'].overlay.show_outline_selected = bool(int(self.window_manager.viewport_show_outline_selected))
+			self.override['space_data'].overlay.show_bones = bool(int(self.window_manager.viewport_show_bones))
+			self.override['space_data'].overlay.show_motion_paths = bool(int(self.window_manager.viewport_show_motion_paths))
+			self.override['space_data'].overlay.show_object_origins = bool(int(self.window_manager.viewport_show_origins))
+			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.window_manager.viewport_show_origins_all))
 			# OVERLAY ATTRIBUTES: Geometry
-			self.override['space_data'].overlay.show_wireframes = bool(int(self.window_manager.liveview_show_wireframes))
-			self.override['space_data'].overlay.show_face_orientation = bool(int(self.window_manager.liveview_show_face_orientation))
+			self.override['space_data'].overlay.show_wireframes = bool(int(self.window_manager.viewport_show_wireframes))
+			self.override['space_data'].overlay.show_face_orientation = bool(int(self.window_manager.viewport_show_face_orientation))
 
 		# if the low quality quilt settings are active AND the user selected the "SOLID SHADER PREVIEW" option
-		if self.preset == 3 and self.window_manager.liveview_use_solid_preview == True:
+		if self.preset == 3 and self.window_manager.viewport_use_solid_preview == True:
 
 			# change the shading type to SOLID
 			LookingGlassAddon.lightfieldSpace.shading.type = 'SOLID'

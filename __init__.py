@@ -31,7 +31,7 @@ bl_info = {
 # required for proper reloading of the addon by using F8
 if "bpy" in locals():
 	import importlib
-	importlib.reload(operators.looking_glass_live_view)
+	importlib.reload(operators.looking_glass_viewport)
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(operators.looking_glass_global_variables)
@@ -41,7 +41,8 @@ else:
 	# import the Holoplay Core SDK Python Wrapper
 	from .operators import libHoloPlayCore as hpc
 
-	from .operators.looking_glass_live_view import *
+	# import the modal operators for the plugin
+	from .operators.looking_glass_viewport import *
 	from .operators.looking_glass_render_quilt import *
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
@@ -372,7 +373,7 @@ def update_camera_setting(self, context):
 		# apply the settings to the selected camera object
 		camera = context.window_manager.lookingglassCamera
 
-		# apply the clipping value
+		# apply the clipping value of the camera
 		camera.data.clip_start = context.window_manager.clip_start
 		camera.data.clip_end = context.window_manager.clip_end
 
@@ -692,7 +693,7 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 	def execute(self, context):
 
 		# refresh the Looking Glass
-		context.window_manager.liveview_manual_refresh = True
+		context.window_manager.viewport_manual_refresh = True
 
 		return {'FINISHED'}
 
@@ -732,21 +733,21 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 														 )
 
 
-	bpy.types.WindowManager.liveview_use_lowres_preview = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_use_lowres_preview = bpy.props.BoolProperty(
 															name="Low-resolution Preview",
 															description="If enabled, a low-resolution lightfield is rendered during scene changes (for higher render speed)",
 															default = True,
 															update = update_func
 															)
 
-	bpy.types.WindowManager.liveview_use_solid_preview = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_use_solid_preview = bpy.props.BoolProperty(
 															name="Solid Shading Preview",
 															description="If enabled, the lightfield is rendered in solid shading mode during scene changes (for higher render speed)",
 															default = True,
 															update = update_func
 															)
 
-	bpy.types.WindowManager.liveview_manual_refresh = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_manual_refresh = bpy.props.BoolProperty(
 															name="Refresh Looking Glass",
 															description="Redraw the lightfield in the Looking Glass",
 															default = False,
@@ -791,23 +792,23 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			column.enabled = False
 			row.enabled = False
 
-		# if the LiveView is active
+		# if the viewport is active
 		if context.window_manager.renderMode == '0':
 
-			# Automatic Live View or Manual Liveview?
+			# Automatic or Manual render mode?
 			row = column.row()
 			row.prop(context.window_manager, "liveMode", expand=True)
 
-			# if the automatic LiveView Mode is selected
+			# if the automatic render mode is selected
 			if int(context.window_manager.liveMode) == 0:
 
 				# Show the options for resolution adjustment
 				row = column.row()
-				row.prop(context.window_manager, "liveview_use_lowres_preview", expand=True, icon='IMAGE_ZDEPTH')
+				row.prop(context.window_manager, "viewport_use_lowres_preview", expand=True, icon='IMAGE_ZDEPTH')
 				row = column.row()
-				row.prop(context.window_manager, "liveview_use_solid_preview", expand=True, icon='SHADING_SOLID')
+				row.prop(context.window_manager, "viewport_use_solid_preview", expand=True, icon='SHADING_SOLID')
 
-			# if the manual LiveView Mode is selected
+			# if the manual render mode is selected
 			elif int(context.window_manager.liveMode) == 1:
 
 				# Show the button for refresh
@@ -925,14 +926,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															name="Shading",
 															)
 
-	bpy.types.WindowManager.liveview_show_xray = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_xray = bpy.props.BoolProperty(
 															name="",
 															description="If enabled, the whole scene is rendered transparent in the Looking Glass",
 															default = False,
 															update = update_func
 															)
 
-	bpy.types.WindowManager.liveview_xray_alpha = bpy.props.FloatProperty(
+	bpy.types.WindowManager.viewport_xray_alpha = bpy.props.FloatProperty(
 															  name = "X-Ray Alpha",
 															  default = 0.5,
 															  min = 0.001,
@@ -942,7 +943,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															  description = "Amount of alpha to use",
 															  )
 
-	bpy.types.WindowManager.liveview_use_dof = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_use_dof = bpy.props.BoolProperty(
 															name="Depth of Field",
 															description="If enabled, the lightfield is rendered using the depth of field settings of the multiview cameras",
 															default = False,
@@ -950,14 +951,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															)
 
 	# GUIDES
-	bpy.types.WindowManager.liveview_show_floor = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_floor = bpy.props.BoolProperty(
 															name="Floor",
 															description="If enabled, the floor grid is displayed in the Looking Glass",
 															default = True,
 															update = update_func
 															)
 
-	bpy.types.WindowManager.liveview_show_axes = bpy.props.BoolVectorProperty(
+	bpy.types.WindowManager.viewport_show_axes = bpy.props.BoolVectorProperty(
 															name="Axes",
 															subtype="XYZ",
 															description="If enabled, the x axis is displayed in the Looking Glass",
@@ -965,7 +966,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															default = (True, True, False),
 															)
 
-	bpy.types.WindowManager.liveview_grid_scale = bpy.props.FloatProperty(
+	bpy.types.WindowManager.viewport_grid_scale = bpy.props.FloatProperty(
 															  name = "Grid Scale",
 															  default = 1,
 															  min = 0.001,
@@ -976,56 +977,56 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 
 	# OBJECTS
-	bpy.types.WindowManager.liveview_show_extras = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_extras = bpy.props.BoolProperty(
 															name="Extras",
 															description="If enabled, object details including empty wire, cameras, and light sources are displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_show_relationship_lines = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_relationship_lines = bpy.props.BoolProperty(
 															name="Relationship Lines",
 															description="If enabled, relationship lines indicating parents or constraints are displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_show_outline_selected = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_outline_selected = bpy.props.BoolProperty(
 															name="Show Outline Selected",
 															description="If enabled, the outline of the selected object is displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_show_bones = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_bones = bpy.props.BoolProperty(
 															name="Bones",
 															description="If enabled, bones are displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_show_motion_paths = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_motion_paths = bpy.props.BoolProperty(
 															name="Motion Paths",
 															description="If enabled, motion paths (without bones) are displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_show_origins = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_origins = bpy.props.BoolProperty(
 															name="Origins",
 															description="If enabled, the object center dots are displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_show_origins_all = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_origins_all = bpy.props.BoolProperty(
 															name="Origins (All)",
 															description="If enabled, the object center dot of all objects are displayed in the Looking Glass",
 															default = False,
 															)
 
 	# GEOMETRY
-	bpy.types.WindowManager.liveview_show_wireframes = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_wireframes = bpy.props.BoolProperty(
 															name="",
 															description="If enabled, the face edges wires are displayed in the Looking Glass",
 															default = False,
 															)
 
-	bpy.types.WindowManager.liveview_wireframe_threshold = bpy.props.FloatProperty(
+	bpy.types.WindowManager.viewport_wireframe_threshold = bpy.props.FloatProperty(
 															name="Wireframe",
 															min=0,
 															max=1,
@@ -1034,7 +1035,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 															default = 1,
 															)
 
-	bpy.types.WindowManager.liveview_show_face_orientation = bpy.props.BoolProperty(
+	bpy.types.WindowManager.viewport_show_face_orientation = bpy.props.BoolProperty(
 															name="Face Orientation",
 															description="If enabled, the face orientation is displayed in the Looking Glass",
 															default = False,
@@ -1076,7 +1077,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 		# define a column of UI elements
 		column = layout.column(align = True)
 
-		# if the LiveView is active
+		# if the automatic render mode is active
 		if int(context.window_manager.renderMode) == 0:
 
 			# TABS to swap between "Custom Viewport" and a "Blender Viewport"
@@ -1118,28 +1119,28 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				column.separator()
 				row = column.row(align = True)
 				column_1 = row.column(align=True)
-				column_1.prop(context.window_manager, "liveview_show_xray")
+				column_1.prop(context.window_manager, "viewport_show_xray")
 				column_2 = row.column(align=True)
-				column_2.prop(context.window_manager, "liveview_xray_alpha", slider=True)
+				column_2.prop(context.window_manager, "viewport_xray_alpha", slider=True)
 
 				# if x-ray is deactivated
-				if context.window_manager.liveview_show_xray == False:
+				if context.window_manager.viewport_show_xray == False:
 					# disable the slider
 					column_2.enabled = False
 
 				row = column.row(align = True)
-				row.prop(context.window_manager, "liveview_use_dof")
+				row.prop(context.window_manager, "viewport_use_dof")
 
 				column.separator()
 
 				row = column.row(align = True)
 				row.label(text="Guides")
 				row = column.row(align = True)
-				row.prop(context.window_manager, "liveview_show_floor")
-				row.prop(context.window_manager, "liveview_show_axes", toggle=1)
+				row.prop(context.window_manager, "viewport_show_floor")
+				row.prop(context.window_manager, "viewport_show_axes", toggle=1)
 				column.separator()
 				row = column.row(align = True)
-				row.prop(context.window_manager, "liveview_grid_scale")
+				row.prop(context.window_manager, "viewport_grid_scale")
 
 				column.separator()
 
@@ -1147,15 +1148,15 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				row.label(text="Objects")
 				row = column.row(align = True)
 				column_1 = row.column(align = True)
-				column_1.prop(context.window_manager, "liveview_show_extras")
-				column_1.prop(context.window_manager, "liveview_show_relationship_lines")
-				column_1.prop(context.window_manager, "liveview_show_outline_selected")
+				column_1.prop(context.window_manager, "viewport_show_extras")
+				column_1.prop(context.window_manager, "viewport_show_relationship_lines")
+				column_1.prop(context.window_manager, "viewport_show_outline_selected")
 
 				column_2 = row.column(align = True)
-				column_2.prop(context.window_manager, "liveview_show_bones")
-				column_2.prop(context.window_manager, "liveview_show_motion_paths")
-				column_2.prop(context.window_manager, "liveview_show_origins")
-				column_2.prop(context.window_manager, "liveview_show_origins_all")
+				column_2.prop(context.window_manager, "viewport_show_bones")
+				column_2.prop(context.window_manager, "viewport_show_motion_paths")
+				column_2.prop(context.window_manager, "viewport_show_origins")
+				column_2.prop(context.window_manager, "viewport_show_origins_all")
 
 				column.separator()
 
@@ -1163,14 +1164,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				row = row.label(text="Geometry")
 				row = column.row(align = True)
 				column_1 = row.column(align=True)
-				column_1.prop(context.window_manager, "liveview_show_wireframes")
+				column_1.prop(context.window_manager, "viewport_show_wireframes")
 				column_2 = row.column(align=True)
-				column_2.prop(context.window_manager, "liveview_wireframe_threshold", slider=True)
+				column_2.prop(context.window_manager, "viewport_wireframe_threshold", slider=True)
 				row = column.row(align = True)
-				row.prop(context.window_manager, "liveview_show_face_orientation")
+				row.prop(context.window_manager, "viewport_show_face_orientation")
 
 				# if no wireframes shall be displayed
-				if context.window_manager.liveview_show_wireframes == False:
+				if context.window_manager.viewport_show_wireframes == False:
 					# disable the slider
 					column_2.enabled = False
 
