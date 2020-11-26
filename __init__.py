@@ -387,6 +387,24 @@ def update_camera_setting(self, context):
 		# apply the settings to the selected camera object
 		camera = context.window_manager.lookingglassCamera
 
+
+		# TODO: Check if this is really helpful. Maybe remove later or refine.
+		# keep clip end behind the clip start
+		if context.window_manager.clip_end < context.window_manager.clip_start:
+			context.window_manager.clip_end = context.window_manager.clip_start
+
+		# keep clip start in front of the clip end
+		if context.window_manager.clip_start > context.window_manager.clip_end:
+			context.window_manager.clip_start = context.window_manager.clip_end
+
+		# keep focal plane within the clipping volume
+		if context.window_manager.focalPlane < context.window_manager.clip_start:
+			context.window_manager.focalPlane = context.window_manager.clip_start
+		elif context.window_manager.focalPlane > context.window_manager.clip_end:
+			context.window_manager.focalPlane = context.window_manager.clip_end
+
+
+
 		# apply the clipping value of the camera
 		camera.data.clip_start = context.window_manager.clip_start
 		camera.data.clip_end = context.window_manager.clip_end
