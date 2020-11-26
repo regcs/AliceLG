@@ -96,6 +96,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	def init_render(self, Scene, unknown_param):
 
+		# reset the operator state to IDLE
+		self.operator_state = "INIT_RENDER"
+
 		# since we need to know the scene through the job, we store it in an internal variable
 		self.render_setting_scene = Scene
 
@@ -411,14 +414,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
-
-
-
-
-				# reset the operator state to IDLE
-				self.operator_state = "INIT_RENDER"
-
-				# start rendering the next view
+				# start rendering
 				bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True, use_viewport=True)
 
 
@@ -453,9 +449,25 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						# add the file file_extension
 						self.rendering_filepath = self.rendering_filepath + self.render_setting_scene.render.file_extension
 
+
+
+				# Some status infos
+				# if a single frame shall be rendered
+				if self.animation == False:
+
+					# notify user
+					self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " ...")
+
+				# if an animation shall be rendered
+				elif self.animation == True:
+
+					# notify user
+					self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " of frame " + str(self.rendering_frame) +  " ...")
+
+
+
 				# reset the operator state to IDLE
 				self.operator_state = "IDLE"
-
 
 
 			# PRE-RENDER STEP
@@ -520,6 +532,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# if this was the last view
 				if self.rendering_view == (self.rendering_totalViews - 1):
 
+					# inform user what's going on
+					self.report({"INFO"},"Quilt is being finalized ... ")
+
+					# then assemble the quilt from the views
 					verticalStack = []
 					horizontalStack = []
 					for row in range(0, self.rendering_rows, 1):
@@ -557,9 +573,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# if a single frame shall be rendered
 				if self.animation == False:
 
-					# notify user
-					self.report({"INFO"},"View " + str(self.rendering_view) + " rendered.")
-
 					# if this was not the last view
 					if self.rendering_view < (self.rendering_totalViews - 1):
 
@@ -585,9 +598,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# if an animation shall be rendered
 				elif self.animation == True:
-
-					# notify user
-					self.report({"INFO"},"View " + str(self.rendering_view) + " of frame " + str(self.rendering_frame) +  " rendered.")
 
 					# if this was not the last view
 					if self.rendering_view < (self.rendering_totalViews - 1):
