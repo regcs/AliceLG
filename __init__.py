@@ -231,6 +231,7 @@ def ShowLightfieldWindow_update(self, context):
 	if self['ShowLightfieldWindow'] == True:
 
 		# Create a new main window
+		#print(context.copy().keys())
 		bpy.ops.wm.window_new_main()
 
 		# assume the last window in the screen list is the created window
@@ -243,13 +244,14 @@ def ShowLightfieldWindow_update(self, context):
 		# hide all panels in the image editor and make the area full screen
 		bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
 
-		# make the window fullscreen
-		# Todo: For some reason that causes an error. Why?
-		#       Until this is clarified, the user has to make the window fullscreen manually.
-		# bpy.ops.wm.window_fullscreen_toggle()
-
 		# Invoke modal operator for the lightfield rendering
-		bpy.ops.render.lightfield('INVOKE_DEFAULT')
+		bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+
+		# TODO: Check if this makes senso on Windows & Linux
+		# make the window fullscreen
+		bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+
+
 
 	else:
 
@@ -524,14 +526,12 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# return the item list
 		return items
 
-
 	# a list of connected Looking Glass displays
 	bpy.types.WindowManager.activeDisplay = bpy.props.EnumProperty(
 														items = looking_glass_list_callback,
 														default=0,
 														name="Please select a Looking Glass."
 														)
-
 
 	# a boolean to toogle the render window on or off
 	bpy.types.WindowManager.ShowLightfieldWindow = bpy.props.BoolProperty(
@@ -540,7 +540,6 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 														default = False,
 														update=ShowLightfieldWindow_update
 														)
-
 
 	bpy.types.WindowManager.viewResolution = bpy.props.EnumProperty(
 														items = [
@@ -601,8 +600,11 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 			# deactivate the looking glass selection
 			row_1a.enabled = False
 
-		# if NO Looking Glass is selected or detected
-		if int(context.window_manager.activeDisplay) == -1:
+		# if NO Looking Glass is selected or detected OR the user is in an fullscreen area
+		# TODO: Blender doesn't allow creating a new window from a fullscreen area.
+		# 		Can we still handle this by using override contexts? Until this is clarified
+		#		the button will be disabled in fullscreen areas.
+		if int(context.window_manager.activeDisplay) == -1 or context.screen.show_fullscreen == True:
 
 			# deactivate the lightfield window button and debug button
 			row_1b.enabled = False
