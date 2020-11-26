@@ -91,3 +91,10 @@ class LookingGlassAddon:
 				"quiltOffscreen": None,
 				"viewOffscreens": []
 				})
+
+		# iterate through all presets
+		for i in range(0, len(LookingGlassAddon.qs), 1):
+
+			# calculate viewWidth and viewHeight
+			LookingGlassAddon.qs[i]["viewWidth"] = int(LookingGlassAddon.qs[i]["width"] / LookingGlassAddon.qs[i]["columns"])
+			LookingGlassAddon.qs[i]["viewHeight"] = int(LookingGlassAddon.qs[i]["height"] / LookingGlassAddon.qs[i]["rows"])
