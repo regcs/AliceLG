@@ -68,8 +68,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_subframe = 0.0	# the subframe that is currently rendered
 	rendering_view = 0	  		# the view of the frame that is currently rendered
 
-	rendering_viewWidth = 819	# rendering width of the view
-	rendering_viewHeight = 455	# rendering height of the view
+	rendering_viewWidth = None	# rendering width of the view
+	rendering_viewHeight = None	# rendering height of the view
+	rendering_rows = None	# rendering width of the view
+	rendering_columns = None	# rendering height of the view
+	rendering_totalViews = None	# rendering height of the view
 	rendering_aspectRatio = 1.0	# aspect ratio of the view
 	rendering_filepath = None	# aspect ratio of the view
 
@@ -248,8 +251,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# SET RENDER SETTINGS
 		# ++++++++++++++++++++++++
+		# settings of the current preset
+		self.rendering_viewWidth = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["viewWidth"]
+		self.rendering_viewHeight = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["viewHeight"]
+		self.rendering_rows = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["rows"]
+		self.rendering_columns = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["columns"]
+		self.rendering_totalViews = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["totalViews"]
+
 		# apply aspect ratio of the Looking Glass
-		self.rendering_aspectRatio = self.device_current['aspectRatio'] / (9 / 5)
+		self.rendering_aspectRatio = self.device_current['aspectRatio'] / (self.rendering_rows / self.rendering_columns)
 		self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
 		self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
 
@@ -380,7 +390,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# start at viewCone * 0.5 and go up to -viewCone * 0.5
 				# TODO: The Looking Glass Factory dicumentation suggests to use a viewcone of 35°, but the device calibration has 40° by default.
 				#		Which one should we take?
-				offsetAngle = (0.5 - self.rendering_view / (45 - 1)) * radians(self.device_current['viewCone'])
+				offsetAngle = (0.5 - self.rendering_view / (self.rendering_totalViews - 1)) * radians(self.device_current['viewCone'])
 
 				# calculate the offset that the camera should move
 				offset = cameraDistance * tan(offsetAngle)
@@ -508,15 +518,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if this was the last view
-				if self.rendering_view == 44:
+				if self.rendering_view == (self.rendering_totalViews - 1):
 
 					verticalStack = []
 					horizontalStack = []
-					for row in range(0, 9, 1):
-						for column in range(0, 5, 1):
+					for row in range(0, self.rendering_rows, 1):
+						for column in range(0, self.rendering_columns, 1):
 
 							# get pixel data and reshape into a reasonable format for stacking
-							viewPixels = self.viewImagesPixels[row * 5 + column]
+							viewPixels = self.viewImagesPixels[row * self.rendering_columns + column]
 							viewPixels = viewPixels.reshape((self.render_setting_scene.render.resolution_y, self.render_setting_scene.render.resolution_x, 4))
 
 							# append the pixel data to the current horizontal stack
@@ -530,10 +540,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					# reshape the pixel data of all images into the quilt shape
 					quiltPixels = np.vstack(verticalStack.copy())
-					quiltPixels = np.reshape(quiltPixels, (5 * 9 * (self.render_setting_scene.render.resolution_x * self.render_setting_scene.render.resolution_y * 4)))
+					quiltPixels = np.reshape(quiltPixels, (self.rendering_columns * self.rendering_rows * (self.render_setting_scene.render.resolution_x * self.render_setting_scene.render.resolution_y * 4)))
 
 					# create a Blender image with the obtained pixeö data
-					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath), self.render_setting_scene.render.resolution_x * 5, self.render_setting_scene.render.resolution_y * 9)
+					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
 					quiltImage.pixels = quiltPixels
 
 					# dave the file
@@ -551,7 +561,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					self.report({"INFO"},"View " + str(self.rendering_view) + " rendered.")
 
 					# if this was not the last view
-					if self.rendering_view < 44:
+					if self.rendering_view < (self.rendering_totalViews - 1):
 
 						# increase view count
 						self.rendering_view += 1
@@ -580,7 +590,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					self.report({"INFO"},"View " + str(self.rendering_view) + " of frame " + str(self.rendering_frame) +  " rendered.")
 
 					# if this was not the last view
-					if self.rendering_view < 44:
+					if self.rendering_view < (self.rendering_totalViews - 1):
 
 						# increase view count
 						self.rendering_view += 1
@@ -591,7 +601,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						return {'RUNNING_MODAL'}
 
 					# if this was the last view
-					elif self.rendering_view == 44:
+					elif self.rendering_view == (self.rendering_totalViews - 1):
 
 						# if this was not the last frame
 						if self.rendering_frame < self.render_setting_scene.frame_end:
