@@ -27,6 +27,8 @@ bl_info = {
 	"category": "View"
 }
 
+# this is only for debugging purposes
+debugging_use_dummy_device = True
 
 # required for proper reloading of the addon by using F8
 if "bpy" in locals():
@@ -98,76 +100,86 @@ def LookingGlassDeviceList():
 	# empty the existing list
 	LookingGlassAddon.deviceList.clear()
 
-	# allocate a memory buffer for string information send by the Holoplay Service
-	buffer = ctypes.create_string_buffer(1000)
+	# TODO: Remove this, it's only for debugging
+	# we add a dummy element
+	LookingGlassAddon.deviceList.append({'index': 0, 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
 
-	# Query the Holoplay Service to update the device information
-	hpc.RefreshState()
+	print("   - device info:", LookingGlassAddon.deviceList[-1])
 
-	# for each connected device
-	for dev_index in range(hpc.GetNumDevices()):
+	# if the HoloPlayService was detected
+	if LookingGlassAddon.HoloPlayService == True:
 
-		#
-		print(" ### Display ", dev_index, ":")
+		# allocate a memory buffer for string information send by the Holoplay Service
+		buffer = ctypes.create_string_buffer(1000)
 
-		# get device name
-		hpc.GetDeviceHDMIName(dev_index, buffer, 1000)
-		dev_name = buffer.value.decode('ascii').strip()
+		# Query the Holoplay Service to update the device information
+		hpc.RefreshState()
 
-		# get device serial
-		hpc.GetDeviceType(dev_index, buffer, 1000)
-		dev_serial = buffer.value.decode('ascii').strip()
+		# for each connected device
+		for dev_index in range(hpc.GetNumDevices()):
 
-		# get device type
-		hpc.GetDeviceType(dev_index, buffer, 1000)
-		dev_type = buffer.value.decode('ascii').strip()
-		if dev_type == "standard":
+			#
+			print(" ### Display ", dev_index, ":")
 
-			dev_type = "8.9'' Looking Glass"
+			# get device name
+			hpc.GetDeviceHDMIName(dev_index, buffer, 1000)
+			dev_name = buffer.value.decode('ascii').strip()
 
-		elif dev_type == "large":
+			# get device serial
+			hpc.GetDeviceType(dev_index, buffer, 1000)
+			dev_serial = buffer.value.decode('ascii').strip()
 
-			dev_type = "15.6'' Looking Glass"
+			# get device type
+			hpc.GetDeviceType(dev_index, buffer, 1000)
+			dev_type = buffer.value.decode('ascii').strip()
+			if dev_type == "standard":
 
-		elif dev_type == "pro":
+				dev_type = "8.9'' Looking Glass"
 
-			dev_type = "15.6'' Pro Looking Glass"
+			elif dev_type == "large":
 
-		if dev_type == "8k":
+				dev_type = "15.6'' Looking Glass"
 
-			dev_type = "8k Looking Glass"
+			elif dev_type == "pro":
 
-		# make an entry in the deviceList
-		LookingGlassAddon.deviceList.append(
-										{
-											# device information
-											'index': dev_index,
-											'name': dev_name,
-											'serial': dev_serial,
-											'type': dev_type,
+				dev_type = "15.6'' Pro Looking Glass"
 
-											# window & screen properties
-											'x': hpc.GetDevicePropertyWinX(dev_index),
-											'y': hpc.GetDevicePropertyWinY(dev_index),
-											'width': hpc.GetDevicePropertyScreenW(dev_index),
-											'height': hpc.GetDevicePropertyScreenH(dev_index),
-											'aspectRatio': hpc.GetDevicePropertyDisplayAspect(dev_index),
+			if dev_type == "8k":
 
-											# calibration data
-											'pitch': hpc.GetDevicePropertyPitch(dev_index),
-											'tilt': hpc.GetDevicePropertyTilt(dev_index),
-											'center': hpc.GetDevicePropertyCenter(dev_index),
-											'subp': hpc.GetDevicePropertySubp(dev_index),
-											'fringe': hpc.GetDevicePropertyFringe(dev_index),
-											'ri': hpc.GetDevicePropertyRi(dev_index),
-											'bi': hpc.GetDevicePropertyBi(dev_index),
-											'invView': hpc.GetDevicePropertyInvView(dev_index),
+				dev_type = "8k Looking Glass"
 
-											# viewcone
-											'viewCone': hpc.GetDevicePropertyFloat(dev_index, b"/calibration/viewCone/value")
-										}
-		)
-		print("   - device info:", LookingGlassAddon.deviceList[-1])
+
+			# make an entry in the deviceList
+			LookingGlassAddon.deviceList.append(
+											{
+												# device information
+												'index': dev_index,
+												'name': dev_name,
+												'serial': dev_serial,
+												'type': dev_type,
+
+												# window & screen properties
+												'x': hpc.GetDevicePropertyWinX(dev_index),
+												'y': hpc.GetDevicePropertyWinY(dev_index),
+												'width': hpc.GetDevicePropertyScreenW(dev_index),
+												'height': hpc.GetDevicePropertyScreenH(dev_index),
+												'aspectRatio': hpc.GetDevicePropertyDisplayAspect(dev_index),
+
+												# calibration data
+												'pitch': hpc.GetDevicePropertyPitch(dev_index),
+												'tilt': hpc.GetDevicePropertyTilt(dev_index),
+												'center': hpc.GetDevicePropertyCenter(dev_index),
+												'subp': hpc.GetDevicePropertySubp(dev_index),
+												'fringe': hpc.GetDevicePropertyFringe(dev_index),
+												'ri': hpc.GetDevicePropertyRi(dev_index),
+												'bi': hpc.GetDevicePropertyBi(dev_index),
+												'invView': hpc.GetDevicePropertyInvView(dev_index),
+
+												# viewcone
+												'viewCone': hpc.GetDevicePropertyFloat(dev_index, b"/calibration/viewCone/value")
+											}
+			)
+			print("   - device info:", LookingGlassAddon.deviceList[-1])
 
 
 class LookingGlassPreferences(AddonPreferences):
@@ -390,8 +402,11 @@ def update_camera_setting(self, context):
 
 			print("SPACE SETTINGS UPDATED: ", LookingGlassAddon.lightfieldSpace, LookingGlassAddon.lightfieldSpace.camera)
 
-		# Invoke modal operator for the camera frustum rendering
-		bpy.ops.render.frustum('INVOKE_DEFAULT')
+		# if the frustum was not already INVOKE_DEFAULT
+		if LookingGlassAddon.FrustumInitialized == False:
+
+			# Invoke modal operator for the camera frustum rendering
+			bpy.ops.render.frustum('INVOKE_DEFAULT')
 
 	else:
 
@@ -561,7 +576,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 
 
 		# if the HoloPlay Service is NOT available
-		if LookingGlassAddon.Initialized == False:
+		if LookingGlassAddon.HoloPlayService == False and debugging_use_dummy_device == False:
 
 			# deactivate the looking glass selection
 			row_1a.enabled = False
@@ -1202,10 +1217,10 @@ def register():
 
 
 	# if no errors were detected
-	if errco == 0:
+	if errco == 0 or debugging_use_dummy_device == True:
 
 		# set status variable
-		LookingGlassAddon.Initialized = True
+		LookingGlassAddon.HoloPlayService = True
 
 		# allocate string buffer
 		buffer = ctypes.create_string_buffer(1000)
@@ -1261,24 +1276,24 @@ def register():
 def unregister():
 
 	# if the addon was previously successfully initialized
-	if LookingGlassAddon.Initialized == True:
+	if LookingGlassAddon.HoloPlayService == True:
 
 		# Unregister at the Holoplay Service
 		hpc.CloseApp()
 
-		bpy.utils.unregister_class(LookingGlassPreferences)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
+	bpy.utils.unregister_class(LookingGlassPreferences)
+	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
+	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
+	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
 
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
 
 	print("########################################################################")

@@ -20,17 +20,20 @@
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
 
-	# Was the addon successfully initialized?
-	Initialized = False
+	# Was the connection to the holoplay service successfully initialized?
+	HoloPlayService = False
 
 	# List of dictionaries with one dictionary for each connected Looking Glass
 	# Each Dictionary contains all available data on the Looking Glass (including calibrations data)
 	deviceList = []
 
+	# Was the modal operator for the frustum initialized?
+	FrustumInitialized = False
+
 	# The Window object representing the Blender main window and the Space object, which are used for the lightfield rendering
 	lightfieldWindow = None
 	lightfieldSpace = None
-	
+
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
 	BlenderViewport = None

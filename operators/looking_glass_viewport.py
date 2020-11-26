@@ -1195,7 +1195,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	@classmethod
 	def __init__(self):
 
-		print("Initializing the frustum rendering operator ...")
+		LookingGlassAddon.FrustumInitialized = True
 
 
 
@@ -1228,6 +1228,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		print("Everything is done.")
 
+		LookingGlassAddon.FrustumInitialized = False
 
 		# return None since this is expected by the operator
 		return None
