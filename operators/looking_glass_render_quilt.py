@@ -499,10 +499,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				print("[INFO] Saving file in ", self.rendering_filepath)
 				print(bpy.data.images["Render Result"].pixels)
 
-				# MAKE A QUILT IMAGE OUT OF THE RENDERED VIEWS
+
+				# STORE THE PIXEL DATA OF THE RENDERED IMAGE
 				# ++++++++++++++++++++++++++++++++++++++++++++
-				# save the rendered image
-				#bpy.ops.image.save_as(save_as_render=True, copy=True, filepath=self.rendering_filepath, check_existing=False)
+				# save the rendered image in a file
 				bpy.data.images["Render Result"].save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
 				# append the loaded image to the list
@@ -511,11 +511,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# store the pixel data in an numpy array
 				self.viewImagesPixels.append(np.array(viewImage.pixels[:]).copy())
 
-				# delete the Blender image
+				# delete the Blender image of this view
 				bpy.data.images.remove(viewImage)
+
+
 
 				# reset the operator state to IDLE
 				self.operator_state = "IDLE"
+
+
 
 
 
@@ -531,9 +535,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if this was the last view
 				if self.rendering_view == (self.rendering_totalViews - 1):
-
-					# inform user what's going on
-					self.report({"INFO"},"Quilt is being finalized ... ")
 
 					# then assemble the quilt from the views
 					verticalStack = []
@@ -562,8 +563,29 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
 					quiltImage.pixels = quiltPixels
 
-					# dave the file
+					# save the quilt in a file
 					quiltImage.save_render(filepath=self.rendering_filepath)
+
+					# QUILT DISPLAY AS RENDER RESULT
+					# ++++++++++++++++++++++++++++++++++++++++++++
+					for window in context.window_manager.windows:
+						for area in window.screen.areas:
+							print(window, area, area.type)
+							if area.type == 'IMAGE_EDITOR':
+								if area.spaces.active.image.name == "Render Result":
+
+									# and change the active image shown here to the quilt
+									area.spaces.active.image = quiltImage
+
+									# fit the zoom factor in this window to show the complete quilt
+									bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
+
+									# remove the render result image
+									bpy.data.images.remove(bpy.data.images["Render Result"])
+
+									break
+
+
 
 
 
