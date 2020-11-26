@@ -101,10 +101,12 @@ def LookingGlassDeviceList():
 	LookingGlassAddon.deviceList.clear()
 
 	# TODO: Remove this, it's only for debugging
-	# we add a dummy element
-	LookingGlassAddon.deviceList.append({'index': 0, 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
+	if debugging_use_dummy_device == True:
+		# we add a dummy element
+		LookingGlassAddon.deviceList.append({'index': 0, 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
+		print("   - device info:", LookingGlassAddon.deviceList[-1])
 
-	print("   - device info:", LookingGlassAddon.deviceList[-1])
+
 
 	# if the HoloPlayService was detected
 	if LookingGlassAddon.HoloPlayService == True:
@@ -1214,7 +1216,8 @@ def register():
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
-
+	# setup the quilt presets
+	LookingGlassAddon.setupQuiltPresets()
 
 	# if no errors were detected
 	if errco == 0 or debugging_use_dummy_device == True:

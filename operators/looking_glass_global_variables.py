@@ -37,3 +37,57 @@ class LookingGlassAddon:
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
 	BlenderViewport = None
+
+
+	# GLOBAL LIST OF QUILT Settings
+	# +++++++++++++++++++++++++++++++++++++++
+	# define a list
+	qs = []
+
+	# set up quilt settings
+	def setupQuiltPresets():
+
+		# there are 3 presets to choose from:
+		# - standard settings
+		LookingGlassAddon.qs.append({
+				"width": 2048,
+				"height": 2048,
+				"columns": 4,
+				"rows": 8,
+				"totalViews": 32,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - high resolution settings (4k)
+		LookingGlassAddon.qs.append({
+				"width": 4095,
+				"height": 4095,
+				"columns": 5,
+				"rows": 9,
+				"totalViews": 45,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - 8k settings
+		LookingGlassAddon.qs.append({
+				"width": 4096 * 2,
+				"height": 4096 * 2,
+				"columns": 5,
+				"rows": 9,
+				"totalViews": 45,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - LOW RESOLUTION FOR PREVIEW
+		LookingGlassAddon.qs.append({
+				"width": 512,
+				"height": 512,
+				"columns": 5,
+				"rows": 9,
+				"totalViews": 45,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
