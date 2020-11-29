@@ -231,10 +231,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# make an internal variable for the window_manager,
 		# which can be accessed from methods that have no "context" parameter
-		self.window_manager = context.window_manager
+		self.settings = context.scene.settings
 
 		# get the calibration data of the selected Looking Glass from the deviceList
-		self.device_current = LookingGlassAddon.deviceList[int(self.window_manager.activeDisplay)]
+		self.device_current = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
 		# RENDER SETTINGS
@@ -254,11 +254,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# SET RENDER SETTINGS
 		# ++++++++++++++++++++++++
 		# settings of the current preset
-		self.rendering_viewWidth = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["viewWidth"]
-		self.rendering_viewHeight = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["viewHeight"]
-		self.rendering_rows = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["rows"]
-		self.rendering_columns = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["columns"]
-		self.rendering_totalViews = LookingGlassAddon.qs[int(context.window_manager.viewResolution)]["totalViews"]
+		self.rendering_viewWidth = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["viewWidth"]
+		self.rendering_viewHeight = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["viewHeight"]
+		self.rendering_rows = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["rows"]
+		self.rendering_columns = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["columns"]
+		self.rendering_totalViews = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["totalViews"]
 
 		# apply aspect ratio of the Looking Glass
 		self.rendering_aspectRatio = self.device_current['aspectRatio'] / (self.rendering_rows / self.rendering_columns)
@@ -386,7 +386,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# calculate cameraSize from its distance to the focal plane and the FOV
 				# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-				cameraDistance = self.window_manager.focalPlane#self.camera_active.data.dof.focus_distance
+				cameraDistance = self.settings.focalPlane#self.camera_active.data.dof.focus_distance
 				cameraSize = cameraDistance * tan(fov / 2)
 
 				# start at viewCone * 0.5 and go up to -viewCone * 0.5

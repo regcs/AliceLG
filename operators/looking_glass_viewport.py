@@ -124,7 +124,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if self._handle_trackViewportUpdates: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackViewportUpdates, 'WINDOW')
 
 		print("Removing view draw handlers: ")
-		print(self._handle_viewDrawing)
 
 		# remove the draw handlers for all quilt views
 		for handle in self._handle_viewDrawing:
@@ -174,7 +173,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# make an internal variable for the window_manager,
 		# which can be accessed from methods that have no "context" parameter
-		self.window_manager = context.window_manager
+		self.settings = context.scene.settings
 
 
 
@@ -279,10 +278,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						space.lock_camera = True
 
 						# set space to a specific camera (automatically None, if none is selected)
-						space.camera = context.window_manager.lookingglassCamera
+						space.camera = context.scene.settings.lookingglassCamera
 
 						# if a camera is selected
-						if context.window_manager.lookingglassCamera != None:
+						if context.scene.settings.lookingglassCamera != None:
 
 							# set view mode to "CAMERA"
 							space.region_3d.view_perspective = 'CAMERA'
@@ -352,7 +351,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-
+		# update the internal variable for the settings, in case the scene has changed
+		self.settings = context.scene.settings
 
 		# Check, whether the lightfield window still exists
 		################################################################
@@ -374,15 +374,15 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		################################################################
 
 		# if the TIMER event for the lightfield rendering is called AND the automatic render mode is active
-		if event.type == 'TIMER' and int(self.window_manager.renderMode) == 0:
+		if event.type == 'TIMER' and int(self.settings.renderMode) == 0:
 
 			# if something has changed
-			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.viewport_manual_refresh == True):
+			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.liveMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
 
-				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.window_manager.liveMode) == 1 and context.window_manager.viewport_manual_refresh == True):
+				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.liveMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
 
 					# set to the currently chosen quality
-					self.preset = int(context.window_manager.viewResolution)
+					self.preset = int(context.scene.settings.viewResolution)
 
  					# set to redraw
 					self.modal_redraw = True
@@ -391,7 +391,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					self.depsgraph_update_time = 0.000
 
 				# reset status variable for manual refreshes
-				context.window_manager.viewport_manual_refresh = False
+				context.scene.settings.viewport_manual_refresh = False
 
 				# update the viewport settings
 				self.updateViewportSettings()
@@ -410,7 +410,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 		# if the live view mode is inactive
-		elif int(self.window_manager.liveMode) != 0:
+		elif int(self.settings.liveMode) != 0:
 
 			# we prevent any event handling by Blender in the lightfield viewport
 			return {'RUNNING_MODAL'}
@@ -428,7 +428,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if context.window == LookingGlassAddon.lightfieldWindow:
 
 			# if automatic live view is activated AND the lightfield viewport is in perspective view mode AND a valid lightfield viewport exists
-			if (int(self.window_manager.renderMode) == 0 and int(self.window_manager.liveMode) == 0) and LookingGlassAddon.lightfieldSpace != None:
+			if (int(self.settings.renderMode) == 0 and int(self.settings.liveMode) == 0) and LookingGlassAddon.lightfieldSpace != None:
 
 				# if no camera is selected for the Looking Glass AND the viewport perspective matrix has changed
 				if LookingGlassAddon.lightfieldSpace.camera == None and (LookingGlassAddon.lightfieldSpace.region_3d.view_matrix != self.viewportViewMatrix):
@@ -445,7 +445,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					self.depsgraph_update_time = time.time()
 
 					# if the low quality quilt settings are inactive, but should be active
-					if self.preset < 3 and self.window_manager.viewport_use_lowres_preview == True:
+					if self.preset < 3 and self.settings.viewport_use_lowres_preview == True:
 
 						# activate them
 						self.preset = 3
@@ -457,7 +457,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def trackDepsgraphUpdates(self, scene, depsgraph):
 
 		# if automatic live view is activated AND something in the scene has changed
-		if (int(self.window_manager.renderMode) == 0 and int(self.window_manager.liveMode) == 0) and len(depsgraph.updates.values()) > 0:
+		if (int(self.settings.renderMode) == 0 and int(self.settings.liveMode) == 0) and len(depsgraph.updates.values()) > 0:
 			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), self.preset)
 
 			# invoke an update of the Looking Glass viewport
@@ -468,7 +468,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.depsgraph_update_time = time.time()
 
 			# if the low quality quilt settings are inactive, but should be active
-			if self.preset < 3 and self.window_manager.viewport_use_lowres_preview == True:
+			if self.preset < 3 and self.settings.viewport_use_lowres_preview == True:
 
 				# activate them
 				self.preset = 3
@@ -487,20 +487,20 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			LookingGlassAddon.BlenderWindow = context.window
 
 			# if the user chose to automatically track the viewport
-			if self.window_manager.blender_track_viewport == True:
+			if self.settings.blender_track_viewport == True:
 
 				# if the user activated the option to
 				# use the shading and overlay settings of the currently used Blender 3D viewport
-				if self.window_manager.viewportMode == 'BLENDER' and context.space_data != LookingGlassAddon.lightfieldSpace:
+				if self.settings.viewportMode == 'BLENDER' and context.space_data != LookingGlassAddon.lightfieldSpace:
 
 					# save the current space data in the global variable
 					LookingGlassAddon.BlenderViewport = context.space_data
 
 					# set the Workspace list to the current workspace
-					self.window_manager.blender_workspace = context.workspace.name
+					self.settings.blender_workspace = context.workspace.name
 
 					# set the 3D View list to the current 3D view
-					self.window_manager.blender_view3d = str(LookingGlassAddon.BlenderViewport)
+					self.settings.blender_view3d = str(LookingGlassAddon.BlenderViewport)
 
 
 
@@ -703,12 +703,12 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def loadCalibrationIntoShader(self):
 
 		# if a Looking Glass is selected
-		if int(self.window_manager.activeDisplay) > -1:
+		if int(self.settings.activeDisplay) > -1:
 
 			# get the calibration data from the deviceList
 			for device in LookingGlassAddon.deviceList:
 
-				if device['index'] == int(self.window_manager.activeDisplay):
+				if device['index'] == int(self.settings.activeDisplay):
 
 					# obtain information from the connected Looking Glass and
 					# load its calibration into the lightfield shader
@@ -733,7 +733,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# get the calibration data of the Looking Glass from the deviceList
 		for device in LookingGlassAddon.deviceList:
 
-			if device['index'] == int(self.window_manager.activeDisplay):
+			if device['index'] == int(self.settings.activeDisplay):
 
 				# if a camera is used for the Looking Glass
 				if camera != None:
@@ -745,7 +745,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# calculate cameraSize from its distance to the focal plane and the FOV
 					# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-					cameraDistance = self.window_manager.focalPlane
+					cameraDistance = self.settings.focalPlane
 					cameraSize = cameraDistance * tan(fov / 2)
 
 					# start at viewCone * 0.5 and go up to -viewCone * 0.5
@@ -773,7 +773,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# calculate cameraSize from its distance to the focal plane and the FOV
 					# NOTE: - we take an arbitrary distance of 5 m (TODO: IS THERE A SPECIFIC BETTER VALUE FOR THE VIEWPORT CAM?)
-					cameraDistance = self.window_manager.focalPlane
+					cameraDistance = self.settings.focalPlane
 					cameraSize = cameraDistance * tan(fov / 2)
 
 					# start at viewCone * 0.5 and go up to -viewCone * 0.5
@@ -803,7 +803,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		######################################################
 
 		# if the settings shall be taken from the current viewport
-		if self.window_manager.viewportMode == 'BLENDER':
+		if self.settings.viewportMode == 'BLENDER':
 
 			# check if the space still exists
 			found = False
@@ -858,35 +858,35 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				LookingGlassAddon.BlenderViewport = None
 
 		# if the custom settings shall be used OR the chosen Blender Viewport is invalid
-		if self.window_manager.viewportMode == 'CUSTOM' or LookingGlassAddon.BlenderViewport == None:
+		if self.settings.viewportMode == 'CUSTOM' or LookingGlassAddon.BlenderViewport == None:
 
 			# APPLY THE CURRENT USER SETTINGS FOR THE LIGHTFIELD RENDERING
 			# SHADING ATTRIBUTES
-			self.override['space_data'].shading.type = self.window_manager.shadingMode
-			self.override['space_data'].shading.show_xray = bool(self.window_manager.viewport_show_xray)
-			self.override['space_data'].shading.xray_alpha = float(self.window_manager.viewport_xray_alpha)
-			self.override['space_data'].shading.use_dof = bool(int(self.window_manager.viewport_use_dof))
+			self.override['space_data'].shading.type = self.settings.shadingMode
+			self.override['space_data'].shading.show_xray = bool(self.settings.viewport_show_xray)
+			self.override['space_data'].shading.xray_alpha = float(self.settings.viewport_xray_alpha)
+			self.override['space_data'].shading.use_dof = bool(int(self.settings.viewport_use_dof))
 
 			# OVERLAY ATTRIBUTES: Guides
-			self.override['space_data'].overlay.show_floor = bool(int(self.window_manager.viewport_show_floor))
-			self.override['space_data'].overlay.show_axis_x = bool(int(self.window_manager.viewport_show_axes[0]))
-			self.override['space_data'].overlay.show_axis_y = bool(int(self.window_manager.viewport_show_axes[1]))
-			self.override['space_data'].overlay.show_axis_z = bool(int(self.window_manager.viewport_show_axes[2]))
-			self.override['space_data'].overlay.grid_scale = float(self.window_manager.viewport_grid_scale)
+			self.override['space_data'].overlay.show_floor = bool(int(self.settings.viewport_show_floor))
+			self.override['space_data'].overlay.show_axis_x = bool(int(self.settings.viewport_show_axes[0]))
+			self.override['space_data'].overlay.show_axis_y = bool(int(self.settings.viewport_show_axes[1]))
+			self.override['space_data'].overlay.show_axis_z = bool(int(self.settings.viewport_show_axes[2]))
+			self.override['space_data'].overlay.grid_scale = float(self.settings.viewport_grid_scale)
 			# OVERLAY ATTRIBUTES: Objects
-			self.override['space_data'].overlay.show_extras = bool(int(self.window_manager.viewport_show_extras))
-			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.window_manager.viewport_show_relationship_lines))
-			self.override['space_data'].overlay.show_outline_selected = bool(int(self.window_manager.viewport_show_outline_selected))
-			self.override['space_data'].overlay.show_bones = bool(int(self.window_manager.viewport_show_bones))
-			self.override['space_data'].overlay.show_motion_paths = bool(int(self.window_manager.viewport_show_motion_paths))
-			self.override['space_data'].overlay.show_object_origins = bool(int(self.window_manager.viewport_show_origins))
-			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.window_manager.viewport_show_origins_all))
+			self.override['space_data'].overlay.show_extras = bool(int(self.settings.viewport_show_extras))
+			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.settings.viewport_show_relationship_lines))
+			self.override['space_data'].overlay.show_outline_selected = bool(int(self.settings.viewport_show_outline_selected))
+			self.override['space_data'].overlay.show_bones = bool(int(self.settings.viewport_show_bones))
+			self.override['space_data'].overlay.show_motion_paths = bool(int(self.settings.viewport_show_motion_paths))
+			self.override['space_data'].overlay.show_object_origins = bool(int(self.settings.viewport_show_origins))
+			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.settings.viewport_show_origins_all))
 			# OVERLAY ATTRIBUTES: Geometry
-			self.override['space_data'].overlay.show_wireframes = bool(int(self.window_manager.viewport_show_wireframes))
-			self.override['space_data'].overlay.show_face_orientation = bool(int(self.window_manager.viewport_show_face_orientation))
+			self.override['space_data'].overlay.show_wireframes = bool(int(self.settings.viewport_show_wireframes))
+			self.override['space_data'].overlay.show_face_orientation = bool(int(self.settings.viewport_show_face_orientation))
 
 		# if the low quality quilt settings are active AND the user selected the "SOLID SHADER PREVIEW" option
-		if self.preset == 3 and self.window_manager.viewport_use_solid_preview == True:
+		if self.preset == 3 and self.settings.viewport_use_solid_preview == True:
 
 			# change the shading type to SOLID
 			LookingGlassAddon.lightfieldSpace.shading.type = 'SOLID'
@@ -927,7 +927,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			######################################################
 
 			# select camera that belongs to the view
-			camera = context.window_manager.lookingglassCamera
+			camera = context.scene.settings.lookingglassCamera
 
 			# PREPARE THE MODELVIEW AND PROJECTION MATRICES
 			# if a camera is selected
@@ -1007,7 +1007,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			#print("drawQuilt ", self.updateQuilt)
 
 			# if the live view mode is active
-			if int(self.window_manager.renderMode) == 0:
+			if int(self.settings.renderMode) == 0:
 
 				start_blit = time.time()
 				# if the quilt must be updated
@@ -1040,14 +1040,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 								# print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
 
 			# if the quilt view mode is active AND an image is loaded
-			elif int(self.window_manager.renderMode) == 1 and context.window_manager.quiltImage != None:
+			elif int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage != None:
 
 				# copy the image that is in the quilt view to the quilt offscreen
 				# print("Quilt view mode: ")
-				# print(" # ", context.window_manager.quiltImage)
+				# print(" # ", context.scene.settings.quiltImage)
 
 				# if the image is a multiview image
-				if context.window_manager.quiltImage.is_multiview == True:
+				if context.scene.settings.quiltImage.is_multiview == True:
 
 					# Todo: How can I access the views of a multiview to copy them into the quilt?
 					print(" # MULTIVIEW IMAGE")
@@ -1059,7 +1059,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# assume that we have a 45 view quilt image and load it into a OpenGL texture
 					# TODO: Integrate a setting for quilts with 32 images
-					context.window_manager.quiltImage.gl_load()
+					context.scene.settings.quiltImage.gl_load()
 
 					# bind the offscreen used for the quilt
 					with LookingGlassAddon.qs[self.preset]["quiltOffscreen"].bind(True):
@@ -1071,10 +1071,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 						# Blit the image into the quilt texture
 						# (use normalized device coordinates)
-						draw_texture_2d(context.window_manager.quiltImage.bindcode, (-1, -1), 2, 2)
+						draw_texture_2d(context.scene.settings.quiltImage.bindcode, (-1, -1), 2, 2)
 
 					# free the previously created OpenGL texture
-					context.window_manager.quiltImage.gl_free()
+					context.scene.settings.quiltImage.gl_free()
 
 
 			# Draw the lightfield
@@ -1089,7 +1089,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.lightFieldShader.bind()
 
 			# load the current debug view mode into the shader
-			self.lightFieldShader.uniform_int("debug", context.window_manager.debug_view)
+			self.lightFieldShader.uniform_int("debug", context.scene.settings.debug_view)
 
 			# draw the quilt texture
 			self.lightFieldShaderBatch.draw(self.lightFieldShader)
@@ -1173,7 +1173,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		# make an internal variable for the window_manager,
 		# which can be accessed from methods that have no "context" parameter
-		self.window_manager = context.window_manager
+		self.settings = context.scene.settings
 
 
 
@@ -1197,7 +1197,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 		print("Invoked modal operator: ", time.time() - start)
 
 		# add the modal handler
-		self.window_manager.modal_handler_add(self)
+		context.window_manager.modal_handler_add(self)
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
@@ -1206,6 +1206,9 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
+
+		# update the internal variable for the settings, in case the scene has changed
+		self.settings = context.scene.settings
 
 		# pass event through
 		return {'PASS_THROUGH'}
@@ -1263,10 +1266,10 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	def drawCameraFrustum(self, context):
 
 		# if a camera is selected AND the space is not in camera mode
-		if self.window_manager.lookingglassCamera != None and context.space_data.region_3d.view_perspective != 'CAMERA':
+		if self.settings.lookingglassCamera != None and context.space_data.region_3d.view_perspective != 'CAMERA':
 
 			# currently selected camera
-			camera = self.window_manager.lookingglassCamera
+			camera = self.settings.lookingglassCamera
 
 			# get modelview matrix
 			view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
@@ -1295,17 +1298,17 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 							(view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
 							(view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
 							# focal plane
-							(view_frame_lower_right[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_lower_right[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane), (view_frame_lower_left[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_lower_left[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane),
-							(view_frame_upper_left[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_upper_left[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane), (view_frame_upper_right[0] / view_frame_distance * self.window_manager.focalPlane, view_frame_upper_right[1] / view_frame_distance * self.window_manager.focalPlane, -self.window_manager.focalPlane),
+							(view_frame_lower_right[0] / view_frame_distance * self.settings.focalPlane, view_frame_lower_right[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane), (view_frame_lower_left[0] / view_frame_distance * self.settings.focalPlane, view_frame_lower_left[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane),
+							(view_frame_upper_left[0] / view_frame_distance * self.settings.focalPlane, view_frame_upper_left[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane), (view_frame_upper_right[0] / view_frame_distance * self.settings.focalPlane, view_frame_upper_right[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane),
 							]
 
 			# if the camera fustum shall be drawn
-			if self.window_manager.showFrustum == True:
+			if self.settings.showFrustum == True:
 				batch_lines = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_lines)
 				batch_faces = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_faces)
 
 			# if the focal plane shall be drawn
-			if self.window_manager.showFocalPlane == True:
+			if self.settings.showFocalPlane == True:
 				batch_focalplane_outline = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_focalplane_outline)
 				batch_focalplane_face = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_focalplane_face)
 
@@ -1326,13 +1329,13 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 			bgl.glDepthMask(bgl.GL_TRUE)
 
 			# if the camera fustum shall be drawn
-			if self.window_manager.showFrustum == True:
+			if self.settings.showFrustum == True:
 				# draw outline
 				self.frustum_shader.uniform_float("color", (0.3, 0, 0, 1))
 				batch_lines.draw(self.frustum_shader)
 
 			# if the focal plane shall be drawn
-			if self.window_manager.showFocalPlane == True:
+			if self.settings.showFocalPlane == True:
 				# draw focal plane outline
 				self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
 				batch_focalplane_outline.draw(self.frustum_shader)
@@ -1342,13 +1345,13 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 			bgl.glEnable(bgl.GL_BLEND)
 
 			# if the camera fustum shall be drawn
-			if self.window_manager.showFrustum == True:
+			if self.settings.showFrustum == True:
 				# fill faces
 				self.frustum_shader.uniform_float("color", (0.5, 0.5, 0.5, 0.05))
 				batch_faces.draw(self.frustum_shader)
 
 			# if the focal plane shall be drawn
-			if self.window_manager.showFocalPlane == True:
+			if self.settings.showFocalPlane == True:
 				# draw focal plane face
 				self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.1))
 				batch_focalplane_face.draw(self.frustum_shader)
