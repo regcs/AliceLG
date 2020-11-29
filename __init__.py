@@ -16,35 +16,47 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# -------------------- DEFINE ADDON ----------------------
 bl_info = {
+
 	"name": "Looking Glass Addon",
-	"author": "Christian Stolze", # This addon uses parts of the first Looking Glass addon created by Gottfried Hofmann and Kyle Appelgate
+	"author": "Christian Stolze",
 	"version": (1, 0, 0),
 	"blender": (2, 90, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Enables the utilization of the Looking Glass holographic displays, including a fully functional holographic Blender viewport as well as options to render quilts from within Blender.",
+	"category": "View",
 	"wiki_url": "",
-	"category": "View"
+    "warning": "",
+    "doc_url": "",
+    "tracker_url": ""
+
 }
 
 # this is only for debugging purposes
 debugging_use_dummy_device = True
 
+
+
+# ------------- LOAD ALL INTERNAL MODULES ----------------
 # required for proper reloading of the addon by using F8
 if "bpy" in locals():
 
 	import importlib
 
-	# import the modal operators for the plugin
+	# reload the modal operators for the viewport & quilt rendering
 	importlib.reload(operators.looking_glass_viewport)
 	importlib.reload(operators.looking_glass_render_quilt)
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(operators.looking_glass_global_variables)
 
+	# reload the Holoplay Core SDK Python Wrapper
+	importlib.reload(operators.libHoloPlayCore)
+
 else:
 
-	# import the modal operators for the plugin
+	# import the modal operators for the viewport & quilt rendering
 	from .operators.looking_glass_viewport import *
 	from .operators.looking_glass_render_quilt import *
 
@@ -55,6 +67,12 @@ else:
 	from .operators import libHoloPlayCore as hpc
 
 
+
+
+
+# ------------- LOAD ALL PYTHON MODULES ----------------
+# NOTE: This needs to be called after loading the internal modules,
+# 		because we need to check if "bpy" was already loaded for reload
 
 import bpy
 import gpu
@@ -69,9 +87,16 @@ from math import *
 from mathutils import *
 from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
-
 import atexit
 
+
+
+
+
+
+
+
+# ------------- DEFINE ADDON PREFERENCES ----------------
 # Preferences pane for this Addon in the Blender preferences
 class LookingGlassAddonPreferences(AddonPreferences):
 	bl_idname = __name__
@@ -89,6 +114,10 @@ class LookingGlassAddonPreferences(AddonPreferences):
 
 
 
+
+
+
+# ----------------- HELPER FUNCTIONS --------------------
 #
 def LookingGlassDeviceList():
 
@@ -429,7 +458,11 @@ def update_camera_setting(self, context):
 
 	return None
 
-# ------------- The Tools Panel ----------------
+
+
+
+
+# ----------------- PANEL/UI DEFINTIONS --------------------
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_display_list"
@@ -1193,7 +1226,9 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 					column_2.enabled = False
 
 
-# ------------- Register classes ----------------
+
+
+# ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
 
 	print("Initializing Holo Play Core:")
@@ -1306,6 +1341,3 @@ def unregister():
 
 	print("########################################################################")
 	print("Deinitialized the Looking Glass Addon.")
-
-if __name__ == "__main__":
-	register()
