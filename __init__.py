@@ -245,8 +245,9 @@ class LookingGlassAddonFunctions:
 			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
 			area.type = "VIEW_3D"
 
+			print(LookingGlassAddon.lightfieldWindow.screen.areas)
 			# hide all panels in the image editor and make the area full screen
-			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
+			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), 'INVOKE_DEFAULT', use_hide_panels=True)
 
 			# Invoke modal operator for the lightfield rendering
 			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
@@ -541,6 +542,12 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											update=LookingGlassAddonFunctions.ShowLightfieldWindow_update
 											)
 
+	# a boolean to toogle the render window on or off
+	lightfieldWindowIndex: bpy.props.IntProperty(
+											name="Lightfield Window",
+											default = -1,
+											)
+
 	viewResolution: bpy.props.EnumProperty(
 										items = [
 												('0', 'Resolution: 512 x 256 px', '2k quilt, 32 views'),
@@ -820,6 +827,33 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	# Invoke modal operator for the camera frustum rendering
 	bpy.ops.render.frustum('INVOKE_DEFAULT')
 
+	# if the lightfield window is active
+	if bpy.context.scene.settings.ShowLightfieldWindow == True and bpy.context.scene.settings.lightfieldWindowIndex != -1:
+		print("WindowIndex: ", bpy.context.scene.settings.lightfieldWindowIndex)
+		# get the lightfield window by the index of this window in the list of windows in the WindowManager
+		LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows.values()[bpy.context.scene.settings.lightfieldWindowIndex]
+
+		# if the window was found
+		if LookingGlassAddon.lightfieldWindow != None:
+
+			# close this window
+			bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
+
+			# Create a new main window
+			bpy.ops.wm.window_new_main(dict(window=bpy.context.window_manager.windows[0]))
+
+			# assume the last window in the screen list is the created window
+			LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows[-1]
+
+			# Change the area type of the last area of the looking glass window to SpaceView3D
+			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
+			area.type = "VIEW_3D"
+
+			# hide all panels in the image editor and make the area full screen
+			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
+
+			# Invoke modal operator for the lightfield rendering
+			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 
 # ----------------- PANEL/UI DEFINTIONS --------------------

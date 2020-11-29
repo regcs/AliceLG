@@ -222,6 +222,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		print(" # width: ", LookingGlassAddon.lightfieldWindow.width)
 		print(" # height: ", LookingGlassAddon.lightfieldWindow.height)
 
+		# get the index of the lightfield window in the list of windows in the WindowManager
+		# NOTE: This is required for reloading a blend file in which the lightfield window was open
+		self.settings.lightfieldWindowIndex = context.window_manager.windows.values().index(LookingGlassAddon.lightfieldWindow)
+
 		# we use the last area for our lightfield drawing
 		# NOTE: This is an arbitrary choice, but it needs to be consistent throughout the code
 		area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
