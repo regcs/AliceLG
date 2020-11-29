@@ -32,16 +32,17 @@ debugging_use_dummy_device = True
 
 # required for proper reloading of the addon by using F8
 if "bpy" in locals():
+
 	import importlib
+
+	# import the modal operators for the plugin
 	importlib.reload(operators.looking_glass_viewport)
+	importlib.reload(operators.looking_glass_render_quilt)
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(operators.looking_glass_global_variables)
 
 else:
-
-	# import the Holoplay Core SDK Python Wrapper
-	from .operators import libHoloPlayCore as hpc
 
 	# import the modal operators for the plugin
 	from .operators.looking_glass_viewport import *
@@ -49,6 +50,9 @@ else:
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	from .operators.looking_glass_global_variables import *
+
+	# import the Holoplay Core SDK Python Wrapper
+	from .operators import libHoloPlayCore as hpc
 
 
 
@@ -58,7 +62,6 @@ import json
 import subprocess
 import logging
 import sys, os
-import platform
 import ctypes
 from ctypes.util import find_library
 from bgl import *
@@ -69,28 +72,22 @@ from bpy.props import FloatProperty, PointerProperty
 
 import atexit
 
+# Preferences pane for this Addon in the Blender preferences
+class LookingGlassAddonPreferences(AddonPreferences):
+	bl_idname = __name__
+
+	# libpath: bpy.props.StringProperty(
+	# 								   name="HoloPlayCore SDK",
+	# 								   subtype='FILE_PATH',
+	# 								   default = ""
+	# 								   )
+	#
+	# def draw(self, context):
+	# 	layout = self.layout
+	# 	layout.prop(self, "libpath")
 
 
-# TODO: Make this a class method
-def set_defaults():
-	''' Returns the file path of the configuration utility shipping with the addon '''
-	script_file = os.path.realpath(__file__)
-	directory = os.path.dirname(script_file)
-	filepath = ''
 
-	print("Searching for HoloPlay Core SDK")
-	if platform.system() == "Darwin":
-		filepath = find_library('HoloPlayCore')
-	else:
-		print("Operating system not recognized, path to calibration utility nees to be set manually.")
-		return ''
-
-	if os.path.isfile(filepath):
-		print("HoloPlay Core SDK found in: " + filepath)
-		return filepath
-	else:
-		print("Could not find HoloPlay Core SDK.")
-		return ''
 
 #
 def LookingGlassDeviceList():
@@ -184,20 +181,6 @@ def LookingGlassDeviceList():
 			print("   - device info:", LookingGlassAddon.deviceList[-1])
 
 
-class LookingGlassPreferences(AddonPreferences):
-	# this must match the addon name
-	bl_idname = __name__
-
-	filepath: bpy.props.StringProperty(
-									   name="Location of the HoloPlayCore library",
-									   subtype='FILE_PATH',
-									   default = set_defaults()
-									   )
-
-	def draw(self, context):
-		layout = self.layout
-		layout.prop(self, "filepath")
-
 
 # Using the atexit library, this functions is called when Blender exists
 def exit_callback():
@@ -231,7 +214,6 @@ def ShowLightfieldWindow_update(self, context):
 	if self['ShowLightfieldWindow'] == True:
 
 		# Create a new main window
-		#print(context.copy().keys())
 		bpy.ops.wm.window_new_main()
 
 		# assume the last window in the screen list is the created window
@@ -247,9 +229,12 @@ def ShowLightfieldWindow_update(self, context):
 		# Invoke modal operator for the lightfield rendering
 		bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
+
+		# TODO: Disabled because for some reason this causes strong flickering in the lightfield window.
+		#		Why?
 		# TODO: Check if this makes senso on Windows & Linux
 		# make the window fullscreen
-		bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+		# bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
 
 
 
@@ -1218,7 +1203,7 @@ def register():
 
 	# register all classes of the addon
 	# Preferences
-	bpy.utils.register_class(LookingGlassPreferences)
+	bpy.utils.register_class(LookingGlassAddonPreferences)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
@@ -1304,7 +1289,7 @@ def unregister():
 		# Unregister at the Holoplay Service
 		hpc.CloseApp()
 
-	bpy.utils.unregister_class(LookingGlassPreferences)
+	bpy.utils.unregister_class(LookingGlassAddonPreferences)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)

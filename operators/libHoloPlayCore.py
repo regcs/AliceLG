@@ -22,7 +22,7 @@ from gpu_extras.presets import draw_texture_2d
 import json
 import subprocess
 import logging
-import os
+import os, platform
 import ctypes
 from bgl import *
 from math import *
@@ -32,13 +32,33 @@ from bpy.props import FloatProperty, PointerProperty
 from ctypes.util import find_library
 import numpy as np
 import time
-from enum import Enum 
+from enum import Enum
 
 
 # -------------------- Load Library ----------------------
 # Load the HoloPlay Core SDK Library
 print("Loading HoloPlay Core SDK library")
-hpc = ctypes.cdll.LoadLibrary(find_library('HoloPlayCore'))
+print(" # Searching for HoloPlay Core SDK")
+
+# if on macOS
+if platform.system() == "Darwin":
+    libpath = find_library('HoloPlayCore')
+
+# if on Windows
+elif platform.system() == "Windows":
+	libpath = find_library('HoloPlayCore')
+
+else:
+    print(" # Unsupported operating system.")
+    raise OSError
+
+# if the library was found
+if os.path.isfile(libpath):
+    print(" # HoloPlay Core SDK found in: " + libpath)
+    hpc = ctypes.cdll.LoadLibrary(libpath)
+else:
+    print(" # Could not find HoloPlay Core SDK.")
+    raise FileNotFoundError
 
 
 
@@ -49,7 +69,7 @@ hpc = ctypes.cdll.LoadLibrary(find_library('HoloPlayCore'))
 # hpc_client_error
 ###################
 #   Enum definition for errors returned from the HoloPlayCore dynamic library.
-#    
+#
 #   This encapsulates potential errors with the connection itself,
 #   as opposed to hpc_service_error, which describes potential error messages
 #   included in a successful reply from HoloPlay Service.
@@ -74,7 +94,7 @@ class client_error(Enum):
 #   Most error messages from HoloPlay Service concern access to the HoloPlay Service
 #   internal renderer, which is supported but not the primary focus of the current
 #   version of HoloPlay Core.
-#        
+#
 #   Future versions of HoloPlay Service may return error codes not defined by this
 #   spec.
 
@@ -86,19 +106,19 @@ class service_error(Enum):
     ERR_LKGNOTFOUND = 4
     ERR_NOTINCACHE = 5
     ERR_INITTOOLATE = 6
-    ERR_NOTALLOWED = 7	
-	
+    ERR_NOTALLOWED = 7
+
 
 # hpc_license_type
 ###################
 #   Enum definition for possible types of licenses associated with a HoloPlay Core app.
-#       
+#
 #   Non-commercial apps can't run on Looking Glass devices without an associated commercial license.
 
 class license_type(Enum):
     LICENSE_NONCOMMERCIAL = 0
     LICENSE_COMMERCIAL = 1
-	
+
 
 
 # ---------- PYTHON WRAPPE FOR HOLOPLAYCORE -------------
