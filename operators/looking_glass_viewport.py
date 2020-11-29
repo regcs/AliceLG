@@ -18,19 +18,12 @@
 
 import bpy, bgl
 import gpu
-import json
-import subprocess
-import logging
 import time
-import os, sys
-import ctypes
+from math import *
+from mathutils import *
 from gpu_extras.batch import batch_for_shader
 from gpu_extras.presets import draw_texture_2d, draw_circle_2d
 from bpy_extras.view3d_utils import location_3d_to_region_2d
-
-from bgl import *
-from math import *
-from mathutils import *
 from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
 

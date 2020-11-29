@@ -16,22 +16,9 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-import bpy
-import gpu
-from gpu_extras.presets import draw_texture_2d
-import json
-import subprocess
-import logging
 import os, platform
 import ctypes
-from bgl import *
-from math import *
-from mathutils import *
-from bpy.types import AddonPreferences, PropertyGroup
-from bpy.props import FloatProperty, PointerProperty
 from ctypes.util import find_library
-import numpy as np
-import time
 from enum import Enum
 
 

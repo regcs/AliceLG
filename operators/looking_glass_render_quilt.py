@@ -18,7 +18,6 @@
 
 import bpy
 import time
-import os, sys
 import numpy as np
 from math import *
 from mathutils import *

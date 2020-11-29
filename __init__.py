@@ -70,24 +70,13 @@ else:
 
 
 
-# ------------- LOAD ALL PYTHON MODULES ----------------
+# ------------- LOAD ALL REQUIRED PYTHON MODULES ----------------
 # NOTE: This needs to be called after loading the internal modules,
 # 		because we need to check if "bpy" was already loaded for reload
-
 import bpy
-import gpu
-import json
-import subprocess
-import logging
-import sys, os
 import ctypes
-from ctypes.util import find_library
-from bgl import *
-from math import *
-from mathutils import *
 from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
-import atexit
 
 
 
@@ -208,19 +197,6 @@ def LookingGlassDeviceList():
 											}
 			)
 			print("   - device info:", LookingGlassAddon.deviceList[-1])
-
-
-
-# Using the atexit library, this functions is called when Blender exists
-def exit_callback():
-	print("Blender closed. Time to tidy some things up!")
-
-	# unregister the classes
-	# Todo: This causes a crash on quitting - why?
-	#		# Error: Segmentation fault: 11
-	#unregister()
-
-atexit.register(exit_callback)
 
 
 
