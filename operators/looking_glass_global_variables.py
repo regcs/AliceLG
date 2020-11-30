@@ -20,6 +20,9 @@
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
 
+	# path to the addon directory
+	path = None
+
 	# Was the connection to the holoplay service successfully initialized?
 	HoloPlayService = False
 

@@ -16,24 +16,66 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-import os, platform
+import sys, os, platform
 import ctypes
 from ctypes.util import find_library
 from enum import Enum
 
+# TODO: Is there a better way to share global variables between all addon files and operators?
+from .looking_glass_global_variables import *
+
 
 # -------------------- Load Library ----------------------
+# get path of this addon
+LookingGlassAddon.path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
+
 # Load the HoloPlay Core SDK Library
 print("Loading HoloPlay Core SDK library")
+print(" # System architecture: ", platform.architecture())
+print(" # Find addon path: ", LookingGlassAddon.path)
 print(" # Searching for HoloPlay Core SDK")
 
 # if on macOS
 if platform.system() == "Darwin":
-    libpath = find_library('HoloPlayCore')
 
-# if on Windows
-elif platform.system() == "Windows":
-	libpath = find_library('HoloPlayCore')
+    # if the library is in the addon directory
+    if os.path.isfile(LookingGlassAddon.path + "/lib/macos/libHoloPlayCore.dylib") == True:
+
+        libpath = LookingGlassAddon.path + "/lib/macos/libHoloPlayCore.dylib"
+
+    else:
+
+        # try to find the library elsewhere
+        libpath = find_library('HoloPlayCore')
+
+
+# if on 32-bit Windows
+elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
+
+    # if the library is in the addon directory
+    if os.path.isfile(LookingGlassAddon.path + "/lib/Win32/libHoloPlayCore.dll") == True:
+
+        libpath = LookingGlassAddon.path + "/lib/Win32/libHoloPlayCore.dll"
+
+    else:
+
+        # try to find the library elsewhere
+        libpath = find_library('HoloPlayCore')
+
+
+# if on 64-bit Windows
+elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
+
+    # if the library is in the addon directory
+    if os.path.isfile(LookingGlassAddon.path + "/lib/Win64/libHoloPlayCore.dll") == True:
+
+        libpath = LookingGlassAddon.path + "/lib/Win64/libHoloPlayCore.dll"
+
+    else:
+
+        # try to find the library elsewhere
+        libpath = find_library('HoloPlayCore')
+
 
 else:
     print(" # Unsupported operating system.")
