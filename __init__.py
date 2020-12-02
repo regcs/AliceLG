@@ -18,7 +18,6 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-
 	"name": "Looking Glass Addon",
 	"author": "Christian Stolze",
 	"version": (1, 0, 0),
@@ -30,7 +29,6 @@ bl_info = {
     "warning": "",
     "doc_url": "",
     "tracker_url": ""
-
 }
 
 # this is only for debugging purposes
@@ -74,12 +72,11 @@ else:
 # NOTE: This needs to be called after loading the internal modules,
 # 		because we need to check if "bpy" was already loaded for reload
 import bpy
+import platform
 import ctypes
 from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
 from bpy.app.handlers import persistent
-
-
 
 
 
@@ -257,7 +254,7 @@ class LookingGlassAddonFunctions:
 			#		Why?
 			# TODO: Check if this makes senso on Windows & Linux
 			# make the window fullscreen
-			# bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+			#bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
 
 
 

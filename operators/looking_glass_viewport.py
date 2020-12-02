@@ -16,6 +16,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+import platform
 import bpy, bgl
 import gpu
 import time
@@ -29,6 +30,56 @@ from bpy.props import FloatProperty, PointerProperty
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *
+
+
+
+# --------- TRY TO LOAD SYSTEM API FOR WINDOW CONTROL -----------
+
+# if on macOS
+if platform.system() == "Darwin":
+
+	# NOTE: This requires that PyObjC is installed in Blenders Python
+	#		- add a button to Preferences wich handles the installation?
+	try:
+
+		# The following lines are necessary to use PyObjC to load AppKit
+		# from: https://github.com/ronaldoussoren/pyobjc/issues/309
+		# User: MaxBelanger
+		#       This means pyobjc always dlopens (via NSBundle) based on the canonical and absolute path of the framework, which works with the cache.
+		import objc, objc._dyld
+
+		def __path_for_framework_safe(path: str) -> str:
+		    return path
+
+		objc._dyld.pathForFramework = __path_for_framework_safe
+		objc.pathForFramework = __path_for_framework_safe
+
+    	# import AppKit
+		import Cocoa
+		from AppKit import NSScreen, NSWorkspace, NSWindow, NSApp, NSApplication, NSWindowStyleMaskBorderless, NSApplicationPresentationHideDock, NSApplicationPresentationHideMenuBar
+		from Quartz import kCGWindowListOptionOnScreenOnly, kCGNullWindowID, CGWindowListCopyWindowInfo, CGWindowListCreate, kCGWindowNumber
+
+	except:
+		print(" # Could not load AppKit")
+		pass
+
+# # if on 32-bit Windows
+# elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
+#
+#
+#
+#
+# # if on 64-bit Windows
+# elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
+#
+#
+
+else:
+    print(" # Unsupported operating system.")
+    raise OSError
+
+
+
 
 
 
@@ -305,6 +356,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
+
 		# REGISTER ALL HANDLERS FOR THE LIGHTFIELD RENDERING
 		################################################################
 
@@ -346,6 +398,38 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# add the modal handler
 		context.window_manager.modal_handler_add(self)
+
+
+
+		# MOVE THE WINDOW TO THE CORRECT SCREEN & TOGGLE FULLSCREEN
+		################################################################
+
+		# TODO: Add a class function that handles this task for the different
+		# operating systems automatically
+		try:
+
+			# find the NSScreen representing the Looking Glass
+			for screen in NSScreen.screens():
+
+				if screen.localizedName() == LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]['name']:
+
+					# move the window to the Looking Glass Screen and resize it
+					NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
+
+					# make window invisible
+					#NSApp._.windows[-1].setIsVisible_(False)
+
+					# make the window a fullscreen window
+					# NSApp._.windows[-1].toggleFullScreen_(0)
+					break
+
+
+			# make the window fullscreen
+			bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+
+		except:
+			pass
+
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
@@ -1006,7 +1090,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def drawLightfield(self, context):
 
 		# if this call belongs to the lightfield window
-		if context.window == LookingGlassAddon.lightfieldWindow:
+		if context.window == LookingGlassAddon.lightfieldWindow and context.area == self.lightfieldArea:
 
 			#print("drawQuilt ", self.updateQuilt)
 
