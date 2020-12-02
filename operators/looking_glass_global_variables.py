@@ -48,6 +48,7 @@ class LookingGlassAddon:
 	lightfieldFragmentShaderSource = None
 
 
+
 	# GLOBAL LIST OF QUILT Settings
 	# +++++++++++++++++++++++++++++++++++++++
 	# define a list
