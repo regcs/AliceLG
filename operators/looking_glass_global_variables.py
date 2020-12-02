@@ -42,6 +42,12 @@ class LookingGlassAddon:
 	BlenderViewport = None
 
 
+	# SHADER SOURCES
+	# +++++++++++++++++++++++++++++++++++++++
+	lightfieldVertexShaderSource = None
+	lightfieldFragmentShaderSource = None
+
+
 	# GLOBAL LIST OF QUILT Settings
 	# +++++++++++++++++++++++++++++++++++++++
 	# define a list

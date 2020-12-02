@@ -151,89 +151,11 @@ class license_type(Enum):
 
 
 # ---------- PYTHON WRAPPE FOR HOLOPLAYCORE -------------
-# Make the function names visible at the module level and add types
+# Lightfield Shaders
+LightfieldVertShaderGLSL = ctypes.c_char_p.in_dll(hpc, "hpc_LightfieldVertShaderGLSLExported").value.decode("utf-8")
+LightfieldFragShaderGLSL = ctypes.c_char_p.in_dll(hpc, "hpc_LightfieldFragShaderGLSLExported").value.decode("utf-8")
 
-LightfieldVertShaderGLSL = '''
-layout (location = 0)
-in vec2 vertPos_data;
-out vec2 texCoords;
-void main()
-{
-    gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
-    texCoords = (vertPos_data.xy + 1.0) * 0.5;
-}
-'''
 
-LightfieldFragShaderGLSL = '''
-in vec2 texCoords;
-out vec4 fragColor;
-
-// Calibration values
-uniform float pitch;
-uniform float tilt;
-uniform float center;
-uniform int invView;
-uniform float subp;
-uniform float displayAspect;
-uniform int ri;
-uniform int bi;
-
-// Quilt settings
-uniform vec3 tile;
-uniform vec2 viewPortion;
-uniform float quiltAspect;
-uniform int overscan;
-uniform int quiltInvert;
-
-uniform int debug;
-
-uniform sampler2D screenTex;
-
-vec2 texArr(vec3 uvz)
-{
-    // decide which section to take from based on the z.
-    float z = floor(uvz.z * tile.z);
-    float x = (mod(z, tile.x) + uvz.x) / tile.x;
-    float y = (floor(z / tile.x) + uvz.y) / tile.y;
-    return vec2(x, y) * viewPortion.xy;
-}
-
-// recreate CG clip function (clear pixel if any component is negative)
-void clip(vec3 toclip)
-{
-    // "discard" cancels the drawing of the current pixel
-    if (any(lessThan(toclip, vec3(0,0,0)))) discard;
-}
-
-void main()
-{
-    if (debug == 1)
-    {
-        fragColor = texture(screenTex, texCoords.xy);
-    }
-    else {
-        float invert = 1.0;
-        if (invView + quiltInvert == 1) invert = -1.0;
-        vec3 nuv = vec3(texCoords.xy, 0.0);
-        nuv -= 0.5;
-        float modx = clamp (step(quiltAspect, displayAspect) * step(float(overscan), 0.5) + step(displayAspect, quiltAspect) * step(0.5, float(overscan)), 0, 1);
-        nuv.x = modx * nuv.x * displayAspect / quiltAspect + (1.0-modx) * nuv.x;
-        nuv.y = modx * nuv.y + (1.0-modx) * nuv.y * quiltAspect / displayAspect;
-        nuv += 0.5;
-        clip (nuv);
-        clip (1.0-nuv);
-        vec4 rgb[3];
-        for (int i=0; i < 3; i++)
-        {
-            nuv.z = (texCoords.x + i * subp + texCoords.y * tilt) * pitch - center;
-            nuv.z = mod(nuv.z + ceil(abs(nuv.z)), 1.0);
-            nuv.z *= invert;
-            rgb[i] = texture(screenTex, texArr(nuv));
-        }
-        fragColor = vec4(rgb[ri].r, rgb[1].g, rgb[bi].b, 1.0);
-    }
-}
-'''
 
 # ----------------- GENERAL FUNCTIONS -------------------
 # int hpc_InitializeApp(const char *app_name, int license)

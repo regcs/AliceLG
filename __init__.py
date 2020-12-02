@@ -1325,6 +1325,12 @@ def register():
 		# obtain the device list
 		LookingGlassAddonFunctions.LookingGlassDeviceList()
 
+		# get shader source codes
+		# TODO: Maybe it would make sense to load the shader directly here
+		#		and pass it on to the rendering operators as global variable
+		LookingGlassAddon.lightfieldVertexShaderSource = hpc.LightfieldVertShaderGLSL
+		LookingGlassAddon.lightfieldFragmentShaderSource = hpc.LightfieldFragShaderGLSL
+
 		print("########################################################################")
 		print("Initialized the Looking Glass Addon.")
 
