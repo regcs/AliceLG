@@ -599,14 +599,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		self.lightFieldShader.bind()
 
 		self.lightFieldShader.uniform_int("overscan", 0)
-		self.lightFieldShader.uniform_int("tile_x", LookingGlassAddon.qs[self.preset]["columns"])
-		self.lightFieldShader.uniform_int("tile_y", LookingGlassAddon.qs[self.preset]["rows"])
-		self.lightFieldShader.uniform_int("tile_z", LookingGlassAddon.qs[self.preset]["totalViews"])
+		self.lightFieldShader.uniform_float("tile", (LookingGlassAddon.qs[self.preset]["columns"], LookingGlassAddon.qs[self.preset]["rows"], LookingGlassAddon.qs[self.preset]["totalViews"]))
+		# self.lightFieldShader.uniform_int("tile_x", LookingGlassAddon.qs[self.preset]["columns"])
+		# self.lightFieldShader.uniform_int("tile_y", LookingGlassAddon.qs[self.preset]["rows"])
+		# self.lightFieldShader.uniform_int("tile_z", LookingGlassAddon.qs[self.preset]["totalViews"])
 
 		# set viewportion to the full view
+		self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
 		#print("viewPortion: ", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
-		self.lightFieldShader.uniform_float("viewPortion_x", LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"])
-		self.lightFieldShader.uniform_float("viewPortion_y", LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"])
+		# self.lightFieldShader.uniform_float("viewPortion_x", LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"])
+		# self.lightFieldShader.uniform_float("viewPortion_y", LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"])
 
 
 
@@ -772,7 +774,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		'''
 
 		# Compile lightfield shader via GPU module
-		self.lightFieldShader = gpu.types.GPUShader(self.lightfieldVertexShaderSource, self.lightfieldFragmentShaderSource)
+		self.lightFieldShader = gpu.types.GPUShader(LookingGlassAddon.LightfieldVertShaderGLSL, LookingGlassAddon.LightfieldFragShaderGLSL)
 
 		# prepare a batch used for drawing the lightfield into a texture of correct size
 		self.lightFieldShaderBatch = batch_for_shader(
