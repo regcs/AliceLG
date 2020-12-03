@@ -293,7 +293,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					if space.type == "VIEW_3D":
 
 						# remember the area, so that Blender will only draw the lightfield in this area
-						self.lightfieldArea = area
+						LookingGlassAddon.lightfieldRegion = region
+						LookingGlassAddon.lightfieldArea = area
 						LookingGlassAddon.lightfieldSpace = space
 
 						# create an override context
@@ -490,11 +491,42 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# Control events in the viewport
 		################################################################
-		if event.type == 'LEFTMOUSE':
+		if event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
 
-			# print("Event: ", event.type, event.mouse_x, event.mouse_region_x)
+			# REMAP MOUSE CLICK IN LOOKING GLASS VIEWPORT TO CAMERA VIEW
+			# currently selected camera
+			camera = self.settings.lookingglassCamera
 
-			return {'PASS_THROUGH'}
+			# get modelview matrix
+			view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
+
+			# obtain the viewframe of the camera in 3D coordinates
+			view_frame = camera.data.view_frame(scene=bpy.context.scene)
+
+			# transform the coordinates from camera to world coordinates
+			view_frame = [view_matrix @ p for p in view_frame]
+
+			# transform world coordinates of each edge to window coordinates
+			view_frame_2D = [location_3d_to_region_2d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, p) for p in view_frame]
+
+			# calculate dimensions
+			view_frame_width = abs(view_frame_2D[2][0] - view_frame_2D[0][0])
+			view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
+
+			# print("Region:", LookingGlassAddon.lightfieldRegion.width, LookingGlassAddon.lightfieldRegion.height)
+			# print("Camera frame:", view_frame_width, view_frame_height)
+			# print("Mouse coordinates:", event.mouse_x, event.mouse_y)
+
+			# remap coordinates
+			mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
+			mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
+
+			# print("Mouse coordinates (re-mapped):", mouse_x, mouse_y)
+
+			# select the object
+			bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(mouse_x, mouse_y))
+
+			return {'RUNNING_MODAL'}
 
 
 		# if the live view mode is inactive
@@ -992,7 +1024,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def copyViewToQuilt(self, context, view):
 
 		# if the quilt must be redrawn AND the current image editor belongs to the lightfield window AND the Multiview object exists
-		if self.modal_redraw == True and context.area == self.lightfieldArea:
+		if self.modal_redraw == True and context.area == LookingGlassAddon.lightfieldArea:
 
 			# Update quilt settings
 			######################################################
@@ -1092,7 +1124,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def drawLightfield(self, context):
 
 		# if this call belongs to the lightfield window
-		if context.window == LookingGlassAddon.lightfieldWindow and context.area == self.lightfieldArea:
+		if context.window == LookingGlassAddon.lightfieldWindow and context.area == LookingGlassAddon.lightfieldArea:
 
 			#print("drawQuilt ", self.updateQuilt)
 
@@ -1182,7 +1214,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.lightFieldShader.uniform_int("debug", context.scene.settings.debug_view)
 
 			# draw the quilt texture
-			self.lightFieldShaderBatch.draw(self.lightFieldShader)
+			#self.lightFieldShaderBatch.draw(self.lightFieldShader)
 
 			# if the quilt was updated
 			if self.updateQuilt == True:
