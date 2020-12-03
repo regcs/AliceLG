@@ -95,9 +95,9 @@ class LookingGlassAddon:
 		LookingGlassAddon.qs.append({
 				"width": 512,
 				"height": 512,
-				"columns": 5,
-				"rows": 9,
-				"totalViews": 45,
+				"columns": 4,
+				"rows": 8,
+				"totalViews": 32,
 				"quiltOffscreen": None,
 				"viewOffscreens": []
 				})
@@ -106,5 +106,5 @@ class LookingGlassAddon:
 		for i in range(0, len(LookingGlassAddon.qs), 1):
 
 			# calculate viewWidth and viewHeight
-			LookingGlassAddon.qs[i]["viewWidth"] = int(LookingGlassAddon.qs[i]["width"] / LookingGlassAddon.qs[i]["columns"])
-			LookingGlassAddon.qs[i]["viewHeight"] = int(LookingGlassAddon.qs[i]["height"] / LookingGlassAddon.qs[i]["rows"])
+			LookingGlassAddon.qs[i]["viewWidth"] = int(round(LookingGlassAddon.qs[i]["width"] / LookingGlassAddon.qs[i]["columns"]))
+			LookingGlassAddon.qs[i]["viewHeight"] = int(round(LookingGlassAddon.qs[i]["height"] / LookingGlassAddon.qs[i]["rows"]))
