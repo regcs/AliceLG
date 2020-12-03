@@ -18,6 +18,7 @@
 
 import bpy
 import time
+import os
 import numpy as np
 from math import *
 from mathutils import *
@@ -361,6 +362,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					self.camera_original_sensor_fit = self.camera_active.data.sensor_fit
 
 
+
 				# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
 				# +++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -634,7 +636,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# if this was the last view
 					elif self.rendering_view == (self.rendering_totalViews - 1):
 
-						# if this was not the last frame
+						# but if this was not the last frame
 						if self.rendering_frame < self.render_setting_scene.frame_end:
 
 							# restore original camera settings of this frame
