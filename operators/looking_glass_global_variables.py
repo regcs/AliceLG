@@ -35,6 +35,8 @@ class LookingGlassAddon:
 
 	# The Window object representing the Blender main window and the Space object, which are used for the lightfield rendering
 	lightfieldWindow = None
+	lightfieldRegion = None
+	lightfieldArea = None
 	lightfieldSpace = None
 
 	# The active Window and Viewport the user is currently working in
