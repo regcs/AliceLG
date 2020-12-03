@@ -1214,7 +1214,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.lightFieldShader.uniform_int("debug", context.scene.settings.debug_view)
 
 			# draw the quilt texture
-			self.lightFieldShaderBatch.draw(self.lightFieldShader)
+			self.lightFieldShaderBatch.draw(self.lightFieldShader) 
 
 			# if the quilt was updated
 			if self.updateQuilt == True:
