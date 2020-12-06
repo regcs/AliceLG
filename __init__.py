@@ -658,6 +658,12 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										default = False,
 										)
 
+	viewport_show_cursor: bpy.props.BoolProperty(
+										name="Lightfield Cursor",
+										description="If enabled, the a holographic mouse cursor is rendered in the lightfield window",
+										default = True,
+										)
+
 
 
 
@@ -1099,6 +1105,9 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 				# Show the button for refresh
 				row = column.row()
 				row.operator("lookingglass.refresh_lightfield", text="Refresh Lightfield", icon='IMAGE_BACKGROUND')
+
+			row = column.row()
+			row.prop(context.scene.settings, "viewport_show_cursor")
 
 		# else, if a single quilt shall be displayed
 		elif context.scene.settings.renderMode == '1':

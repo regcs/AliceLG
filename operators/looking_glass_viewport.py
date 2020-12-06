@@ -24,7 +24,7 @@ from math import *
 from mathutils import *
 from gpu_extras.batch import batch_for_shader
 from gpu_extras.presets import draw_texture_2d, draw_circle_2d
-from bpy_extras.view3d_utils import location_3d_to_region_2d
+from bpy_extras.view3d_utils import location_3d_to_region_2d, region_2d_to_origin_3d, region_2d_to_vector_3d
 from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
 
@@ -45,16 +45,16 @@ if platform.system() == "Darwin":
 		# The following lines are necessary to use PyObjC to load AppKit
 		# from: https://github.com/ronaldoussoren/pyobjc/issues/309
 		# User: MaxBelanger
-		#       This means pyobjc always dlopens (via NSBundle) based on the canonical and absolute path of the framework, which works with the cache.
+		#	   This means pyobjc always dlopens (via NSBundle) based on the canonical and absolute path of the framework, which works with the cache.
 		import objc, objc._dyld
 
 		def __path_for_framework_safe(path: str) -> str:
-		    return path
+			return path
 
 		objc._dyld.pathForFramework = __path_for_framework_safe
 		objc.pathForFramework = __path_for_framework_safe
 
-    	# import AppKit
+		# import AppKit
 		import Cocoa
 		from AppKit import NSScreen, NSWorkspace, NSWindow, NSApp, NSApplication, NSWindowStyleMaskBorderless, NSApplicationPresentationHideDock, NSApplicationPresentationHideMenuBar
 		from Quartz import kCGWindowListOptionOnScreenOnly, kCGNullWindowID, CGWindowListCopyWindowInfo, CGWindowListCreate, kCGWindowNumber
@@ -75,8 +75,8 @@ if platform.system() == "Darwin":
 #
 
 else:
-    print(" # Unsupported operating system.")
-    raise OSError
+	print(" # Unsupported operating system.")
+	raise OSError
 
 
 
@@ -105,9 +105,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	depsgraph_update_time = 0.000
 	viewportViewMatrix = None
 
+	# LIGHTFIELD CURSOR
+	cursor = Vector((0, 0, 0))
+	normal = Vector((0, 0, 1))
+
 	# HANDLER IDENTIFIERS
 	_handle_viewDrawing = []
 	_handle_lightfieldDrawing = None
+	_handle_CusorDrawing = None
 	_handle_trackViewportUpdates = None
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
@@ -135,7 +140,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-    # poll method
+	# poll method
 	@classmethod
 	def poll(self, context):
 
@@ -187,6 +192,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# remove the draw handler for the lightfield window
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
 
+		print("Removing cursor draw handlers: ")
+		# remove the draw handler for the lightfield window
+		if self._handle_CusorDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_CusorDrawing, 'WINDOW')
+
 		print("Free quilt and view offscreens.")
 
 		# iterate through all presets
@@ -237,6 +246,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# create a GPUOffscreen for the quilt / lightfield
 			LookingGlassAddon.qs[i]["quiltOffscreen"] = gpu.types.GPUOffScreen(LookingGlassAddon.qs[i]["width"], LookingGlassAddon.qs[i]["height"])
+
+			# create a GPUOffscreen for the 3D cursor
+			LookingGlassAddon.qs[i]["cursorOffscreen"] = gpu.types.GPUOffScreen(LookingGlassAddon.qs[i]["width"], LookingGlassAddon.qs[i]["height"])
 
 			# create a list for the GPUOffscreens of the different views
 			for view in range(0, LookingGlassAddon.qs[i]["totalViews"], 1):
@@ -389,6 +401,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# draw callback to draw the lightfield in the window
 		self._handle_lightfieldDrawing = bpy.types.SpaceView3D.draw_handler_add(self.drawLightfield, (context,), 'WINDOW', 'POST_PIXEL')
 
+		# draw callback for the mouse cursor in the lightfield viewport
+		#self._handle_CusorDrawing = bpy.types.SpaceView3D.draw_handler_add(self.drawCursor, (context,), 'WINDOW', 'POST_PIXEL')
 
 
 
@@ -461,7 +475,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-		# CHandle the mouse cursor visibility
+		# Handle the mouse cursor visibility
 		################################################################
 
 		# if the mouse cursor is not inside the window
@@ -513,27 +527,36 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# Control events in the viewport
 		################################################################
 		# if left mouse click was released
-		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
+		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE') or event.type == 'MOUSEMOVE':
+
+			# save current mouse position
+			self.mouse_x = event.mouse_x
+			self.mouse_y = event.mouse_y
+
+			# currently selected camera
+			camera = self.settings.lookingglassCamera
 
 			# if the lightfield viewport is attched to a camera
-			if self.settings.lookingglassCamera != None:
+			if camera != None:
 
-				# currently selected camera
-				camera = self.settings.lookingglassCamera
+				# REMAP MOUSE POSITIONS
+				# +++++++++++++++++++++++++++++++++++++++++++++
+				# NOTE: - this is required because the "CAMERA" view mode
+				#		  does not fill the complete window area
 
 				# get modelview matrix
 				view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
 
 				# obtain the viewframe of the camera in 3D coordinates
-				view_frame = camera.data.view_frame(scene=bpy.context.scene)
+				view_frame = camera.data.view_frame(scene=context.scene)
 
 				# transform the coordinates from camera to world coordinates
 				view_frame = [view_matrix @ p for p in view_frame]
 
-				# transform world coordinates of each edge to window coordinates
+				# transform world coordinates of each edge to screen coordinates in pixels
 				view_frame_2D = [location_3d_to_region_2d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, p) for p in view_frame]
 
-				# calculate dimensions
+				# calculate dimensions in pixels
 				view_frame_width = abs(view_frame_2D[2][0] - view_frame_2D[0][0])
 				view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
 
@@ -542,20 +565,57 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# print("Mouse coordinates:", event.mouse_x, event.mouse_y)
 				# print("")
 
-				# remap coordinates to the camera view frame
+				# remap mouse coordinates in complete window to corresponding coordinates in the camera view frame
 				mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
 				mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
+				#print("VIEW FRAME: ", (view_frame_2D[2][0], view_frame_2D[2][1]))
+
 
 				# print("Mouse coordinates (re-mapped):", mouse_x, mouse_y)
 
-				# select the object
-				bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(mouse_x, mouse_y))
+				# CALCULATE CUSTOM CURSOR POSITION AND SIZE
+				# +++++++++++++++++++++++++++++++++++++++++++++
+				# a custom cursor is drawn in the Looking Glass viewPortion
+				# because the standard cursor was too small
+				view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
+				ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
+				#print("ray_cast_origin: ", ray_cast_origin)
+
+				# calculate the ray end point (10000 is just an arbitrary length)
+				ray_end = ray_start + (view_direction * 10000)
+
+				# cast the ray into the scene
+				result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
+
+				# if no object was under the mouse cursor
+				if self.cursor.length == 0:
+
+					# set cursor in onto the focal plane
+					self.cursor = ray_start + (view_direction * self.settings.focalPlane)
+
+					# set normal in view direction
+					self.normal = view_direction
+
+					print("NO HIT: ", view_direction.length)
+
+
+				# force area redraw to draw the cursor
+				if context.area:
+					context.area.tag_redraw()
+
+				# if the left mouse button was clicked
+				if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
+
+					# select the object
+					bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(mouse_x, mouse_y))
 
 				return {'RUNNING_MODAL'}
 
 
 		# if the live view mode is inactive
 		elif int(self.settings.liveMode) != 0:
+
+			#print("SKIPPED EVENT: ", event.type, event.value)
 
 			# we prevent any event handling by Blender in the lightfield viewport
 			return {'RUNNING_MODAL'}
@@ -584,7 +644,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# invoke an update of the Looking Glass viewport
 					self.modal_redraw = True
-					#self.updateQuilt = True
 
 					# remember time of last depsgraph update
 					self.depsgraph_update_time = time.time()
@@ -607,7 +666,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# invoke an update of the Looking Glass viewport
 			self.modal_redraw = True
-			#self.updateQuilt = True
 
 			# remember time of last depsgraph update
 			self.depsgraph_update_time = time.time()
@@ -1100,7 +1158,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						scale_y = 1, # for final renders: bpy.context.scene.render.pixel_aspect_y,
 					)
 
-			# otherwise we take the lightfield viewport matrices
+			# otherwise we take the (lightfield) viewport matrices
 			else:
 
 				# get viewports modelview matrix
@@ -1127,6 +1185,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix,
 				projection_matrix)
 
+
 			#print("draw_view3d (view: ", view, "): ", time.time() - start_test)
 			# print("copyViewToQuilt end: ", time.time() - self.start_multi_view)
 
@@ -1151,14 +1210,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# if this call belongs to the lightfield window
 		if context.window == LookingGlassAddon.lightfieldWindow and context.area == LookingGlassAddon.lightfieldArea:
 
-			#print("drawQuilt ", self.updateQuilt)
-
 			# if the live view mode is active
 			if int(self.settings.renderMode) == 0:
 
 				start_blit = time.time()
+
 				# if the quilt must be updated
-				if self.updateQuilt == True:
+				if self.updateQuilt == True or self.settings.viewport_show_cursor == True:
 
 					# bind the offscreen used for the quilt
 					with LookingGlassAddon.qs[self.preset]["quiltOffscreen"].bind():
@@ -1176,15 +1234,21 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 								gpu.matrix.load_projection_matrix(Matrix.Identity(4))
 
 								# calculate the position of the view
-								x = (view % LookingGlassAddon.qs[self.preset]["columns"]) * LookingGlassAddon.qs[self.preset]["viewWidth"]
-								y = int(view / LookingGlassAddon.qs[self.preset]["columns"]) * LookingGlassAddon.qs[self.preset]["viewHeight"]
+								x = 2 * (view % LookingGlassAddon.qs[self.preset]["columns"]) * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"] - 1
+								y = 2 * int(view / LookingGlassAddon.qs[self.preset]["columns"]) * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"] - 1
 
 								# Copy the view texture into the quilt texture,
 								# but transform the position and dimensions to
 								# normalized device coordinates before that
-								draw_texture_2d(LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].color_texture, (2 * x / LookingGlassAddon.qs[self.preset]["width"] - 1, 2 * y / LookingGlassAddon.qs[self.preset]["height"] - 1), 2 * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"], 2 * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"])
+								draw_texture_2d(LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].color_texture, (x, y), 2 * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"], 2 * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"])
 
-								# print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
+								# draw the lightfield mouse cursor if desired
+								if self.settings.viewport_show_cursor == True:
+									self.drawCursor3D(context, view, x, y, 0.025, 8)
+
+							#print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
+
+						#print("Required time: ", time.time() - start_blit)
 
 			# if the quilt view mode is active AND an image is loaded
 			elif int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage != None:
@@ -1230,6 +1294,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# bind the quilt texture
 			bgl.glActiveTexture(bgl.GL_TEXTURE0)
+			bgl.glEnable(bgl.GL_TEXTURE_2D)
 			bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.qs[self.preset]["quiltOffscreen"].color_texture)
 
 			# bind the lightfield shader for drawing operations
@@ -1241,6 +1306,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# draw the quilt texture
 			self.lightFieldShaderBatch.draw(self.lightFieldShader)
 
+
+
 			# if the quilt was updated
 			if self.updateQuilt == True:
 
@@ -1248,6 +1315,107 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				self.updateQuilt = False
 
 
+
+
+	# TODO: In this method is room for speed optimization
+	# draw the mouse cursor
+	def drawCursor3D(self, context, view, xoffset, yoffset, radius, segments):
+
+		# if this call belongs to the lightfield window
+		if context.window == LookingGlassAddon.lightfieldWindow and context.area == LookingGlassAddon.lightfieldArea:
+			start_timer = time.time()
+			# current camera object
+			camera = context.scene.settings.lookingglassCamera
+
+			# Calculate view & projection matrix
+			# ++++++++++++++++++++++++++++++++++++++
+			# if a camera is selected
+			if camera != None:
+
+				# get camera's modelview matrix
+				view_matrix = camera.matrix_world.copy()
+
+				# correct for the camera scaling
+				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
+				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
+				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
+
+				# calculate the inverted view matrix because this is what the draw_view_3D function requires
+				view_matrix = view_matrix.inverted()
+
+				# get the camera's projection matrix
+				projection_matrix = camera.calc_matrix_camera(
+						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+						x = LookingGlassAddon.qs[self.preset]["viewWidth"],# for final renders: x = bpy.context.scene.render.resolution_x,
+						y = LookingGlassAddon.qs[self.preset]["viewHeight"],# for final renders: y = bpy.context.scene.render.resolution_y,
+						scale_x = ((LookingGlassAddon.lightfieldWindow.width / LookingGlassAddon.lightfieldWindow.height) / (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"])), # for final renders: bpy.context.scene.render.pixel_aspect_x,
+						scale_y = 1, # for final renders: bpy.context.scene.render.pixel_aspect_y,
+					)
+
+			# otherwise we take the (lightfield) viewport matrices
+			else:
+
+				# get viewports modelview matrix
+				view_matrix = LookingGlassAddon.lightfieldSpace.region_3d.view_matrix.copy()
+
+				# get the viewports projection matrix
+				projection_matrix = LookingGlassAddon.lightfieldSpace.region_3d.window_matrix.copy()
+
+			# calculate the offset-projection of the current view
+			view_matrix, projection_matrix = self.setupVirtualCameraForView(camera, view, view_matrix, projection_matrix)
+
+
+
+			# Cursor geometry for the view
+			# ++++++++++++++++++++++++++++++++++++++
+			# location vector
+			rot_axis = self.normal.cross(Vector((0, 0, 1)))
+			rot_angle = acos(self.normal.dot(Vector((0, 0, 1))))
+
+			# create rotation matrix
+			rot_matrix = Matrix.Rotation(rot_angle, 4, rot_axis)
+
+			# calculate the coordinated of a circle with given radius and segments
+			cursor_geometry_coords = []
+			for n in range(segments):
+
+				# coordinates
+				p1 = cos((1.0 / (segments - 1)) * (2 * pi * n)) * radius
+				p2 = sin((1.0 / (segments - 1)) * (2 * pi * n)) * radius
+
+				# location Vector, rotated to lay on the current face
+				point = rot_matrix @ Vector((p1, p2, 0))
+
+				# translate to the position of the hit point
+				point = Matrix.Translation(self.cursor) @ point
+
+				# project point into camera space taking camera shift etc. into account
+				prj = projection_matrix @ view_matrix @ Vector((point[0], point[1], point[2], 1.0))
+
+				# if point is in front of camera
+				if prj.w > 0.0:
+
+					width_half = (2 * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"]) / 2.0
+					height_half = (2 * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"]) / 2.0
+
+					location = Vector((
+						width_half + width_half * (prj.x / prj.w),
+						height_half + height_half * (prj.y / prj.w),
+					))
+
+				# add point to the list and add the currect x- & y-offset for the current view
+				cursor_geometry_coords.append((xoffset + location[0], yoffset + location[1]))
+
+
+			# Draw the custom 3D cursor
+			# ++++++++++++++++++++++++++++++++++++++
+			shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
+			batch = batch_for_shader(shader, 'TRI_FAN', {"pos": cursor_geometry_coords})
+			shader.bind()
+			shader.uniform_float("color", (1, 1, 0.1, 1.0))
+			batch.draw(shader)
+
+			print("Cursor time: ", time.time() - start_timer)
 
 
 
@@ -1287,7 +1455,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 
 
-    # poll method
+	# poll method
 	@classmethod
 	def poll(self, context):
 
@@ -1419,7 +1587,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 			camera = self.settings.lookingglassCamera
 
 			# get modelview matrix
-			view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
+			view_matrix = camera.matrix_world
 
 			# we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
 			# based on the intercept theorems
