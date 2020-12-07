@@ -461,7 +461,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 						# make window invisible
 						#NSApp._.windows[-1].setIsVisible_(False)
-		
+
 						# make the window a fullscreen window
 						# NSApp._.windows[-1].toggleFullScreen_(0)
 						break
@@ -618,18 +618,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_frame_width = abs(view_frame_2D[2][0] - view_frame_2D[0][0])
 				view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
 
-				# print("Region:", LookingGlassAddon.lightfieldRegion.width, LookingGlassAddon.lightfieldRegion.height)
-				# print("Camera frame:", view_frame_width, view_frame_height)
-				# print("Mouse coordinates:", event.mouse_x, event.mouse_y)
-				# print("")
-
 				# remap mouse coordinates in complete window to corresponding coordinates in the camera view frame
 				mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
 				mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
-				#print("VIEW FRAME: ", (view_frame_2D[2][0], view_frame_2D[2][1]))
 
-
-				# print("Mouse coordinates (re-mapped):", mouse_x, mouse_y)
 
 				# CALCULATE CUSTOM CURSOR POSITION AND SIZE
 				# +++++++++++++++++++++++++++++++++++++++++++++
@@ -653,8 +645,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# set normal in view direction
 					self.normal = view_direction
-
-					print("NO HIT: ", view_direction.length)
 
 
 				# force area redraw to draw the cursor
@@ -1427,11 +1417,11 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# Cursor geometry for the view
 			# ++++++++++++++++++++++++++++++++++++++
 			# location vector
-			rot_axis = self.normal.cross(Vector((0, 0, 1)))
-			rot_angle = acos(self.normal.dot(Vector((0, 0, 1))))
+			rot_axis = Vector((0, 0, 1)).cross(self.normal)
+			rot_angle = acos(Vector((0, 0, 1)).dot(self.normal))
 
 			# create rotation matrix
-			rot_matrix = Matrix.Rotation(rot_angle, 4, rot_axis)
+			rot_matrix = Matrix.Rotation(rot_angle, 4, rot_axis.normalized())
 
 			# calculate the coordinated of a circle with given radius and segments
 			cursor_geometry_coords = []
@@ -1473,7 +1463,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			shader.uniform_float("color", (1, 1, 0.1, 1.0))
 			batch.draw(shader)
 
-			print("Cursor time: ", time.time() - start_timer)
+			#print("Cursor time: ", time.time() - start_timer)
 
 
 
