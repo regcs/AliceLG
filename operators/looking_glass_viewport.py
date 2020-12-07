@@ -62,15 +62,42 @@ if platform.system() == "Darwin":
 		pass
 
 # # if on 32-bit Windows
-# elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
-#
-#
-#
-#
-# # if on 64-bit Windows
-# elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
-#
-#
+# elif platform.system() == "Windows":
+
+	# # NOTE: Try to use the user32 dll
+	# try:
+	#
+	# 	# import ctypes module
+	# 	import ctypes
+	# 	from ctypes import wintypes
+	#
+	# 	# load the user32.dll system dll
+	# 	user32 = ctypes.windll.user32
+	#
+	# 	# prepare callback function types for window enumeration
+	# 	WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+	#
+	# 	# load / define functions and argument types to get window information
+	# 	user32.EnumWindows.argtypes = [WNDENUMPROC, wintypes.LPARAM]
+	# 	user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
+	# 	user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
+	#
+	# 	# define callback
+	# 	EnumWindowsList = []
+	# 	def _callback(hwnd, lParam):
+	# 		length = user32.GetWindowTextLengthW(hwnd) + 1
+	# 		buffer = ctypes.create_unicode_buffer(length)
+	# 		user32.GetWindowTextW(hwnd, buffer, length)
+	#
+	# 		# only list Blender windows
+	# 		if buffer.value == 'Blender':
+	# 			EnumWindowsList.append(hwnd)
+	# 			print("Buff: ", hwnd, buffer.value)
+	# 			return True
+	#
+	# except:
+	# 	print(" # Could not load User32.dll")
+	# 	pass
 
 else:
 	print(" # Unsupported operating system.")
@@ -417,32 +444,65 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# MOVE THE WINDOW TO THE CORRECT SCREEN & TOGGLE FULLSCREEN
 		################################################################
 
-		# TODO: Add a class function that handles this task for the different
-		# operating systems automatically
-		try:
+		# if on macOS
+		if platform.system() == "Darwin":
 
-			# find the NSScreen representing the Looking Glass
-			for screen in NSScreen.screens():
+			# TODO: Add a class function that handles this task for the different
+			# operating systems automatically
+			try:
 
-				if screen.localizedName() == LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]['name']:
+				# find the NSScreen representing the Looking Glass
+				for screen in NSScreen.screens():
 
-					# move the window to the Looking Glass Screen and resize it
-					NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
+					if screen.localizedName() == LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]['name']:
 
-					# make window invisible
-					#NSApp._.windows[-1].setIsVisible_(False)
+						# move the window to the Looking Glass Screen and resize it
+						NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
 
-					# make the window a fullscreen window
-					# NSApp._.windows[-1].toggleFullScreen_(0)
-					break
+						# make window invisible
+						#NSApp._.windows[-1].setIsVisible_(False)
+		
+						# make the window a fullscreen window
+						# NSApp._.windows[-1].toggleFullScreen_(0)
+						break
 
 
-			# make the window fullscreen
-			bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+				# make the window fullscreen
+				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
 
-		except:
-			pass
+			except:
+				pass
 
+		# # if on Windows
+		# elif platform.system() == "Windows":
+
+			# # TODO: Add a class function that handles this task for the different
+			# # operating systems automatically
+			# try:
+			#
+			# 	# call EnumWindows function with the defined _callback function
+			# 	# to find all Blender windows
+			# 	if not user32.EnumWindows(WNDENUMPROC(_callback), 42):
+			# 		raise ctypes.WinError()
+			# 	# get handle for Notepad window
+			# 	# non-zero value for handle should mean it found a window that matches
+			# 	handle = user32.FindWindowW(u'Notepad', None)
+			# 	# or
+			# 	handle = user32.FindWindowW(None, u'Blender')
+			#
+			# 	# meaning of 2nd parameter defined here
+			# 	# https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548(v=vs.85).aspx
+			# 	# minimize window using handle
+			# 	user32.ShowWindow(handle, 6)
+			# 	# maximize window using handle
+			# 	user32.ShowWindow(handle, 9)
+			#
+			# 	# move window using handle
+			# 	# MoveWindow(handle, x, y, height, width, repaint(bool))
+			# 	user32.MoveWindow(handle, 100, 100, 400, 400, True)
+			#
+			# except:
+			# 	pass
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}

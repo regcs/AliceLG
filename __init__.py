@@ -268,6 +268,28 @@ class LookingGlassAddonFunctions:
 
 
 
+	# Update the Boolean property that creates the hologram rendering window
+	def toggleFullscrenMode(self, context):
+
+		# if the bool property was set to True
+		if self['toggleLightfieldWindowFullscreen'] == True:
+
+			# if the lightfield window exists
+			if LookingGlassAddon.lightfieldWindow != None:
+
+				# make it fullscreen
+				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+
+		else:
+
+			# if a lightfield window still exists
+			if LookingGlassAddon.lightfieldWindow != None:
+
+				# toggle fullscreen mode off
+				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+
+
+
 	# update function for the viewport mode
 	def update_track_viewport(self, context):
 
@@ -540,6 +562,14 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											)
 
 	# a boolean to toogle the render window on or off
+	toggleLightfieldWindowFullscreen: bpy.props.BoolProperty(
+											name="Toggle Fullscreen Mode",
+											description = "Press this button, if the lightfield window was moved to the Looking Glass to make it fullscreen.",
+											default = False,
+											update=LookingGlassAddonFunctions.toggleFullscrenMode
+											)
+
+	# the index of the lightfield window among the Blender windows
 	lightfieldWindowIndex: bpy.props.IntProperty(
 											name="Lightfield Window",
 											default = -1,
@@ -670,8 +700,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# PANEL: OVERLAY & SHADER SETTINGS
 	viewportMode: bpy.props.EnumProperty(
 										items = [
-													('BLENDER', 'Blender ', 'Use the settings of a Blender viewport'),
-													('CUSTOM', 'Custom', 'Specify the settings for the Looking Glass viewport manually')
+													('BLENDER', 'Blender ', 'Use the settings of a Blender viewport', 'BLENDER', 0),
+													('CUSTOM', 'Custom', 'Specify the settings for the Looking Glass viewport manually', 'OVERLAY', 1)
 												],
 										default='BLENDER',
 										name="Viewport Mode",
@@ -934,7 +964,8 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		column_2 = row_1.column(align=True)
 		row_1b = column_2.row(align = True)
 		row_1b.prop(context.scene.settings, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
-		row_1b.prop(context.scene.settings, "debug_view", expand=True, text="", icon='PLUGIN')
+		row_1b.prop(context.scene.settings, "toggleLightfieldWindowFullscreen", text="", toggle=True, icon='FULLSCREEN_ENTER')
+		row_1b.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 
 		# Resolution selection of the quilt views
 		row_2 = column.row()
