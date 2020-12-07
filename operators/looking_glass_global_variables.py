@@ -70,7 +70,6 @@ class LookingGlassAddon:
 				"columns": 4,
 				"rows": 8,
 				"totalViews": 32,
-				"cursorOffscreen": None,
 				"quiltOffscreen": None,
 				"viewOffscreens": []
 				})
@@ -82,7 +81,6 @@ class LookingGlassAddon:
 				"columns": 5,
 				"rows": 9,
 				"totalViews": 45,
-				"cursorOffscreen": None,
 				"quiltOffscreen": None,
 				"viewOffscreens": []
 				})
@@ -94,7 +92,6 @@ class LookingGlassAddon:
 				"columns": 5,
 				"rows": 9,
 				"totalViews": 45,
-				"cursorOffscreen": None,
 				"quiltOffscreen": None,
 				"viewOffscreens": []
 				})
@@ -106,7 +103,6 @@ class LookingGlassAddon:
 				"columns": 4,
 				"rows": 8,
 				"totalViews": 32,
-				"cursorOffscreen": None,
 				"quiltOffscreen": None,
 				"viewOffscreens": []
 				})

@@ -137,7 +137,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# HANDLER IDENTIFIERS
 	_handle_viewDrawing = []
 	_handle_lightfieldDrawing = None
-	_handle_CusorDrawing = None
 	_handle_trackViewportUpdates = None
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
@@ -217,10 +216,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# remove the draw handler for the lightfield window
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
 
-		print("Removing cursor draw handlers: ")
-		# remove the draw handler for the lightfield window
-		if self._handle_CusorDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_CusorDrawing, 'WINDOW')
-
 		print("Free quilt and view offscreens.")
 
 		# iterate through all presets
@@ -237,6 +232,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# clear the list
 			LookingGlassAddon.qs[i]["viewOffscreens"].clear()
+
+		# set the "toggle fullscreen button" to False
+		self.settings.toggleLightfieldWindowFullscreen = False
 
 		# set status variables to default state
 		LookingGlassAddon.lightfieldWindow = None
@@ -271,9 +269,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# create a GPUOffscreen for the quilt / lightfield
 			LookingGlassAddon.qs[i]["quiltOffscreen"] = gpu.types.GPUOffScreen(LookingGlassAddon.qs[i]["width"], LookingGlassAddon.qs[i]["height"])
-
-			# create a GPUOffscreen for the 3D cursor
-			LookingGlassAddon.qs[i]["cursorOffscreen"] = gpu.types.GPUOffScreen(LookingGlassAddon.qs[i]["width"], LookingGlassAddon.qs[i]["height"])
 
 			# create a list for the GPUOffscreens of the different views
 			for view in range(0, LookingGlassAddon.qs[i]["totalViews"], 1):
@@ -426,9 +421,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# draw callback to draw the lightfield in the window
 		self._handle_lightfieldDrawing = bpy.types.SpaceView3D.draw_handler_add(self.drawLightfield, (context,), 'WINDOW', 'POST_PIXEL')
 
-		# draw callback for the mouse cursor in the lightfield viewport
-		#self._handle_CusorDrawing = bpy.types.SpaceView3D.draw_handler_add(self.drawCursor, (context,), 'WINDOW', 'POST_PIXEL')
-
 
 
 		print("Invoked modal operator: ", time.time() - start)
@@ -469,6 +461,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# make the window fullscreen
 				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+
+				# set the "toogle fullscreen button" to True
+				self.settings.toggleLightfieldWindowFullscreen = True
 
 			except:
 				pass
@@ -1090,7 +1085,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						try:
 							setattr(self.override['space_data'].shading, attr, getattr(LookingGlassAddon.BlenderViewport.shading, attr))
 						except Exception as e:
-							print(" # ", e)
+							#print(" # ", e)
 							pass
 
 				attributeList = dir(self.override['space_data'].overlay)
@@ -1102,7 +1097,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						try:
 							setattr(self.override['space_data'].overlay, attr, getattr(LookingGlassAddon.BlenderViewport.overlay, attr))
 						except Exception as e:
-							print(" # ", e)
+							#print(" # ", e)
 							pass
 
 			else:
@@ -1460,7 +1455,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 			batch = batch_for_shader(shader, 'TRI_FAN', {"pos": cursor_geometry_coords})
 			shader.bind()
-			shader.uniform_float("color", (1, 1, 0.1, 1.0))
+			shader.uniform_float("color", (1, 0.627451, 0.156863, 1))
 			batch.draw(shader)
 
 			#print("Cursor time: ", time.time() - start_timer)

@@ -449,7 +449,7 @@ class LookingGlassAddonFunctions:
 				# set view mode to "CAMERA VIEW"
 				LookingGlassAddon.lightfieldSpace.region_3d.view_perspective = 'CAMERA'
 
-				print("SPACE SETTINGS UPDATED: ", LookingGlassAddon.lightfieldSpace, LookingGlassAddon.lightfieldSpace.camera)
+				#print("SPACE SETTINGS UPDATED: ", LookingGlassAddon.lightfieldSpace, LookingGlassAddon.lightfieldSpace.camera)
 
 		else:
 
@@ -963,13 +963,13 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# Lightfield window & debug button
 		column_2 = row_1.column(align=True)
 		row_1b = column_2.row(align = True)
+		if LookingGlassAddon.lightfieldWindow != None: row_1b.prop(context.scene.settings, "toggleLightfieldWindowFullscreen", text="", toggle=True, icon='FULLSCREEN_ENTER')
 		row_1b.prop(context.scene.settings, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
-		row_1b.prop(context.scene.settings, "toggleLightfieldWindowFullscreen", text="", toggle=True, icon='FULLSCREEN_ENTER')
-		row_1b.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 
 		# Resolution selection of the quilt views
 		row_2 = column.row()
 		row_2.prop(context.scene.settings, "viewResolution", text="")
+		row_2.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 		column.separator()
 
 		# Button to start rendering a single quilt using the current render settings
