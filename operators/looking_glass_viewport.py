@@ -23,10 +23,8 @@ import time
 from math import *
 from mathutils import *
 from gpu_extras.batch import batch_for_shader
-from gpu_extras.presets import draw_texture_2d, draw_circle_2d
+from gpu_extras.presets import draw_texture_2d
 from bpy_extras.view3d_utils import location_3d_to_region_2d, region_2d_to_origin_3d, region_2d_to_vector_3d
-from bpy.types import AddonPreferences, PropertyGroup
-from bpy.props import FloatProperty, PointerProperty
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *

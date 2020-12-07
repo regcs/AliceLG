@@ -22,8 +22,6 @@ import os
 import numpy as np
 from math import *
 from mathutils import *
-from bpy.types import AddonPreferences, PropertyGroup
-from bpy.props import FloatProperty, PointerProperty
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *
