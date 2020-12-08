@@ -31,7 +31,7 @@ If you like this add-on, I would be grateful if you would support its developmen
    - Select the zip file and click "Install"
    - Enable the add-on by activating the check box next on the left
 
-## Usage
+## How to Use
 
 ### Add-on Controls
 
