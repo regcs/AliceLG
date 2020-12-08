@@ -2,7 +2,7 @@
 
 **Version:** 1.0 (last updated: December 08th, 2020) | **Author:** Christian Stolze (mail: ...)
 
-Let Alice take your Blender artworks through the Looking Glass! This short guide is to get you started.
+### Let Alice take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## General Information
 This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool privately in my freetime because I love Blender and the amazing new display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
