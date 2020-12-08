@@ -78,7 +78,9 @@ from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
 from bpy.app.handlers import persistent
 
-
+# check, if a supported version of Blender is executed
+if bpy.app.version < (2, 80, 0):
+	raise Exception()
 
 
 

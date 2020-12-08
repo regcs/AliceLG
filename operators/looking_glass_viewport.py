@@ -66,11 +66,11 @@ elif platform.system() == "Windows":
 
 	# NOTE: Try to use the user32 dll
 	try:
-	
+
 		# import ctypes module
 		import ctypes
 		from ctypes import wintypes
-	
+
 		# load the user32.dll system dll
 		user32 = ctypes.windll.user32
 	#
@@ -94,7 +94,7 @@ elif platform.system() == "Windows":
 	# 			EnumWindowsList.append(hwnd)
 	# 			print("Buff: ", hwnd, buffer.value)
 	# 			return True
-	
+
 	except:
 		print(" # Could not load User32.dll")
 		pass
@@ -630,7 +630,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				ray_end = ray_start + (view_direction * 10000)
 
 				# cast the ray into the scene
-				result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
+				# NOTE: The first parameter ray_cast expects was changed in Blender 2.91
+				if bpy.app.version < (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
+				if bpy.app.version >= (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
 
 				# if no object was under the mouse cursor
 				if self.cursor.length == 0:
@@ -832,12 +834,12 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 # 		 		texCoords = (vertPos_data.xy + 1.0) * 0.5;
 # 		 	}
 # 		'''
-# 		
+#
 # 		# Fragment shader
 # 		LookingGlassAddon.lightfieldFragmentShaderSource = '''
 # 		 	in vec2 texCoords;
 # 		 	out vec4 fragColor;
-# 		
+#
 # 		 	// Calibration values
 # 		 	uniform float pitch;
 # 		 	uniform float tilt;
@@ -847,7 +849,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 # 		 	uniform float displayAspect;
 # 		 	uniform int ri;
 # 		 	uniform int bi;
-# 		
+#
 # 		 	// Quilt settings
 # 		 	uniform int tile_x;
 # 		 	uniform int tile_y;
@@ -859,7 +861,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 # 		 	uniform float quiltAspect;
 # 		 	uniform int overscan;
 # 		 	uniform int quiltInvert;
-# 		
+#
 # 		 	// NOTE: added by reg.cs
 # 		 	// make tile and viewPortion as a vector
 # 		 	// because I didn't new how to pass a vec uniform
@@ -868,44 +870,44 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 # 		 	// - viewPortion = (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs_row / LookingGlassAddon.qs[self.preset]["height"])
 # 		 	vec3 tile = vec3(tile_x, tile_y, tile_z);
 # 		 	vec2 viewPortion = vec2(viewPortion_x, viewPortion_y);
-# 		
-# 		
+#
+#
 # 		 	uniform int debug;
 # 		 	uniform sampler2D screenTex;
-# 		
-# 		
+#
+#
 # 		 	vec2 texArr(vec3 uvz)
 # 		 	{
 # 		 		// NOTE: their are 1/qs_totalViews possible values of uvz.z
 # 		 		//		verification: float z = floor(0.02222222 * view * tile.z); => change view to show the corresponding view from the quilt
-# 		
+#
 # 		 		// NOTE: For some reason, I don't understand yet
 # 		 		//	   I had to change uvz * tile.z to (1 + uvz.z) * tile.z)
 # 		 		//	   in order to get the correct quilt display
 # 		 		//
 # 		 		//	 # TODO => there must be something wrong in my code elsewhere that causes this weird behavior
-# 		
+#
 # 		 		// decide which section to take from based on the z.
 # 		 		float z = floor((1 + uvz.z) * tile.z);
 # 		 		float x = (mod(z, tile.x) + uvz.x) / tile.x;
 # 		 		float y = (floor(z / tile.x) + uvz.y) / tile.y;
 # 		 		return vec2(x, y) * viewPortion.xy;
 # 		 	}
-# 		
+#
 # 		 	// recreate CG clip function (clear pixel if any component is negative)
 # 		 	void clip(vec3 toclip)
 # 		 	{
 # 		 		if (any(lessThan(toclip, vec3(0,0,0)))) discard;
 # 		 	}
-# 		
+#
 # 		 	void main()
 # 		 	{
-# 		
+#
 # 		 		if (debug == 1)
 # 		 		{
-# 		
+#
 # 		 			fragColor = texture(screenTex, texCoords.xy);
-# 		
+#
 # 		 		}
 # 		 		else {
 # 		 			float invert = 1.0;
