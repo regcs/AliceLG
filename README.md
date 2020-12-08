@@ -55,7 +55,7 @@ The lightfield window is the place where the hologram is rendered. It can be ope
 
 ### Rendering
 
-You can render complete quilt images and animation frames. To start the rendering process, you basically follow the known Blender workflow:
+You can render complete quilt images and animation frames. To start the rendering process, you basically follow the usual Blender workflow:
 
 - set up a camera and a camera view you would like to render
 - adjust the render settings (and the animation settings)
