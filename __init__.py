@@ -18,12 +18,12 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-	"name": "Looking Glass Addon",
+	"name": "Alice/LG",
 	"author": "Christian Stolze",
 	"version": (1, 0, 0),
 	"blender": (2, 90, 0),
 	"location": "3D View > Looking Glass Tab",
-	"description": "Enables the utilization of the Looking Glass holographic displays, including a fully functional holographic Blender viewport as well as options to render quilts from within Blender.",
+	"description": "Alice/LG takes your Blender artwork thorugh the Looking Glass (holograpic display). It includes a lightfield viewport as well as options to render quilts directly from within Blender.",
 	"category": "View",
 	"wiki_url": "",
     "warning": "",
