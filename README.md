@@ -23,8 +23,9 @@ If you like this addon, I would be grateful if you would support its development
 
 1. Install the Holoplay Service App and the Holoplay Core SDK on your PC or Mac.
 
-2. Install Alice/LG by opening Blender:
-   - In the menu, navigate to _Edit → Preferences → Add-ons → Install → Install Add-on_
+2. Install the Alice/LG addon:
+   - Open Blender
+   - In the main menu, navigate to _Edit → Preferences → Add-ons → Install → Install Add-on_
    - Select the zip file and click "Install"
    - Enable the addon by activating the check box next on the left
 
@@ -58,4 +59,10 @@ The addon can be used without having a Looking Glass connected. You can still re
 - adjust the render settings (and the animation settings)
 - enter the compositor settings
 
-Instead of pressing _F12_ or _Alt + F12_ or choosing the _Render Image/Animation_, respectively, click on _Looking Glass → General → Render Quilt_ or _Looking Glass → General → Render Animation Quilt_ in the addon controls.
+Instead of pressing _F12_ or _Alt + F12_ or choosing the _Render Image/Animation_, respectively, click on _Looking Glass → General → Render Quilt_ or _Looking Glass → General → Render Animation Quilt_ in the addon controls. The _Render Quilt_ option will render the different different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. 
+
+## License
+
+The Blender addon portion of this code is licensed under the [GNU GPL v3 License](LICENSE).
+
+The HoloPlay Core SDK provides the fundamental software basis for the communication between the operating system and the Looking Glass display hardware and is required for the basic functionality of a Looking Glass display. As a consequence, the linked libraries of this API are distributed in a compiled form with this addon in agreement with the system library exception defined by the GNU GPL v3 License. The HoloPlayCore API libraries are property of the Looking Glass Factory and are licensed under the following agreement: **LINK TO LICENSE**.
