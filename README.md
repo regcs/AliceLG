@@ -8,7 +8,7 @@ Let Alice take your Blender artworks through the Looking Glass. This guide is to
 ## Background
 This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool privately in my freetime because I love Blender and the amazing new display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
 
-If you like this addon, I would be grateful if you would support its development with a donation. *LINK MISSING*
+If you like this addon, I would be grateful if you would support its development with a donation. **LINK MISSING**
 
 ## Features
 - seamless integration into the common Blender workflow
@@ -50,7 +50,7 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
 The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → General → Lightfield Window_. After it was opened, move the window to your Looking Glass screen and click the _Looking Glass → General → Toggle Fullscreen Mode_ button, which appeared after the lightfield window was opened. Only in fullscreen mode the hologram will be displayed correctly. The lightfield window can operate in two modes:
 
-**Viewport.** In viewport mode, it basically acts like a native Blender viewport in the Looking Glass - except that it displays it as a hologram. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. **NOTE: Due to the restrictions in the rendering pipeline Blender currently has for addon developers, this mode can be quite slow. Hopefully, their will be a solution for that provided in future versions of Blender.**
+**Viewport.** In viewport mode, it basically acts like a native Blender viewport in the Looking Glass - except that it displays it as a hologram. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to the restrictions in the rendering pipeline Blender currently has for addon developers, this mode can be quite slow. Hopefully, their will be a solution for that provided in future versions of Blender._
 
 **Quilt Viewer.** In the quilt viewer mode, you can load or select a rendered quilt image and display it as a hologram in the Looking Glass. So, this mode is basically here to enjoy the fruits of your work. Playing animations is not supported ... yet.
 
