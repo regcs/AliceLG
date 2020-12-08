@@ -19,7 +19,7 @@ Let Alice take your Blender artwork through the Looking Glass. This guide is to 
 1. Install the Holoplay Service App and the Holoplay Core SDK on your PC or Mac.
 
 2. Install Allice/LG by opening Blender:
-   - Navigate to _File → User Preferences → Add-ons → Install Add-on from file_
+   - Navigate to _Edit → Preferences → Add-ons → Install ... → Install Add-on_
    - Select the .zip file and click "Install"
    - Enable the addon by activating the check box next on the left.
    - Click "Save User Settings" to keep the addon enabled.
