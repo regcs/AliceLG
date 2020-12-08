@@ -1,13 +1,13 @@
-# Alice/LG - An unofficial Looking Glass Addon for Blender
+# Alice/LG - An unofficial Looking Glass Add-on for Blender
 
 **Version:** 1.0 (last updated: December 08th, 2020) | **Author:** Christian Stolze (mail: ...)
 
-### Let Alice take your Blender artworks through the Looking Glass! This short guide is to get you started.
+### Let Alice/LG take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## General Information
-This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool privately in my freetime because I love Blender and the amazing new display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
+This add-on was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I love Blender and the amazing new display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
 
-If you like this addon, I would be grateful if you would support its development with a donation. **LINK MISSING**
+If you like this add-on, I would be grateful if you would support its development with a donation. **LINK MISSING**
 
 ## Features
 - seamless integration into the common Blender workflow
@@ -25,15 +25,15 @@ If you like this addon, I would be grateful if you would support its development
 
 1. Install the Holoplay Service App and the Holoplay Core SDK on your PC or Mac.
 
-2. Install the Alice/LG addon:
+2. Install the Alice/LG add-on:
    - Open Blender
    - In the main menu, navigate to _Edit → Preferences → Add-ons → Install → Install Add-on_
    - Select the zip file and click "Install"
-   - Enable the addon by activating the check box next on the left
+   - Enable the add-on by activating the check box next on the left
 
 ## Usage
 
-### Addon Controls
+### Add-on Controls
 
 After the installation you find a _Looking Glass_ tab in each Blender viewport. Depending on the current selections, the tab has four control categories:
 
@@ -49,7 +49,7 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
 The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → General → Lightfield Window_. After it was opened, move the window to your Looking Glass screen and click the _Looking Glass → General → Toggle Fullscreen Mode_ button, which appeared after the lightfield window was opened. Only in fullscreen mode the hologram will be displayed correctly. The lightfield window can operate in two modes:
 
-**Viewport.** In viewport mode, it basically acts like a native Blender viewport in the Looking Glass - except that it displays it as a hologram. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to the restrictions in the rendering pipeline Blender currently has for addon developers, this mode can be quite slow. Hopefully, their will be a solution for that provided in future versions of Blender._
+**Viewport.** In viewport mode, it basically acts like a native Blender viewport in the Looking Glass - except that it displays it as a hologram. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to the restrictions in the rendering pipeline Blender currently has for add-on developers, this mode can be quite slow. Hopefully, their will be a solution for that provided in future versions of Blender._
 
 **Quilt Viewer.** In the quilt viewer mode, you can load or select a rendered quilt image and display it as a hologram in the Looking Glass. So, this mode is basically here to enjoy the fruits of your work. Playing animations is not supported ... yet.
 
@@ -61,12 +61,12 @@ You can render complete quilt images and animation frames. To start the renderin
 - adjust the render settings (and the animation settings)
 - enter the compositor settings (if needed)
 
-Instead of pressing _F12_ or _Alt + F12_ or choosing the _Render Image/Animation_, respectively, click on _Looking Glass → General → Render Quilt_ or _Looking Glass → General → Render Animation Quilt_ in the addon controls. The _Render Quilt_ option will render the different different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image has to be handled in the same way as normal renders.
+Instead of pressing _F12_ or _Alt + F12_ or choosing the _Render Image/Animation_, respectively, click on _Looking Glass → General → Render Quilt_ or _Looking Glass → General → Render Animation Quilt_ in the add-on controls. The _Render Quilt_ option will render the different different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image has to be handled in the same way as normal renders.
 
-This functionality of the addon can be used even if no Looking Glass is connected.
+This functionality of the add-on can be used even if no Looking Glass is connected.
 
 ## License
 
-The Blender addon part of this project is licensed under the [GNU GPL v3 License](LICENSE).
+The Blender add-on part of this project is licensed under the [GNU GPL v3 License](LICENSE).
 
-The HoloPlay Core SDK provides the fundamental software basis for the communication between the operating system and the Looking Glass display hardware and is required for the basic functionality of a Looking Glass display. As a consequence, the linked libraries of this API are distributed in a compiled form with this addon in agreement with the system library exception defined by the GNU GPL v3 License. The HoloPlayCore API libraries are property of the Looking Glass Factory and are licensed under the following agreement: **LINK TO LICENSE**.
+The HoloPlay Core SDK provides the fundamental software basis for the communication between the operating system and the Looking Glass display hardware and is required for the basic functionality of a Looking Glass display. As a consequence, the linked libraries of this API are distributed in a compiled (non open-source) form with this free software in agreement with the system library exception defined by the GNU GPL v3 License. The HoloPlay Core SDK libraries are property of the Looking Glass Factory and are licensed under the following agreement: **LINK TO LICENSE**.
