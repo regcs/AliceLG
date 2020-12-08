@@ -1,4 +1,4 @@
-# Alice/LG - Unofficial Looking Glass Addon for Blender
+# Alice/LG - An unofficial Looking Glass Addon for Blender
 
 **Version:** 1.0 (last updated: December 08th, 2020) | **Author:** Christian Stolze (mail: ...)
 
