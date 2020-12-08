@@ -61,18 +61,18 @@ if platform.system() == "Darwin":
 		print(" # Could not load AppKit")
 		pass
 
-# # if on 32-bit Windows
-# elif platform.system() == "Windows":
+# if on 32-bit Windows
+elif platform.system() == "Windows":
 
-	# # NOTE: Try to use the user32 dll
-	# try:
-	#
-	# 	# import ctypes module
-	# 	import ctypes
-	# 	from ctypes import wintypes
-	#
-	# 	# load the user32.dll system dll
-	# 	user32 = ctypes.windll.user32
+	# NOTE: Try to use the user32 dll
+	try:
+	
+		# import ctypes module
+		import ctypes
+		from ctypes import wintypes
+	
+		# load the user32.dll system dll
+		user32 = ctypes.windll.user32
 	#
 	# 	# prepare callback function types for window enumeration
 	# 	WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
@@ -94,10 +94,10 @@ if platform.system() == "Darwin":
 	# 			EnumWindowsList.append(hwnd)
 	# 			print("Buff: ", hwnd, buffer.value)
 	# 			return True
-	#
-	# except:
-	# 	print(" # Could not load User32.dll")
-	# 	pass
+	
+	except:
+		print(" # Could not load User32.dll")
+		pass
 
 else:
 	print(" # Unsupported operating system.")
@@ -277,13 +277,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 		# LOAD SHADERS
-		# Load the blit shaders
-		if self.loadBlitShaders() == 0:
-			print("ERROR: Blit shader not compiled")
-			raise Exception()
+# 		# Load the blit shaders
+# 		if self.loadBlitShaders() == 0:
+# 			print("ERROR: Blit shader not compiled")
+# 			raise Exception()
 
 		# Load the lightfield shaders
-		if self.loadlightFieldShaders() == 0:
+		if self.loadlightFieldShaders() == None:
 			print("ERROR: Lightfield shader not compiled")
 			raise Exception()
 
@@ -630,7 +630,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				ray_end = ray_start + (view_direction * 10000)
 
 				# cast the ray into the scene
-				result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
+				result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
 
 				# if no object was under the mouse cursor
 				if self.cursor.length == 0:
@@ -811,7 +811,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.blitShader, 'TRIS',
 			{"vertPos_data": vertPos_data,},
 		)
-		print(self.blitShader, self.blitShader.program)
+
 		# return the OpenGL program code
 		return self.blitShader.program
 
@@ -821,117 +821,117 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# on the LookingGlass as a hologram
 	def loadlightFieldShaders(self):
 
-		# # Vertex shader
-		# self.lightfieldVertexShaderSource = '''
-		# 	layout (location = 0)
-		# 	in vec2 vertPos_data;
-		# 	out vec2 texCoords;
-		# 	void main()
-		# 	{
-		# 		gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
-		# 		texCoords = (vertPos_data.xy + 1.0) * 0.5;
-		# 	}
-		# '''
-		#
-		# # Fragment shader
-		# self.lightfieldFragmentShaderSource = '''
-		# 	in vec2 texCoords;
-		# 	out vec4 fragColor;
-		#
-		# 	// Calibration values
-		# 	uniform float pitch;
-		# 	uniform float tilt;
-		# 	uniform float center;
-		# 	uniform int invView;
-		# 	uniform float subp;
-		# 	uniform float displayAspect;
-		# 	uniform int ri;
-		# 	uniform int bi;
-		#
-		# 	// Quilt settings
-		# 	uniform int tile_x;
-		# 	uniform int tile_y;
-		# 	uniform int tile_z;
-		# 	// uniform vec3 tile;
-		# 	uniform float viewPortion_x;
-		# 	uniform float viewPortion_y;
-		# 	// uniform vec2 viewPortion;
-		# 	uniform float quiltAspect;
-		# 	uniform int overscan;
-		# 	uniform int quiltInvert;
-		#
-		# 	// NOTE: added by reg.cs
-		# 	// make tile and viewPortion as a vector
-		# 	// because I didn't new how to pass a vec uniform
-		# 	// with the Blender API
-		# 	// - tile = (qs_columns, qs_rows, qs_totalViews)
-		# 	// - viewPortion = (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs_row / LookingGlassAddon.qs[self.preset]["height"])
-		# 	vec3 tile = vec3(tile_x, tile_y, tile_z);
-		# 	vec2 viewPortion = vec2(viewPortion_x, viewPortion_y);
-		#
-		#
-		# 	uniform int debug;
-		# 	uniform sampler2D screenTex;
-		#
-		#
-		# 	vec2 texArr(vec3 uvz)
-		# 	{
-		# 		// NOTE: their are 1/qs_totalViews possible values of uvz.z
-		# 		//		verification: float z = floor(0.02222222 * view * tile.z); => change view to show the corresponding view from the quilt
-		#
-		# 		// NOTE: For some reason, I don't understand yet
-		# 		//	   I had to change uvz * tile.z to (1 + uvz.z) * tile.z)
-		# 		//	   in order to get the correct quilt display
-		# 		//
-		# 		//	 # TODO => there must be something wrong in my code elsewhere that causes this weird behavior
-		#
-		# 		// decide which section to take from based on the z.
-		# 		float z = floor((1 + uvz.z) * tile.z);
-		# 		float x = (mod(z, tile.x) + uvz.x) / tile.x;
-		# 		float y = (floor(z / tile.x) + uvz.y) / tile.y;
-		# 		return vec2(x, y) * viewPortion.xy;
-		# 	}
-		#
-		# 	// recreate CG clip function (clear pixel if any component is negative)
-		# 	void clip(vec3 toclip)
-		# 	{
-		# 		if (any(lessThan(toclip, vec3(0,0,0)))) discard;
-		# 	}
-		#
-		# 	void main()
-		# 	{
-		#
-		# 		if (debug == 1)
-		# 		{
-		#
-		# 			fragColor = texture(screenTex, texCoords.xy);
-		#
-		# 		}
-		# 		else {
-		# 			float invert = 1.0;
-		# 			if (invView + quiltInvert == 1) invert = -1.0;
-		# 			vec3 nuv = vec3(texCoords.xy, 0.0);
-		# 			nuv -= 0.5;
-		# 			float modx = clamp (step(quiltAspect, displayAspect) * step(float(overscan), 0.5) + step(displayAspect, quiltAspect) * step(0.5, float(overscan)), 0, 1);
-		# 			nuv.x = modx * nuv.x * displayAspect / quiltAspect + (1.0-modx) * nuv.x;
-		# 			nuv.y = modx * nuv.y + (1.0-modx) * nuv.y * quiltAspect / displayAspect;
-		# 			nuv += 0.5;
-		# 			clip (nuv);
-		# 			clip (1.0-nuv);
-		# 			vec4 rgb[3];
-		# 			for (int i=0; i < 3; i++)
-		# 			{
-		# 				nuv.z = (texCoords.x + i * subp + texCoords.y * tilt) * pitch - center;
-		# 				nuv.z = mod(nuv.z + ceil(abs(nuv.z)), 1.0);
-		# 				nuv.z *= invert;
-		# 				rgb[i] = texture(screenTex, texArr(nuv));
-		# 			}
-		# 			fragColor = vec4(rgb[ri].r, rgb[1].g, rgb[bi].b, 1.0);
-		# 		}
-		# 	}
-		# '''
+# 		# Vertex shader
+# 		LookingGlassAddon.lightfieldVertexShaderSource = '''
+# 		 	layout (location = 0)
+# 		 	in vec2 vertPos_data;
+# 		 	out vec2 texCoords;
+# 		 	void main()
+# 		 	{
+# 		 		gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
+# 		 		texCoords = (vertPos_data.xy + 1.0) * 0.5;
+# 		 	}
+# 		'''
+# 		
+# 		# Fragment shader
+# 		LookingGlassAddon.lightfieldFragmentShaderSource = '''
+# 		 	in vec2 texCoords;
+# 		 	out vec4 fragColor;
+# 		
+# 		 	// Calibration values
+# 		 	uniform float pitch;
+# 		 	uniform float tilt;
+# 		 	uniform float center;
+# 		 	uniform int invView;
+# 		 	uniform float subp;
+# 		 	uniform float displayAspect;
+# 		 	uniform int ri;
+# 		 	uniform int bi;
+# 		
+# 		 	// Quilt settings
+# 		 	uniform int tile_x;
+# 		 	uniform int tile_y;
+# 		 	uniform int tile_z;
+# 		 	// uniform vec3 tile;
+# 		 	uniform float viewPortion_x;
+# 		 	uniform float viewPortion_y;
+# 		 	// uniform vec2 viewPortion;
+# 		 	uniform float quiltAspect;
+# 		 	uniform int overscan;
+# 		 	uniform int quiltInvert;
+# 		
+# 		 	// NOTE: added by reg.cs
+# 		 	// make tile and viewPortion as a vector
+# 		 	// because I didn't new how to pass a vec uniform
+# 		 	// with the Blender API
+# 		 	// - tile = (qs_columns, qs_rows, qs_totalViews)
+# 		 	// - viewPortion = (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs_row / LookingGlassAddon.qs[self.preset]["height"])
+# 		 	vec3 tile = vec3(tile_x, tile_y, tile_z);
+# 		 	vec2 viewPortion = vec2(viewPortion_x, viewPortion_y);
+# 		
+# 		
+# 		 	uniform int debug;
+# 		 	uniform sampler2D screenTex;
+# 		
+# 		
+# 		 	vec2 texArr(vec3 uvz)
+# 		 	{
+# 		 		// NOTE: their are 1/qs_totalViews possible values of uvz.z
+# 		 		//		verification: float z = floor(0.02222222 * view * tile.z); => change view to show the corresponding view from the quilt
+# 		
+# 		 		// NOTE: For some reason, I don't understand yet
+# 		 		//	   I had to change uvz * tile.z to (1 + uvz.z) * tile.z)
+# 		 		//	   in order to get the correct quilt display
+# 		 		//
+# 		 		//	 # TODO => there must be something wrong in my code elsewhere that causes this weird behavior
+# 		
+# 		 		// decide which section to take from based on the z.
+# 		 		float z = floor((1 + uvz.z) * tile.z);
+# 		 		float x = (mod(z, tile.x) + uvz.x) / tile.x;
+# 		 		float y = (floor(z / tile.x) + uvz.y) / tile.y;
+# 		 		return vec2(x, y) * viewPortion.xy;
+# 		 	}
+# 		
+# 		 	// recreate CG clip function (clear pixel if any component is negative)
+# 		 	void clip(vec3 toclip)
+# 		 	{
+# 		 		if (any(lessThan(toclip, vec3(0,0,0)))) discard;
+# 		 	}
+# 		
+# 		 	void main()
+# 		 	{
+# 		
+# 		 		if (debug == 1)
+# 		 		{
+# 		
+# 		 			fragColor = texture(screenTex, texCoords.xy);
+# 		
+# 		 		}
+# 		 		else {
+# 		 			float invert = 1.0;
+# 		 			if (invView + quiltInvert == 1) invert = -1.0;
+# 		 			vec3 nuv = vec3(texCoords.xy, 0.0);
+# 		 			nuv -= 0.5;
+# 		 			float modx = clamp (step(quiltAspect, displayAspect) * step(float(overscan), 0.5) + step(displayAspect, quiltAspect) * step(0.5, float(overscan)), 0, 1);
+# 		 			nuv.x = modx * nuv.x * displayAspect / quiltAspect + (1.0-modx) * nuv.x;
+# 		 			nuv.y = modx * nuv.y + (1.0-modx) * nuv.y * quiltAspect / displayAspect;
+# 		 			nuv += 0.5;
+# 		 			clip (nuv);
+# 		 			clip (1.0-nuv);
+# 		 			vec4 rgb[3];
+# 		 			for (int i=0; i < 3; i++)
+# 		 			{
+# 		 				nuv.z = (texCoords.x + i * subp + texCoords.y * tilt) * pitch - center;
+# 		 				nuv.z = mod(nuv.z + ceil(abs(nuv.z)), 1.0);
+# 		 				nuv.z *= invert;
+# 		 				rgb[i] = texture(screenTex, texArr(nuv));
+# 		 			}
+# 		 			fragColor = vec4(rgb[ri].r, rgb[1].g, rgb[bi].b, 1.0);
+# 		 		}
+# 		 	}
+# 		'''
 
-		# Compile lightfield shader via GPU module
+        # Compile lightfield shader via GPU module
 		self.lightFieldShader = gpu.types.GPUShader(LookingGlassAddon.lightfieldVertexShaderSource, LookingGlassAddon.lightfieldFragmentShaderSource)
 
 		# prepare a batch used for drawing the lightfield into a texture of correct size
@@ -943,7 +943,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		)
 
 		# return the OpenGL program code
-		return self.lightFieldShader.program
+		return self.lightFieldShader
 
 
 
@@ -1445,6 +1445,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						width_half + width_half * (prj.x / prj.w),
 						height_half + height_half * (prj.y / prj.w),
 					))
+
+				else:
+
+					location = Vector((0, 0))
 
 				# add point to the list and add the currect x- & y-offset for the current view
 				cursor_geometry_coords.append((xoffset + location[0], yoffset + location[1]))

@@ -29,8 +29,14 @@ from .looking_glass_global_variables import *
 # get path of this addon
 LookingGlassAddon.path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 
+# TODO: That doesn't work?
+# append this path to syspath: that enables find_library to find the 
+# dynamic linked library in the addon folder
+sys.path.append(LookingGlassAddon.path + "\lib\Win64")
+
 # Load the HoloPlay Core SDK Library
 print("Loading HoloPlay Core SDK library")
+print(" # Running on OS: ", platform.system())
 print(" # System architecture: ", platform.architecture())
 print(" # Find addon path: ", LookingGlassAddon.path)
 print(" # Searching for HoloPlay Core SDK")
@@ -53,9 +59,9 @@ if platform.system() == "Darwin":
 elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
 
     # if the library is in the addon directory
-    if os.path.isfile(LookingGlassAddon.path + "/lib/Win32/libHoloPlayCore.dll") == True:
+    if os.path.isfile(LookingGlassAddon.path + "\lib\Win32\HoloPlayCore.dll") == True:
 
-        libpath = LookingGlassAddon.path + "/lib/Win32/libHoloPlayCore.dll"
+        libpath = LookingGlassAddon.path + "\lib\Win32\HoloPlayCore.dll"
 
     else:
 
@@ -66,10 +72,12 @@ elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
 # if on 64-bit Windows
 elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
 
-    # if the library is in the addon directory
-    if os.path.isfile(LookingGlassAddon.path + "/lib/Win64/libHoloPlayCore.dll") == True:
+    print(" # Automatic detection:", find_library('HoloPlayCore.dll'))    
 
-        libpath = LookingGlassAddon.path + "/lib/Win64/libHoloPlayCore.dll"
+    # if the library is in the addon directory
+    if os.path.isfile(LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll") == True:
+
+        libpath = LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll"
 
     else:
 
@@ -80,6 +88,7 @@ elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
 else:
     print(" # Unsupported operating system.")
     raise OSError
+
 
 # if the library was found
 if os.path.isfile(libpath):

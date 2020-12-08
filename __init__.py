@@ -242,21 +242,11 @@ class LookingGlassAddonFunctions:
 			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
 			area.type = "VIEW_3D"
 
-			print(LookingGlassAddon.lightfieldWindow.screen.areas)
 			# hide all panels in the image editor and make the area full screen
 			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), 'INVOKE_DEFAULT', use_hide_panels=True)
 
 			# Invoke modal operator for the lightfield rendering
 			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
-
-
-			# TODO: Disabled because for some reason this causes strong flickering in the lightfield window.
-			#		Why?
-			# TODO: Check if this makes senso on Windows & Linux
-			# make the window fullscreen
-			#bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
-
-
 
 		else:
 
