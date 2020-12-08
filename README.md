@@ -3,7 +3,7 @@
 Let Alice take your Blender artworks through the Looking Glass. This guide is to get you started. 
 
 ## Background
-This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool in my freetime because I love Blender and this new amazing display technology created by the Looking Glass Factory. 
+This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool privately in my freetime because I love Blender and this new amazing display technology created by the Looking Glass Factory. 
 
 If you like this addon, I would be grateful if you would support its development with a donation. Thank you!
 
@@ -48,7 +48,7 @@ If the lightfield window is in _Viewport_ mode, it basically acts like a native 
 
 ### Lightfield Window & Viewport
 
-The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → General → Lightfield Window_. After it was opened, move the window to your Looking Glass screen and click the _Looking Glass → General → Toggle Fullscreen Mode_ button, which appeared after the lightfield window was opened.
+The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → General → Lightfield Window_. After it was opened, move the window to your Looking Glass screen and click the _Looking Glass → General → Toggle Fullscreen Mode_ button, which appeared after the lightfield window was opened. Only in fullscreen mode the hologram will be displayed correctly.
 
 ### Rendering
 
