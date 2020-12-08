@@ -4,7 +4,7 @@
 Let Alice take your Blender artworks through the Looking Glass. This guide is to get you started. 
 
 ## Background
-This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool privately in my freetime because I love Blender and this new amazing display technology created by the Looking Glass Factory. 
+This addon was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this tool privately in my freetime because I love Blender and this new amazing display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
 
 If you like this addon, I would be grateful if you would support its development with a donation. Thank you!
 
