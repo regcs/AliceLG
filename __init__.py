@@ -898,13 +898,13 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 
-# ----------------- PANEL/UI DEFINTIONS --------------------
+# ----------------- PANEL FOR GENERAL SETTINGS --------------------
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_display_list"
 	bl_label = "Refresh list"
 	bl_description = "Refreshes the list of connected Looking Glass deviced from the HoloPlay Service"
-	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+	bl_options = {'REGISTER', 'INTERNAL'}
 
 	def execute(self, context):
 
@@ -947,8 +947,6 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 
 
 class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
-
-	""" Looking Glass Addon """
 	bl_idname = "LOOKINGGLASS_PT_panel_general" # unique identifier for buttons and menu items to reference.
 	bl_label = "Looking Glass" # display name in the interface.
 	bl_space_type = "VIEW_3D"
@@ -1013,8 +1011,6 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 
 # ------------- The Camera Settings Panel ----------------
 class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
-
-	""" Looking Glass Properties """
 	bl_idname = "LOOKINGGLASS_PT_panel_camera" # unique identifier for buttons and menu items to reference.
 	bl_label = "Camera Settings" # display name in the interface.
 	bl_space_type = "VIEW_3D"
@@ -1068,7 +1064,9 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 # Operator for manual redrawing of the Looking Glass (for manual Live View Mode)
 class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_lightfield"
-	bl_label = "Refresh the lightfield in the Looking Glass."
+	bl_label = "Refresh the lightfield window."
+	bl_description = "Render the current view directly in your Looking Glass"
+	bl_options = {'REGISTER', 'INTERNAL'}
 
 	def execute(self, context):
 
@@ -1162,7 +1160,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 
 
-# ------------- Sub-Panel for overlay settings ----------------
+# ------------- Panel for overlay settings ----------------
 class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 	""" Looking Glass Properties """

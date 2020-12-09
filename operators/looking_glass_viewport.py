@@ -114,7 +114,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 	bl_idname = "render.lightfield"
 	bl_label = "Looking Glass Lightfield Rendering"
-	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+	bl_options = {'REGISTER', 'INTERNAL'}
 
 	# WINDOW RELATED VARIABLES
 	window_manager = None
@@ -1484,7 +1484,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 	bl_idname = "render.frustum"
 	bl_label = "Looking Glass Frustum Rendering"
-	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+	bl_options = {'REGISTER', 'INTERNAL'}
 
 	# WINDOW RELATED VARIABLES
 	window_manager = None

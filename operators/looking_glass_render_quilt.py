@@ -34,7 +34,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	bl_idname = "render.quilt"
 	bl_label = "Render"
 	bl_description = "Render a quilt (animation) using the current scene and active camera."
-	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+	bl_options = {'REGISTER', 'INTERNAL'}
 
 	# OPERATOR ARGUMENTS
 	animation: bpy.props.BoolProperty(default = False)
