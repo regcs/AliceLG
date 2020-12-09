@@ -203,7 +203,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# remove the handler for the viewport tracking
 		if self._handle_trackViewportUpdates: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackViewportUpdates, 'WINDOW')
 
-		print("Removing view draw handlers: ")
+		print("Removing view draw handlers.")
 
 		# remove the draw handlers for all quilt views
 		for handle in self._handle_viewDrawing:
@@ -212,7 +212,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# clear the list of handles
 		self._handle_viewDrawing.clear()
 
-		print("Removing lightfield draw handlers: ")
+		print("Removing lightfield draw handler.")
 		# remove the draw handler for the lightfield window
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
 
@@ -233,14 +233,15 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# clear the list
 			LookingGlassAddon.qs[i]["viewOffscreens"].clear()
 
-		# set the "toggle fullscreen button" to False
-		self.settings.toggleLightfieldWindowFullscreen = False
-
 		# set status variables to default state
 		LookingGlassAddon.lightfieldWindow = None
 		LookingGlassAddon.lightfieldSpace = None
 		LookingGlassAddon.BlenderWindow = None
 		LookingGlassAddon.BlenderViewport = None
+
+		# set the button controls for the lightfield window to False
+		self.settings.toggleLightfieldWindowFullscreen = False
+		self.settings.ShowLightfieldWindow = False
 
 		print("Everything is done.")
 
@@ -278,7 +279,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# LOAD SHADERS
 # 		# Load the blit shaders
-# 		if self.loadBlitShaders() == 0:
+# 		if self.loadBlitShaders() == None:
 # 			print("ERROR: Blit shader not compiled")
 # 			raise Exception()
 
@@ -340,9 +341,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 						# ADJUST VIEWPORT SETTINGS
-						# set space to WIREFRAME
-						# space.shading.type = 'WIREFRAME'
-
 						# set FOV to 14° as suggested by the LookingGlassFactory documentation
 						# we calculate the field of view from the projection matrix
 						self.viewportViewMatrix = space.region_3d.view_matrix.inverted()
@@ -513,6 +511,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# current Looking Glass device
 		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
+
+
 		# Check, whether the lightfield window still exists
 		################################################################
 		# search in all open Blender windows
@@ -535,7 +535,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		################################################################
 
 		# if the mouse cursor is inside the fullscreen lightfield window
-		if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (event.mouse_x < LookingGlassAddon.lightfieldWindow.width or event.mouse_y < LookingGlassAddon.lightfieldWindow.height):
+		if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (event.mouse_x < LookingGlassAddon.lightfieldWindow.width and event.mouse_y < LookingGlassAddon.lightfieldWindow.height):
 
 			# make mouse cursor invisible
 			LookingGlassAddon.lightfieldWindow.cursor_modal_set('NONE')
@@ -580,7 +580,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-		# Control events in the viewport
+		# Control events & lightfield cursor in the viewport
 		################################################################
 		# if left mouse click was released
 		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE') or event.type == 'MOUSEMOVE':
@@ -1292,7 +1292,11 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 								# draw the lightfield mouse cursor if desired
 								if self.settings.viewport_show_cursor == True:
-									self.drawCursor3D(context, view, x, y, 0.025, 8)
+
+									# but only, if the mouse cursor is inside the fullscreen lightfield window
+									if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (self.mouse_x < LookingGlassAddon.lightfieldWindow.width and self.mouse_y < LookingGlassAddon.lightfieldWindow.height):
+
+										self.drawCursor3D(context, view, x, y, 0.025, 8)
 
 							#print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
 

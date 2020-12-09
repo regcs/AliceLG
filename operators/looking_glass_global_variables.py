@@ -33,9 +33,6 @@ class LookingGlassAddon:
 	# Was the modal operator for the frustum initialized?
 	FrustumInitialized = False
 
-	# Was the modal operator for the 3D cursor initialized?
-	CursorInitialized = True
-
 	# The Window object representing the Blender main window and the Space object, which are used for the lightfield rendering
 	lightfieldWindow = None
 	lightfieldRegion = None
