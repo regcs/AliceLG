@@ -510,6 +510,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# update the internal variable for the settings, in case the scene has changed
 		self.settings = context.scene.settings
 
+		# current Looking Glass device
+		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+
 		# Check, whether the lightfield window still exists
 		################################################################
 		# search in all open Blender windows
@@ -531,16 +534,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# Handle the mouse cursor visibility
 		################################################################
 
-		# if the mouse cursor is not inside the window
-		if event.mouse_x > LookingGlassAddon.lightfieldWindow.width or event.mouse_y > LookingGlassAddon.lightfieldWindow.height:
-
-			# make mouse cursor visible again
-			LookingGlassAddon.lightfieldWindow.cursor_modal_restore()
-
-		else:
+		# if the mouse cursor is inside the fullscreen lightfield window
+		if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (event.mouse_x < LookingGlassAddon.lightfieldWindow.width or event.mouse_y < LookingGlassAddon.lightfieldWindow.height):
 
 			# make mouse cursor invisible
 			LookingGlassAddon.lightfieldWindow.cursor_modal_set('NONE')
+
+		else:
+
+			# make mouse cursor visible again
+			LookingGlassAddon.lightfieldWindow.cursor_modal_restore()
 
 
 
@@ -583,8 +586,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE') or event.type == 'MOUSEMOVE':
 
 			# save current mouse position
-			self.mouse_x = event.mouse_x
-			self.mouse_y = event.mouse_y
+			mouse_x = self.mouse_x = event.mouse_x
+			mouse_y = self.mouse_y = event.mouse_y
 
 			# currently selected camera
 			camera = self.settings.lookingglassCamera
@@ -618,43 +621,43 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
 
 
-				# CALCULATE CUSTOM CURSOR POSITION AND SIZE
-				# +++++++++++++++++++++++++++++++++++++++++++++
-				# a custom cursor is drawn in the Looking Glass viewPortion
-				# because the standard cursor was too small
-				view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
-				ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
-				#print("ray_cast_origin: ", ray_cast_origin)
+			# CALCULATE CUSTOM CURSOR POSITION AND SIZE
+			# +++++++++++++++++++++++++++++++++++++++++++++
+			# a custom cursor is drawn in the Looking Glass viewPortion
+			# because the standard cursor was too small
+			view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
+			ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
+			#print("ray_cast_origin: ", ray_cast_origin)
 
-				# calculate the ray end point (10000 is just an arbitrary length)
-				ray_end = ray_start + (view_direction * 10000)
+			# calculate the ray end point (10000 is just an arbitrary length)
+			ray_end = ray_start + (view_direction * 10000)
 
-				# cast the ray into the scene
-				# NOTE: The first parameter ray_cast expects was changed in Blender 2.91
-				if bpy.app.version < (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
-				if bpy.app.version >= (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
+			# cast the ray into the scene
+			# NOTE: The first parameter ray_cast expects was changed in Blender 2.91
+			if bpy.app.version < (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
+			if bpy.app.version >= (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
 
-				# if no object was under the mouse cursor
-				if self.cursor.length == 0:
+			# if no object was under the mouse cursor
+			if self.cursor.length == 0:
 
-					# set cursor in onto the focal plane
-					self.cursor = ray_start + (view_direction * self.settings.focalPlane)
+				# set cursor in onto the focal plane
+				self.cursor = ray_start + (view_direction * self.settings.focalPlane)
 
-					# set normal in view direction
-					self.normal = view_direction
+				# set normal in view direction
+				self.normal = view_direction
 
 
-				# force area redraw to draw the cursor
-				if context.area:
-					context.area.tag_redraw()
+			# force area redraw to draw the cursor
+			if context.area:
+				context.area.tag_redraw()
 
-				# if the left mouse button was clicked
-				if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
+			# if the left mouse button was clicked
+			if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
 
-					# select the object
-					bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(mouse_x, mouse_y))
+				# select the object
+				bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(mouse_x, mouse_y))
 
-				return {'RUNNING_MODAL'}
+			return {'RUNNING_MODAL'}
 
 
 		# if the live view mode is inactive
