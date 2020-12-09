@@ -646,12 +646,19 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										name="Render Mode",
 										)
 
-	# UI elements for user control
-	liveMode: bpy.props.EnumProperty(
-										items = [('0', 'Auto', 'Automatically refresh the Looking Glass viewport'),
-												 ('1', 'Manual', 'Refresh the Looking Glass viewport manually')],
-										default='1',
-										name="Live View Mode",
+	# Lightfield Window Mode
+	lightfieldMode: bpy.props.EnumProperty(
+										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the lightfield viewport'),
+												 ('1', 'Refresh Mode: Manual', 'Refresh the lightfield viewport manually')],
+										default='0',
+										name="Lightfield Window Mode",
+										)
+
+	# Lightfield Preview Resolution in Auto lightfield mode
+	lightfield_preview_resolution: bpy.props.EnumProperty(
+										items = [('0', 'Preview: 512 x 512', '32 views'),],
+										default='0',
+										name="Lightfield Preview Resolution",
 										)
 
 	# pointer property that can be used to load a pre-rendered quilt image
@@ -682,8 +689,18 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	viewport_show_cursor: bpy.props.BoolProperty(
 										name="Lightfield Cursor",
-										description="If enabled, the a holographic mouse cursor is rendered in the lightfield window",
+										description="If enabled, a lightfield mouse cursor is rendered in the lightfield window",
 										default = True,
+										)
+
+	viewport_cursor_size: bpy.props.FloatProperty(
+										name="Lightfield Cursor Size",
+										description="The size of the lightfield mouse cursor in the lightfield window",
+										default = 0.025,
+										min = 0.0,
+										max = 0.1,
+										precision = 3,
+										step = 1,
 										)
 
 
@@ -700,7 +717,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 	blender_track_viewport: bpy.props.BoolProperty(
-										name="Use Viewport Settings",
+										name="Use Active Viewport Settings",
 										description="If enabled, the Looking Glass automatically adjusts to the settings of the currently used Blender viewport",
 										default = True,
 										update = LookingGlassAddonFunctions.update_track_viewport
@@ -1106,33 +1123,34 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			column.enabled = False
 			row.enabled = False
 
-		# if the viewport is active
+		# if the lightfield window is in viewport mode
 		if context.scene.settings.renderMode == '0':
 
-			# Automatic or Manual render mode?
-			row = column.row()
-			row.prop(context.scene.settings, "liveMode", expand=True)
+			# Lightfield rendering mode & refresh button
+			row_1 = column.row()
+			row_1.label(text="Lightfield Window Mode:")
+			row_2 = column.row()
+			row_2.prop(context.scene.settings, "lightfieldMode", text="")
+			row_2.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
 
-			# if the automatic render mode is selected
-			if int(context.scene.settings.liveMode) == 0:
+			# Preview settings
+			row_3 = column.row(align = True)
+			row_3.prop(context.scene.settings, "lightfield_preview_resolution", text="")
+			row_3.separator()
+			row_3.prop(context.scene.settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
+			row_3.prop(context.scene.settings, "viewport_use_solid_preview", text="", icon='SHADING_SOLID')
+			column.separator()
 
-				# Show the options for resolution adjustment
-				row = column.row()
-				row.prop(context.scene.settings, "viewport_use_lowres_preview", expand=True, icon='IMAGE_ZDEPTH')
-				row = column.row()
-				row.prop(context.scene.settings, "viewport_use_solid_preview", expand=True, icon='SHADING_SOLID')
+			# Lightfield cursor settings
+			row_4 = column.row()
+			row_4.label(text="Lightfield Cursor:")
+			row_5 = column.row(align = True)
+			row_5.prop(context.scene.settings, "viewport_cursor_size", text="Size", slider=True)
+			row_5.prop(context.scene.settings, "viewport_show_cursor", text="", icon='RESTRICT_SELECT_OFF')
 
-			# if the manual render mode is selected
-			elif int(context.scene.settings.liveMode) == 1:
 
-				# Show the button for refresh
-				row = column.row()
-				row.operator("lookingglass.refresh_lightfield", text="Refresh Lightfield", icon='IMAGE_BACKGROUND')
 
-			row = column.row()
-			row.prop(context.scene.settings, "viewport_show_cursor")
-
-		# else, if a single quilt shall be displayed
+		# if the lightfield window is in quilt viewer mode
 		elif context.scene.settings.renderMode == '1':
 
 			# display all settings for the quilt view mode

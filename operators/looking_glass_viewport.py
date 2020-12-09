@@ -421,7 +421,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-		print("Invoked modal operator: ", time.time() - start)
+		print("Invoked modal operator for lightfield window: ", time.time() - start)
 
 		# Create timer event that runs every millisecond to check if the lightfield needs to be updated
 		self.timerEvent = context.window_manager.event_timer_add(0.001, window=context.window)
@@ -555,9 +555,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if event.type == 'TIMER' and int(self.settings.renderMode) == 0:
 
 			# if something has changed
-			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.liveMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
+			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.lightfieldMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
 
-				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.liveMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
+				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.lightfieldMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
 
 					# set to the currently chosen quality
 					self.preset = int(context.scene.settings.viewResolution)
@@ -661,7 +661,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 		# if the live view mode is inactive
-		elif int(self.settings.liveMode) != 0:
+		elif int(self.settings.lightfieldMode) != 0:
 
 			#print("SKIPPED EVENT: ", event.type, event.value)
 
@@ -681,7 +681,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if context.window == LookingGlassAddon.lightfieldWindow:
 
 			# if automatic live view is activated AND the lightfield viewport is in perspective view mode AND a valid lightfield viewport exists
-			if (int(self.settings.renderMode) == 0 and int(self.settings.liveMode) == 0) and LookingGlassAddon.lightfieldSpace != None:
+			if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and LookingGlassAddon.lightfieldSpace != None:
 
 				# if no camera is selected for the Looking Glass AND the viewport perspective matrix has changed
 				if LookingGlassAddon.lightfieldSpace.camera == None and (LookingGlassAddon.lightfieldSpace.region_3d.view_matrix != self.viewportViewMatrix):
@@ -709,7 +709,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	def trackDepsgraphUpdates(self, scene, depsgraph):
 
 		# if automatic live view is activated AND something in the scene has changed
-		if (int(self.settings.renderMode) == 0 and int(self.settings.liveMode) == 0) and len(depsgraph.updates.values()) > 0:
+		if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
 			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), self.preset)
 
 			# invoke an update of the Looking Glass viewport
@@ -1296,7 +1296,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 									# but only, if the mouse cursor is inside the fullscreen lightfield window
 									if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (self.mouse_x < LookingGlassAddon.lightfieldWindow.width and self.mouse_y < LookingGlassAddon.lightfieldWindow.height):
 
-										self.drawCursor3D(context, view, x, y, 0.025, 8)
+										self.drawCursor3D(context, view, x, y, self.settings.viewport_cursor_size, 8)
 
 							#print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
 
@@ -1565,7 +1565,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 		# draw handler to display the frustum of the Looking Glass camera
 		self._handle_drawCameraFrustum = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
 
-		print("Invoked modal operator: ", time.time() - start)
+		print("Invoked modal operator for frustum: ", time.time() - start)
 
 		# add the modal handler
 		context.window_manager.modal_handler_add(self)
