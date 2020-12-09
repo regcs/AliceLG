@@ -1,9 +1,11 @@
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
-#  This program is free software; you can redistribute it and/or
-#  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; either version 2
-#  of the License, or (at your option) any later version.
+#  Copyright © 2020 Christian Stolze
+#
+#  This program is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -11,8 +13,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software Foundation,
-#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 # ##### END GPL LICENSE BLOCK #####
 
@@ -30,7 +31,7 @@ from .looking_glass_global_variables import *
 LookingGlassAddon.path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 
 # TODO: That doesn't work?
-# append this path to syspath: that enables find_library to find the 
+# append this path to syspath: that enables find_library to find the
 # dynamic linked library in the addon folder
 sys.path.append(LookingGlassAddon.path + "\lib\Win64")
 
@@ -72,7 +73,7 @@ elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
 # if on 64-bit Windows
 elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
 
-    print(" # Automatic detection:", find_library('HoloPlayCore.dll'))    
+    print(" # Automatic detection:", find_library('HoloPlayCore.dll'))
 
     # if the library is in the addon directory
     if os.path.isfile(LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll") == True:
