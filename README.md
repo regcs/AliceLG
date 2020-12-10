@@ -1,6 +1,6 @@
 # Alice/LG - A Blender Add-on for Looking Glass displays
 
-**Version:** 1.0 (last updated: December 08th, 2020) | **Author:** Christian Stolze (mail: **CONTACT MISSING**)
+**Version:** 1.0 (last updated: December 08th, 2020) | **Author:** Christian Stolze
 
 ### Let Alice/LG take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
