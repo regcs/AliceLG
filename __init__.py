@@ -98,8 +98,10 @@ class LookingGlassAddonPreferences(AddonPreferences):
 	# 								   )
 	#
 	# def draw(self, context):
+	#
+	# 	# Lightfield
 	# 	layout = self.layout
-	# 	layout.prop(self, "libpath")
+	# 	layout.prop(context.scene.settings, "viewport_cursor_color")
 
 
 
@@ -697,13 +699,16 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	viewport_cursor_size: bpy.props.FloatProperty(
 										name="Lightfield Cursor Size",
 										description="The size of the lightfield mouse cursor in the lightfield window",
-										default = 0.025,
+										default = 0.05,
 										min = 0.0,
 										max = 0.1,
 										precision = 3,
 										step = 1,
 										)
 
+	viewport_cursor_color: bpy.props.FloatVectorProperty(name="Lightfield Cursor Color",
+                                    subtype='COLOR',
+                                    default=[1.0, 0.627451, 0.156863])
 
 
 
@@ -1146,7 +1151,8 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			row_5 = column.row(align = True)
 			row_5.prop(context.scene.settings, "viewport_cursor_size", text="Size", slider=True)
 			row_5.prop(context.scene.settings, "viewport_show_cursor", text="", icon='RESTRICT_SELECT_OFF')
-
+			row_6 = column.row()
+			row_6.prop(context.scene.settings, "viewport_cursor_color", text="")
 
 
 		# if the lightfield window is in quilt viewer mode

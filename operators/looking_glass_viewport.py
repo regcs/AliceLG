@@ -647,7 +647,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# set cursor in onto the focal plane
 				self.cursor = ray_start + (view_direction * self.settings.focalPlane)
 
-				print("NO HIT: ", self.normal, self.cursor)
+				#print("NO HIT: ", self.normal, self.cursor)
 
 
 			# force area redraw to draw the cursor
@@ -1471,7 +1471,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
 			batch = batch_for_shader(shader, 'TRI_FAN', {"pos": cursor_geometry_coords})
 			shader.bind()
-			shader.uniform_float("color", (1, 0.627451, 0.156863, 1))
+			shader.uniform_float("color", (self.settings.viewport_cursor_color[0], self.settings.viewport_cursor_color[1], self.settings.viewport_cursor_color[2], 1.0))
 			batch.draw(shader)
 
 			#print("Cursor time: ", time.time() - start_timer)
