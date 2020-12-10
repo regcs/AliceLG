@@ -711,9 +711,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# Multiview used for Looking Glass rendering
 	def trackDepsgraphUpdates(self, scene, depsgraph):
 
+		# adjust the scene in the lightfield window
+		# NOTE: We need this to handle multiple scenes with the Looking Glass
+		if LookingGlassAddon.lightfieldWindow != None:
+			LookingGlassAddon.lightfieldWindow.scene = scene
+
+
+
 		# if automatic live view is activated AND something in the scene has changed
 		if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
-			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), self.preset)
+			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), scene)
 
 			# invoke an update of the Looking Glass viewport
 			self.modal_redraw = True
