@@ -19,7 +19,6 @@ If you like this add-on, I would be grateful if you would support its developmen
 - Windows or macOS (Linux not tested yet)
 - Blender 2.9x
 - Holoplay Service App
-- Holoplay Core SDK
 
 ## Installation
 
