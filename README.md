@@ -28,7 +28,7 @@ If you like this add-on, I would be grateful if you would support its developmen
    - Open Blender
    - In the main menu, navigate to _Edit → Preferences → Add-ons → Install → Install Add-on_
    - Select the zip file and click "Install"
-   - Enable the add-on by activating the check box next on the left
+   - Enable the add-on by activating the check box on the left
 
 ## How to Use
 
