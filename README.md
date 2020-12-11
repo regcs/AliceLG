@@ -22,7 +22,7 @@ If you like this add-on, I would be grateful if you would support its developmen
 
 ## Installation
 
-1. Install the Holoplay Service App and the Holoplay Core SDK on your PC or Mac.
+1. Install the Holoplay Service App on your PC or Mac.
 
 2. Install the Alice/LG add-on:
    - Open Blender
