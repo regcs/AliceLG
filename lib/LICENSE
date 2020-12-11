@@ -1,0 +1,79 @@
+  Looking Glass Factory Inc.
+HOLOPLAY CORE LICENSE AGREEMENT
+IMPORTANT-READ CAREFULLY BEFORE USING THE APPLICATION PROGRAMMING INTERFACE: This HoloPlay Core License Agreement (“Agreement”) is a legal agreement between you and/or any company you represent (“Licensee”) and Looking Glass Factory Inc. (“LGF”), for the HoloPlay Core (the “Looking Glass HoloPlay Core”, “HoloPlay Core”, or collectively, “Core”) licensed by LGF. By accepting these terms or by installing, downloading, copying, or otherwise using Core, you agree to be and will be bound by the terms of this Agreement as a condition of your license. If you do not agree to the terms of this Agreement, your use is prohibited, and you may not install or use Core. 
+
+Core is protected by copyright laws and international copyright treaties, as well as other intellectual property laws and treaties. Core is licensed (not sold) to you, and its use is subject to the terms of this Agreement. This is NOT a sale contract. 
+
+1. DEFINITIONS. 
+1.1 “HoloPlay Core” or “Core” means LGF technology, which may include object code, software libraries, software tools, sample source code, published specifications and Documentation. Core shall include any future, updated or otherwise modified version(s) thereof furnished by LGF (in its sole discretion) to Licensee. 
+
+1.2 “Documentation” includes, but is not limited to programmer guides, CDs, manuals, materials, and information appropriate or necessary for use in connection with Core.
+
+2. GRANT OF LICENSE. Subject to the terms of this Agreement, LGF hereby grants Licensee a limited, non- exclusive, non-transferable, royalty-free license (without the right to sublicense) to use Core solely for the purpose of Licensee’s development efforts to develop applications to work in conjunction with the LGF products referenced in Core and for which Core was provided. Licensee shall have no right to distribute, license (whether or not through multiple tiers) or otherwise transfer Core to any third party or incorporate Core in any software, product, or technology for use on anything other than LGF products. 
+
+3. OTHER RIGHTS AND LIMITATIONS. 
+3.1 Copies. Licensee may copy Core only as necessary to exercise its rights hereunder; provided, however that Licensee may also make one (1) copy for back-up purposes and any reproduction of Core must be marked with the proprietary notices provided on the original Core. 
+
+3.2 No Reverse Engineering. Licensee shall have no rights to any source code for any of the software in Core, except for the explicit rights to use the source code as provided to Licensee hereunder. Licensee may not reverse engineer, decompile, modify or disassemble Core or otherwise reduce Core to human-perceivable form in whole or in part, except and only to the extent that such activity is expressly permitted by this Agreement or applicable laws. 
+
+3.3 Third Party Software. Licensee acknowledges that effective utilization of Core may require the use of a development tool, compiler and other software and technology of third parties (“Third Party Software”). Licensee is solely responsible for procuring such Third Party Software and technology and the necessary licenses for the use thereof. LGF makes no representation or warranty concerning Third Party Software and shall have no obligation or liability with respect to Third Party Software. 
+
+3.4 No right is granted to Licensee to sublicense its rights hereunder. All rights not expressly granted are reserved by LGF and, except as expressly set forth herein, no license is granted by LGF under this Agreement directly, by implication, estoppel or otherwise, under any patent, copyright, trade secret or trademark or other intellectual property right of LGF. Nothing herein shall be deemed to authorize Licensee to use LGF’s trademarks or trade names in Licensee’s advertising, marketing, promotional, sales or related materials.
+
+3.5 Nonassertion By Licensee. Licensee agrees not to assert any patent rights related to Core or applications developed using Core against LGF, LGF’s distributors, LGF customers, or other licensees of Core for making, using, selling, offering for sale, or importing any products or technology developed using Core. 
+
+3.6 Benchmark Tests. You may not publish the results of any benchmark tests run on Core without written permission from LGF. 
+
+4. OWNERSHIP. 
+As between LGF and Licensee, LGF or its licensors shall own and retain all proprietary rights, including all patent, copyright, trade secret, trademark and other intellectual property rights, in and to Core and any corrections, bug fixes, enhancements, updates, improvements, or modifications thereto and Licensee hereby irrevocably transfers, conveys and assigns to LGF all of its right, title, and interest therein. LGF shall have the exclusive right to apply for or register any patents, mask work rights, copyrights, and such other proprietary protections with respect thereto. Licensee acknowledges that the license granted under this Agreement does not provide Licensee with title or ownership to Core, but only a right of limited use under the terms and conditions of this Agreement. 
+
+5. SUPPORT.
+LGF will not provide any support for Core under this Agreement. Nothing herein shall be construed to require LGF to provide support services or updates, upgrades, bug fixes or modifications to Core.
+ 
+6. CONFIDENTIALITY. 
+6.1 Core contains valuable proprietary information and trade secrets of LGF and its suppliers that remain the property of LGF. You shall protect the confidentiality of, and avoid disclosure and unauthorized use of, Core. 
+
+6.2 Licensee shall not disclose, advertise, or publish the terms and conditions of this Agreement without the prior written consent of LGF. Any press release or publication regarding this Agreement is subject to prior review and written approval of LGF. 
+
+7. HEALTHCARE APPLICATIONS SUITABILITY. 
+LICENSEE SHALL BE SOLELY RESPONSIBLE FOR ANY PRODUCT USE OR APPLICATION DEVELOPED USING LGF’S CORE THAT MAY FALL UNDER UNITED STATES FOOD AND DRUG ADMINISTRATION REGULATION, OR OTHER SUCH SIMILAR REGULATORY JURISDICTION, INCLUDING ANY AND ALL RESPONSIBILITY FOR COMPLIANCE TO SUCH REGULATION AS MAY BE APPLICABLE. LICENSEE ACKNOWLEDGES THAT LGF PROVIDES THE API AS A GENERAL PURPOSE DEVELOPMENT TOOL TO LICENSEE. 
+
+8. NO WARRANTY.
+Core and Documentation are provided "AS-IS" without any warranty whatsoever. TO THE FULL EXTENT ALLOWED BY LAW, THE FOREGOING WARRANTIES AND REMEDIES ARE EXCLUSIVE AND ARE IN LIEU OF ALL OTHER WARRANTIES, TERMS, OR CONDITIONS, EXPRESS OR IMPLIED, EITHER IN FACT OR BY OPERATION OF LAW, STATUTORY OR OTHERWISE, INCLUDING WARRANTIES, TERMS, OR CONDITIONS OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, SATISFACTORY QUALITY, CORRESPONDENCE WITH DESCRIPTION, AND NON-INFRINGEMENT, ALL OF WHICH ARE EXPRESSLY DISCLAIMED. NO ADVICE OR INFORMATION, WHETHER ORAL OR WRITTEN, OBTAINED BY YOU FROM LGF OR THROUGH OR FROM CORE SHALL CREATE ANY WARRANTY NOT EXPRESSLY STATED IN THIS AGREEMENT. LGF DOES NOT WARRANT THAT CORE AND DOCUMENTATION ARE SUITABLE FOR LICENSEE'S USE, THAT CORE OR DOCUMENTATION ARE WITHOUT DEFECT OR ERROR, THAT OPERATION WILL BE UNINTERRUPRED, OR THAT DEFECTS WILL BE CORRECTED. FURTHER, LGF MAKES NO WARRANTY REGARDING THE RESULTS OF THE USE OF CORE AND DOCUMENTATION. YOU ACKNOWLEDGE THAT LGF DOES NOT WARRANT THAT CORE WILL BE UNINTERRUPTED, TIMELY, SECURE, ERROR-FREE OR FREE FROM VIRUSES OR OTHER MALICIOUS SOFTWARE, AND NO INFORMATION OR ADVICE OBTAINED BY YOU FROM LGF OR THROUGH YOUR USE OF CORE SHALL CREATE ANY WARRANTY NOT EXPRESSLY STATED IN THIS AGREEMENT.
+
+9. LIMITATION OF LIABILITY. 
+YOUR USE OF CORE IS AT YOUR SOLE RISK. YOU WILL BE SOLELY RESPONSIBLE FOR ANY DAMAGE TO YOUR COMPUTER SYSTEM OR LOSS OF DATA THAT RESULTS FROM THE DOWNLOAD OR USE OF CORE. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL LGF OR ITS SUPPLIERS BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT, OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION DAMAGES FOR LOSS OF BUSINESS PROFITS OR REVENUE; BUSINESS INTERRUPTION OR WORK STOPPAGE; COMPUTER FAILURE OR MALFUNCTION; LOSS OF BUSINESS INFORMATION, DATA OR DATA USE; LOSS OF GOODWILL; OR ANY OTHER PECUNIARY LOSS) ARISING OUT OF THE USE OF OR INABILITY TO USE CORE OR THE PROVISION OF OR FAILURE TO PROVIDE SUPPORT SERVICES, EVEN IF LGF OR ITS SUPPLIER HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL LGF’S SUPPLIERS BE LIABLE FOR ANY DIRECT DAMAGES WHATSOEVER ARISING OUT OF THE USE OR THE INABILITY TO USE CORE. IN ANY CASE, LGF’S ENTIRE LIABILITY SHALL BE LIMITED TO THE GREATER OF THE AMOUNT ACTUALLY PAID BY YOU FOR CORE OR U.S. $5.00. 
+
+10. INDEMNITY. 
+You agree to indemnify and hold harmless LGF and its subsidiaries, affiliates, officers, agents, co-branders, customers, suppliers or other partners, and employees, from any loss, claim or demand, including reasonable attorneys' fees, made by any third party due to or arising out of your use of Core, your connection to Core, or your violation of the Terms. 
+
+11. DISCLAIMER. 
+Some countries, states, or provinces do not allow the exclusion or limitation of implied warranties or the limitation of incidental or consequential damages for certain products supplied to consumers, or the limitation of liability for death or personal injury, so the above limitations and exclusions may be limited in their application to you. When the implied warranties are not allowed to be excluded in their entirety due to local law, they will be limited to the duration of the applicable warranty. 
+
+12. TERM AND TERMINATION. 
+12.1 This Agreement will terminate automatically if you fail to comply with any of the terms and conditions of this Agreement and you will be liable to LGF and its suppliers for damages or losses caused by your non-compliance. The waiver by LGF of a specific breach or default shall not constitute the waiver of any subsequent breach or default. 
+
+12.2 Either party shall have the right to terminate the Agreement, upon thirty (30) days written notice to the other party. 
+
+12.3 Upon termination of this Agreement, Licensee will immediately cease using Core, and Licensee agrees to destroy all adaptations or copies of Core and Documentation, or return them LGF upon termination of this License. 
+
+12.4 LGF shall have the right to audit your use of Core in conjunction with this Agreement, and you will provide reasonable assistance for this purpose. 
+
+12.5 The rights of LGF and your obligations contained in this Agreement survive any expiration or termination of this Agreement. 
+
+13. MISCELLANEOUS. 
+13.1 ASSIGNMENT. Licensee may not assign this Agreement, or any interest or rights granted hereunder to any third party without the prior written consent of LGF. A change of control or reorganization of Licensee pursuant to a merger, sale of assets or stock shall be deemed to be an assignment under this Agreement. This Agreement shall terminate immediately upon occurrence of any prohibited assignment. 
+
+13.2 EXPORT CONTROLS. You acknowledge that Core may be subject to export restrictions of various countries. You shall fully comply with all applicable export license restrictions and requirements as well as with all laws and regulations relating to the importation of Core, in the United States and in any foreign jurisdiction in which Core is used. Without limiting the foregoing, Core may not be downloaded or otherwise exported or re-exported (i) into (or to a national or resident of) any country to which the U.S. has embargoed goods; (ii) any end user known, or having reason to be known, will utilize them in the design, development or production of nuclear, chemical or biological weapons; or (iii) to anyone on the U.S. Treasury Department's list of Specially Designated Nationals or the U.S. Commerce Department's Table of Denial Orders. By downloading or using Core, you are agreeing to the foregoing and you are representing and warranting that you are not located in, under the control of, or a national or resident of any such country or on any such list. If you obtained Core outside of the United States, you are also agreeing that you will not export or re-export it in violation of the laws of the country in which it was obtained. You further acknowledge that Core may include technical data subject to export and re-export restrictions imposed by US law. 
+
+13.3 WAIVER. No failure by either party to exercise or enforce any of its rights under this Agreement will act as a waiver of such rights and no waiver of a breach in a particular situation shall be held to be a waiver of any other or subsequent breach. 
+
+13.4 SEVERABILITY. If any provision of this Agreement is found invalid or unenforceable, that provision will be enforced to the maximum extent possible and the other provisions of this Agreement will remain in force. 
+
+13.5 Governing Law. This Agreement shall be governed by the laws of the state of New York as such laws are applied to agreements entered into and to be performed entirely within New York between New York residents, and by the laws of the United States, without reference to conflict of laws principles. The United Nations Convention on Contracts for the International Sale of Goods (1980) and the Uniform Computer Information Transactions Act (UCITA) are hereby excluded in their entirety from application to this Agreement. 
+
+13.6 Entire Agreement. This Agreement represents the complete agreement concerning Core. 
+
+13.7 Contact. If you have any questions concerning this Agreement, or if you desire to contact LGF for any reason, please contact the LGF at support@lookingglassfactory.com. 
+
+BY INSTALLING, COPYING, OR OTHERWISE USING CORE YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTAND AND AGREE TO BE BOUND BY THE TERMS AND CONDITIONS INDICATED ABOVE.
