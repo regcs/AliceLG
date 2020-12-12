@@ -1239,6 +1239,8 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 					column = layout.column(align = True)
 					row = column.row(align = True)
+					row.label(text="Viewport to Copy Settings from:")
+					row = column.row(align = True)
 					row.prop(context.scene.settings, "blender_workspace")
 					row = column.row(align = True)
 					row.prop(context.scene.settings, "blender_view3d")
