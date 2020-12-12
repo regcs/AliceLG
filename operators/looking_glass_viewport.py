@@ -247,6 +247,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# which can be accessed from methods that have no "context" parameter
 		self.settings = context.scene.settings
 
+		# update the variable for the current Looking Glass device
+		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
 		# PREPARE THE SHADERS AND LIGHTFIELD RENDERING
@@ -497,7 +499,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# update the internal variable for the settings, in case the scene has changed
 		self.settings = context.scene.settings
 
-		# current Looking Glass device
+		# update the variable for the current Looking Glass device
 		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
