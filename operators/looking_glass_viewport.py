@@ -969,91 +969,74 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# if a Looking Glass is selected
 		if int(self.settings.activeDisplay) > -1:
 
-			# get the calibration data from the deviceList
-			for device in LookingGlassAddon.deviceList:
-
-				if device['index'] == int(self.settings.activeDisplay):
-
-					# obtain information from the connected Looking Glass and
-					# load its calibration into the lightfield shader
-					self.lightFieldShader.bind()
-					self.lightFieldShader.uniform_float("pitch", device['pitch'])
-					self.lightFieldShader.uniform_float("tilt", device['tilt'])
-					self.lightFieldShader.uniform_float("center", device['center'])
-					self.lightFieldShader.uniform_int("invView", device['invView'])
-					self.lightFieldShader.uniform_int("quiltInvert", 0)
-					self.lightFieldShader.uniform_float("subp", device['subp'])
-					self.lightFieldShader.uniform_int("ri", device['ri'])
-					self.lightFieldShader.uniform_int("bi", device['bi'])
-					self.lightFieldShader.uniform_float("displayAspect", device['aspectRatio'])
-					self.lightFieldShader.uniform_float("quiltAspect", device['aspectRatio'])
-
-					break
+			# obtain information from the connected Looking Glass and
+			# load its calibration into the lightfield shader
+			self.lightFieldShader.bind()
+			self.lightFieldShader.uniform_float("pitch", self.device['pitch'])
+			self.lightFieldShader.uniform_float("tilt", self.device['tilt'])
+			self.lightFieldShader.uniform_float("center", self.device['center'])
+			self.lightFieldShader.uniform_int("invView", self.device['invView'])
+			self.lightFieldShader.uniform_int("quiltInvert", 0)
+			self.lightFieldShader.uniform_float("subp", self.device['subp'])
+			self.lightFieldShader.uniform_int("ri", self.device['ri'])
+			self.lightFieldShader.uniform_int("bi", self.device['bi'])
+			self.lightFieldShader.uniform_float("displayAspect", self.device['aspectRatio'])
+			self.lightFieldShader.uniform_float("quiltAspect", self.device['aspectRatio'])
 
 
 	# set up the camera for each view and the shader of the rendering object
 	def setupVirtualCameraForView(self, camera, view, viewMatrix, projectionMatrix):
 
-		# get the calibration data of the Looking Glass from the deviceList
-		for device in LookingGlassAddon.deviceList:
+		# if a camera is used for the Looking Glass
+		if camera != None:
 
-			if device['index'] == int(self.settings.activeDisplay):
+			# The field of view set by the camera
+			# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
+			# NOTE 2: - we take the angle directly from the projection matrix
+			fov = 2.0 * atan(1 / projectionMatrix[1][1])
 
-				# if a camera is used for the Looking Glass
-				if camera != None:
+			# calculate cameraSize from its distance to the focal plane and the FOV
+			# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
+			cameraDistance = self.settings.focalPlane
+			cameraSize = cameraDistance * tan(fov / 2)
 
-					# The field of view set by the camera
-					# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
-					# NOTE 2: - we take the angle directly from the projection matrix
-					fov = 2.0 * atan(1 / projectionMatrix[1][1])
+			# start at viewCone * 0.5 and go up to -viewCone * 0.5
+			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device['viewCone'])
 
-					# calculate cameraSize from its distance to the focal plane and the FOV
-					# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-					cameraDistance = self.settings.focalPlane
-					cameraSize = cameraDistance * tan(fov / 2)
+			# calculate the offset that the camera should move
+			offset = cameraDistance * tan(offsetAngle)
 
-					# start at viewCone * 0.5 and go up to -viewCone * 0.5
-					# TODO: The Looking Glass Factory dicumentation suggests to use a viewcone of 35°, but the device calibration has 40° by default.
-					#		Which one should we take?
-					offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(device['viewCone'])
+			# translate the view matrix (position) by the calculated offset in x-direction
+			viewMatrix = Matrix.Translation((offset, 0, 0)) @ viewMatrix
 
-					# calculate the offset that the camera should move
-					offset = cameraDistance * tan(offsetAngle)
+			# modify the projection matrix, relative to the camera size and aspect ratio
+			projectionMatrix[0][2] += offset / (cameraSize * self.device['aspectRatio'])
 
-					# translate the view matrix (position) by the calculated offset in x-direction
-					viewMatrix = Matrix.Translation((offset, 0, 0)) @ viewMatrix
+		# TODO: THE FOLLOWING WORKS IN PRINCIPLE, BUT IS DISTORTED. WHY?
+		# otherwise we take the active viewport camera
+		else:
 
-					# modify the projection matrix, relative to the camera size and aspect ratio
-					projectionMatrix[0][2] += offset / (cameraSize * device['aspectRatio'])
+			# The field of view set by the camera
+			# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
+			# NOTE 2: - we take the angle directly from the projection matrix
+			fov = 2.0 * atan(1 / projectionMatrix[1][1])
 
-				# TODO: THE FOLLOWING WORKS IN PRINCIPLE, BUT IS DISTORTED. WHY?
-				# otherwise we take the active viewport camera
-				else:
+			# calculate cameraSize from its distance to the focal plane and the FOV
+			# NOTE: - we take an arbitrary distance of 5 m (TODO: IS THERE A SPECIFIC BETTER VALUE FOR THE VIEWPORT CAM?)
+			cameraDistance = self.settings.focalPlane
+			cameraSize = cameraDistance * tan(fov / 2)
 
-					# The field of view set by the camera
-					# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
-					# NOTE 2: - we take the angle directly from the projection matrix
-					fov = 2.0 * atan(1 / projectionMatrix[1][1])
+			# start at viewCone * 0.5 and go up to -viewCone * 0.5
+			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device['viewCone'])
 
-					# calculate cameraSize from its distance to the focal plane and the FOV
-					# NOTE: - we take an arbitrary distance of 5 m (TODO: IS THERE A SPECIFIC BETTER VALUE FOR THE VIEWPORT CAM?)
-					cameraDistance = self.settings.focalPlane
-					cameraSize = cameraDistance * tan(fov / 2)
+			# calculate the offset that the camera should move
+			offset = cameraDistance * tan(offsetAngle)
 
-					# start at viewCone * 0.5 and go up to -viewCone * 0.5
-					# ToDo: The Looking Glass Factory dicumentation suggests to use a viewcone of 35°, but the device calibration has 40° by default. Which one should we take?
-					offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(device['viewCone'])
+			# translate the view matrix (position) by the calculated offset in x-direction
+			viewMatrix = Matrix.Translation((offset, 0, cameraDistance)) @ viewMatrix
 
-					# calculate the offset that the camera should move
-					offset = cameraDistance * tan(offsetAngle)
-
-					# translate the view matrix (position) by the calculated offset in x-direction
-					viewMatrix = Matrix.Translation((offset, 0, cameraDistance)) @ viewMatrix
-
-					# modify the projection matrix, relative to the camera size and aspect ratio
-					projectionMatrix[0][2] += offset / (cameraSize * device['aspectRatio'])
-
-				break
+			# modify the projection matrix, relative to the camera size and aspect ratio
+			projectionMatrix[0][2] += offset / (cameraSize * self.device['aspectRatio'])
 
 		# return the projection matrix
 		return viewMatrix, projectionMatrix
