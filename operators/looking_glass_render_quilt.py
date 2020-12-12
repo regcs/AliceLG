@@ -72,7 +72,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_rows = None	# rendering width of the view
 	rendering_columns = None	# rendering height of the view
 	rendering_totalViews = None	# rendering height of the view
-	rendering_aspectRatio = 1.0	# aspect ratio of the view
 	rendering_filepath = None	# aspect ratio of the view
 
 	# camera settings
@@ -255,17 +254,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.rendering_columns = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["columns"]
 		self.rendering_totalViews = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["totalViews"]
 
-		# apply aspect ratio of the Looking Glass
-		self.rendering_aspectRatio = self.device_current['aspectRatio'] / (self.rendering_rows / self.rendering_columns)
+		# apply the render resolution
 		self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
 		self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
 
-		if self.rendering_aspectRatio > 1:
-			self.render_setting_scene.render.pixel_aspect_x = self.rendering_aspectRatio
-			self.render_setting_scene.render.pixel_aspect_y = 1
-		else:
-			self.render_setting_scene.render.pixel_aspect_x = 1
-			self.render_setting_scene.render.pixel_aspect_y = 1 / self.rendering_aspectRatio
+		# for landscape type displays
+		if self.device['aspectRatio'] > 1.0:
+
+			self.render_setting_scene.render.pixel_aspect_x = 1.0
+			self.render_setting_scene.render.pixel_aspect_y = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
+
+		# for portrait type displays
+		elif self.device['aspectRatio'] < 1.0:
+
+			self.render_setting_scene.render.pixel_aspect_x = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
+			self.render_setting_scene.render.pixel_aspect_y = 1.0
 
 
 		# if the operator was called with the animation flag set
