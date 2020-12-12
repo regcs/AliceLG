@@ -267,12 +267,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				LookingGlassAddon.qs[i]["viewOffscreens"].append(gpu.types.GPUOffScreen(int(LookingGlassAddon.qs[i]["viewWidth"]), int(LookingGlassAddon.qs[i]["viewHeight"])))
 
 
-		# LOAD SHADERS
-# 		# Load the blit shaders
-# 		if self.loadBlitShaders() == None:
-# 			print("ERROR: Blit shader not compiled")
-# 			raise Exception()
-
 		# Load the lightfield shaders
 		if self.loadlightFieldShaders() == None:
 			self.report({"ERROR"}, "Lightfield shader not compiled")
@@ -772,52 +766,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# TODO: Check, if the utilization of a blit shader would have any benefit in Blender. Otherwise remove this here.
-	# Compile the blit shader, which can copy a view into the
-	# correct position in the quilt
-	def loadBlitShaders(self):
-
-		# Blit shader sourcecodes
-		self.blitVertexShaderSource = '''
-			out vec2 texCoords;
-
-			layout (location = 0)
-			in vec2 vertPos_data;
-
-			void main()
-			{
-				gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
-				texCoords = (vertPos_data.xy + 1.0) * 0.5;
-			}
-		'''
-
-		self.blitFragmentShaderSource = '''
-			out vec4 fragColor;
-
-			in vec2 texCoords;
-
-			uniform sampler2D blitTex;
-			void main()
-			{
-				fragColor = texture(blitTex, texCoords.xy);
-			}
-		'''
-
-		# set up fullscreen quad vertices
-		vertPos_data = ((-1, -1), (1, 1), (1, 1), (-1, -1))
-
-		# Compile shader via GPU module
-		self.blitShader = gpu.types.GPUShader(self.blitVertexShaderSource, self.blitFragmentShaderSource)
-		self.blitShaderBatch = batch_for_shader(
-			self.blitShader, 'TRIS',
-			{"vertPos_data": vertPos_data,},
-		)
-
-		# return the OpenGL program code
-		return self.blitShader.program
-
-
-
 	# Compile the lightfield shader, which prepares the quilt for display
 	# on the LookingGlass as a hologram
 	def loadlightFieldShaders(self):
@@ -1243,7 +1191,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# Blit all the views into the quilt, if something has changed
+	# Draw all the views into the quilt, if something has changed
 	# and then apply the lightfield shader. Finally, draw the lightfield
 	# directly into the SpaceView3D created for the LookingGlass.
 	def drawLightfield(self, context):
