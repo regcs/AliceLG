@@ -21,6 +21,9 @@
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
 
+	# addon name
+	name = None
+
 	# path to the addon directory
 	path = None
 

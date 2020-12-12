@@ -1239,6 +1239,8 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 					column = layout.column(align = True)
 					row = column.row(align = True)
+					row.label(text="Viewport to Copy Settings from:")
+					row = column.row(align = True)
 					row.prop(context.scene.settings, "blender_workspace")
 					row = column.row(align = True)
 					row.prop(context.scene.settings, "blender_view3d")
@@ -1324,9 +1326,13 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 def register():
 
 	print("Initializing Holo Play Core:")
-	print(" # Registering at Holoplay Service as 'Blender Addon v2.0'")
+	# define name for registration
+	LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
+
+	print(" # Registering at Holoplay Service as: " + LookingGlassAddon.name)
+
 	# initialize HoloPlay Core SDK
-	errco = hpc.InitializeApp(b"Blender Addon v2.0", hpc.license_type.LICENSE_NONCOMMERCIAL.value)
+	errco = hpc.InitializeApp(LookingGlassAddon.name.encode(), hpc.license_type.LICENSE_NONCOMMERCIAL.value)
 
 	# register all classes of the addon
 	# Preferences
