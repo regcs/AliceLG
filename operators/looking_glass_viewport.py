@@ -59,7 +59,7 @@ if platform.system() == "Darwin":
 		from Quartz import kCGWindowListOptionOnScreenOnly, kCGNullWindowID, CGWindowListCopyWindowInfo, CGWindowListCreate, kCGWindowNumber
 
 	except:
-		print(" # Could not load AppKit")
+		self.report({"WARNING"}, "Could not load PyObjC. Need to position lightfield window manually.")
 		pass
 
 # if on 32-bit Windows
@@ -97,11 +97,11 @@ elif platform.system() == "Windows":
 	# 			return True
 
 	except:
-		print(" # Could not load User32.dll")
+		self.report({"WARNING"}, "Could not load User32.dll. Need to position lightfield window manually.")
 		pass
 
 else:
-	print(" # Unsupported operating system.")
+	self.report({"ERROR"}, "Unsupported operating system.")
 	raise OSError
 
 
@@ -148,19 +148,19 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# Inititalize the Looking Glass
-	@classmethod
-	def __init__(self):
-
-		print("Initializing the lightfield rendering operator ...")
-
-
-
-	# delete all objects
-	@classmethod
-	def __del__(self):
-
-		print("Stopped lightfield Rendering operator ...")
+	# # Inititalize the Looking Glass
+	# @classmethod
+	# def __init__(self):
+	#
+	# 	print("Initializing the lightfield rendering operator ...")
+	#
+	#
+	#
+	# # delete all objects
+	# @classmethod
+	# def __del__(self):
+	#
+	# 	print("Stopped lightfield Rendering operator ...")
 
 
 
@@ -185,26 +185,18 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# cancel the modal operator
 	def cancel(self, context):
 
-		print("Stopping timer.")
-
 		# stop timer
 		context.window_manager.event_timer_remove(self.timerEvent)
-
-		print("Stopping depsgraph handlers.")
 
 		# remove the app handler that checks for depsgraph updates
 		bpy.app.handlers.depsgraph_update_post.remove(self.trackDepsgraphUpdates)
 		bpy.app.handlers.frame_change_post.remove(self.trackDepsgraphUpdates)
 
-		print("Stopping viewport tracking handlers.")
 		# remove the handler for the viewport tracking
 		if self._handle_trackActiveSpaceView3D: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackActiveSpaceView3D, 'WINDOW')
 
-		print("Stopping viewport update tracking handlers.")
 		# remove the handler for the viewport tracking
 		if self._handle_trackViewportUpdates: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackViewportUpdates, 'WINDOW')
-
-		print("Removing view draw handlers.")
 
 		# remove the draw handlers for all quilt views
 		for handle in self._handle_viewDrawing:
@@ -213,11 +205,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# clear the list of handles
 		self._handle_viewDrawing.clear()
 
-		print("Removing lightfield draw handler.")
 		# remove the draw handler for the lightfield window
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
-
-		print("Free quilt and view offscreens.")
 
 		# iterate through all presets
 		for i in range(0, len(LookingGlassAddon.qs), 1):
@@ -243,8 +232,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# set the button controls for the lightfield window to False
 		self.settings.toggleLightfieldWindowFullscreen = False
 		self.settings.ShowLightfieldWindow = False
-
-		print("Everything is done.")
 
 
 		# return None since this is expected by the operator
@@ -286,7 +273,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# Load the lightfield shaders
 		if self.loadlightFieldShaders() == None:
-			print("ERROR: Lightfield shader not compiled")
+			self.report({"ERROR"}, "Lightfield shader not compiled")
 			raise Exception()
 
 		# Load the specific calibration data of the LG into the shaders
@@ -300,12 +287,12 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# PREPARE THE LIGHTFIELD WINDOW AND OVERRIDE CONTEXT
 		################################################################
 
-		# make a temporary variable
-		print("Window: ", LookingGlassAddon.lightfieldWindow)
-		print(" # x: ", LookingGlassAddon.lightfieldWindow.x)
-		print(" # y: ", LookingGlassAddon.lightfieldWindow.y)
-		print(" # width: ", LookingGlassAddon.lightfieldWindow.width)
-		print(" # height: ", LookingGlassAddon.lightfieldWindow.height)
+		# # make a temporary variable
+		# print("Window: ", LookingGlassAddon.lightfieldWindow)
+		# print(" # x: ", LookingGlassAddon.lightfieldWindow.x)
+		# print(" # y: ", LookingGlassAddon.lightfieldWindow.y)
+		# print(" # width: ", LookingGlassAddon.lightfieldWindow.width)
+		# print(" # height: ", LookingGlassAddon.lightfieldWindow.height)
 
 		# get the index of the lightfield window in the list of windows in the WindowManager
 		# NOTE: This is required for reloading a blend file in which the lightfield window was open
@@ -422,8 +409,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-		print("Invoked modal operator for lightfield window: ", time.time() - start)
 
+		# HANDLERS FOR OPERATOR CONTROL
+		# ++++++++++++++++++++++++++++++
 		# Create timer event that runs every millisecond to check if the lightfield needs to be updated
 		self.timerEvent = context.window_manager.event_timer_add(0.001, window=context.window)
 
@@ -628,7 +616,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# because the standard cursor was too small
 			view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
 			ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
-			#print("ray_cast_origin: ", ray_cast_origin)
 
 			# calculate the ray end point (10000 is just an arbitrary length)
 			ray_end = ray_start + (view_direction * 10000)
@@ -647,8 +634,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# set cursor in onto the focal plane
 				self.cursor = ray_start + (view_direction * self.settings.focalPlane)
 
-				#print("NO HIT: ", self.normal, self.cursor)
-
 
 			# force area redraw to draw the cursor
 			if context.area:
@@ -665,8 +650,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# if the live view mode is inactive
 		elif int(self.settings.lightfieldMode) != 0:
-
-			#print("SKIPPED EVENT: ", event.type, event.value)
 
 			# we prevent any event handling by Blender in the lightfield viewport
 			return {'RUNNING_MODAL'}
@@ -1243,7 +1226,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 			#print("draw_view3d (view: ", view, "): ", time.time() - start_test)
-			# print("copyViewToQuilt end: ", time.time() - self.start_multi_view)
+			#print("copyViewToQuilt end: ", time.time() - self.start_multi_view)
 
 			# if this was the last view
 			if view == LookingGlassAddon.qs[self.preset]["totalViews"] - 1:
@@ -1309,7 +1292,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 							#print("Copied view ", view, (x, y), " into the quilt texture. Required time: ", time.time() - start_blit)
 
-						#print("Required time: ", time.time() - start_blit)
+						#print("Required total time: ", time.time() - start_blit)
 
 			# if the quilt view mode is active AND an image is loaded
 			elif int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage != None:
@@ -1524,11 +1507,11 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 
 
-	# delete all objects
-	@classmethod
-	def __del__(self):
-
-		print("Stopped the frustum rendering operator ...")
+	# # delete all objects
+	# @classmethod
+	# def __del__(self):
+	#
+	# 	print("Stopped the frustum rendering operator ...")
 
 
 
@@ -1546,12 +1529,8 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	# cancel the modal operator
 	def cancel(self, context):
 
-		print("Removing draw handler: ")
-
 		# remove the handler for the frustum drawing
 		if self._handle_drawCameraFrustum: bpy.types.SpaceView3D.draw_handler_remove(self._handle_drawCameraFrustum, 'WINDOW')
-
-		print("Everything is done.")
 
 		LookingGlassAddon.FrustumInitialized = False
 
@@ -1586,8 +1565,6 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++
 		# draw handler to display the frustum of the Looking Glass camera
 		self._handle_drawCameraFrustum = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
-
-		print("Invoked modal operator for frustum: ", time.time() - start)
 
 		# add the modal handler
 		context.window_manager.modal_handler_add(self)

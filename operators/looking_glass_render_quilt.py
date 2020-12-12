@@ -134,7 +134,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# reset the operator state to COMPLETE_RENDER
 		self.operator_state = "COMPLETE_RENDER"
 
-		print("######################################")
+		# print("######################################")
 		# # wait a few milliseconds until the operator processed the step
 		# while self.operator_state != "INVOKE_RENDER" and self.operator_state != "IDLE":
 		# 	time.sleep(0.001)
@@ -149,19 +149,19 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
-	# inititalize the quilt rendering
-	@classmethod
-	def __init__(self):
-
-		print("Initializing the quilt rendering operator ...")
-
-
-
-	# clean up
-	@classmethod
-	def __del__(self):
-
-		print("Stopped quilt rendering operator ...")
+	# # inititalize the quilt rendering
+	# @classmethod
+	# def __init__(self):
+	#
+	# 	print("Initializing the quilt rendering operator ...")
+	#
+	#
+	#
+	# # clean up
+	# @classmethod
+	# def __del__(self):
+	#
+	# 	print("Stopped quilt rendering operator ...")
 
 
 
@@ -177,8 +177,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	# cancel modal operator
 	def cancel(self, context):
-
-		print("[INFO] Rendering operator clean-up.")
 
 		# REMOVE APP HANDLERS
 		# +++++++++++++++++++++++++
@@ -218,8 +216,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_scene.render.resolution_y = self.render_setting_original_height
 		self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
 		self.render_setting_scene.render.pixel_aspect_y = self.render_setting_original_aspect_y
-
-		print("Everything is done.")
 
 		# return None since this is expected by the operator
 		return None
@@ -318,7 +314,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		print("[INFO] Operator state: ", self.operator_state)
+		#print("[INFO] Operator state: ", self.operator_state)
 
 		# if the TIMER event for the quilt rendering is called
 		if event.type == 'TIMER':
@@ -327,7 +323,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++
 			if self.operator_state == "INVOKE_RENDER":
 
-				print("[INFO] Invoking new render job.")
+				#print("[INFO] Invoking new render job.")
 
 				# FRAME AND VIEW
 				# ++++++++++++++++++++++
@@ -406,10 +402,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# NOTE: - we need to take into account the view aspect ratio and the pixel aspect ratio
 				self.camera_active.data.shift_x = self.camera_original_shift_x + offset / (cameraSize * self.rendering_viewWidth / self.rendering_viewHeight * self.render_setting_scene.render.pixel_aspect_x * self.render_setting_scene.render.pixel_aspect_y)
 
-				print("view_matrix: ", view_matrix)
-				print("view_matrix_inv: ", view_matrix_inv)
-				print("camera_location: ", self.camera_active.location)
-				print("camera_original_location: ", self.camera_original_location)
 
 
 
@@ -421,7 +413,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++
 			elif self.operator_state == "INIT_RENDER":
 
-				print("[INFO] Rendering job initialized.")
+				#print("[INFO] Rendering job initialized.")
 
 				# if an animation shall be rendered
 				if self.animation == True:
@@ -475,14 +467,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "PRE_RENDER":
 
-				print("[INFO] Rendering view is going to be prepared.")
+				#print("[INFO] Rendering view is going to be prepared.")
 
-				# output current status
-				print(" # active camera: ", self.camera_active)
-				print(" # current frame: ", self.rendering_frame)
-				print(" # current subframe: ", self.rendering_subframe)
-				print(" # current view: ", self.rendering_view)
-				print(" # current file: ", self.rendering_filepath)
+				# # output current status
+				# print(" # active camera: ", self.camera_active)
+				# print(" # current frame: ", self.rendering_frame)
+				# print(" # current subframe: ", self.rendering_subframe)
+				# print(" # current view: ", self.rendering_view)
+				# print(" # current file: ", self.rendering_filepath)
 
 				# reset the operator state to IDLE
 				self.operator_state = "IDLE"
@@ -495,8 +487,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "POST_RENDER":
 
-				print("[INFO] Saving file in ", self.rendering_filepath)
-				print(bpy.data.images["Render Result"].pixels)
+				# print("[INFO] Saving file in ", self.rendering_filepath)
+				# print(bpy.data.images["Render Result"].pixels)
 
 
 				# STORE THE PIXEL DATA OF THE RENDERED IMAGE
@@ -528,7 +520,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "COMPLETE_RENDER":
 
-				print("[INFO] Render job completed.")
+				# print("[INFO] Render job completed.")
 
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
@@ -677,7 +669,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "CANCEL_RENDER":
 
-				print("[INFO] Render job cancelled.")
+				#print("[INFO] Render job cancelled.")
 
 				# cancel the operator
 				# NOTE: - this includes recovering all original user settings
