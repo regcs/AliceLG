@@ -250,7 +250,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_scene = context.scene
 		self.render_setting_filepath = context.scene.render.filepath
 
-
 		# SET RENDER SETTINGS
 		# ++++++++++++++++++++++++
 		# settings of the current preset

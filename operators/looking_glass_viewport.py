@@ -624,7 +624,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# CALCULATE CUSTOM CURSOR POSITION AND SIZE
 			# +++++++++++++++++++++++++++++++++++++++++++++
-			# a custom cursor is drawn in the Looking Glass viewPortion
+			# a custom cursor is drawn in the Looking Glass viewport
 			# because the standard cursor was too small
 			view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
 			ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
@@ -778,8 +778,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# self.lightFieldShader.uniform_int("tile_z", LookingGlassAddon.qs[self.preset]["totalViews"])
 
 		# set viewportion to the full view
+		# NOTE: This is always 1 for landscape, but might be different for portait LG?
 		self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
-		#print("viewPortion: ", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
+		# print("viewPortion: ", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
 		# self.lightFieldShader.uniform_float("viewPortion_x", LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"])
 		# self.lightFieldShader.uniform_float("viewPortion_y", LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"])
 
@@ -1208,13 +1209,27 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix = view_matrix.inverted()
 
 				# get the camera's projection matrix
-				projection_matrix = camera.calc_matrix_camera(
-						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
-						x = LookingGlassAddon.qs[self.preset]["viewWidth"],# for final renders: x = bpy.context.scene.render.resolution_x,
-						y = LookingGlassAddon.qs[self.preset]["viewHeight"],# for final renders: y = bpy.context.scene.render.resolution_y,
-						scale_x = ((LookingGlassAddon.lightfieldWindow.width / LookingGlassAddon.lightfieldWindow.height) / (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"])), # for final renders: bpy.context.scene.render.pixel_aspect_x,
-						scale_y = 1, # for final renders: bpy.context.scene.render.pixel_aspect_y,
-					)
+				# for landscape type displays
+				if self.device['aspectRatio'] > 1.0:
+
+					projection_matrix = camera.calc_matrix_camera(
+							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
+							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+							scale_x = 1.0,
+							scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+						)
+
+				# for portrait type displays
+				elif self.device['aspectRatio'] < 1.0:
+
+					projection_matrix = camera.calc_matrix_camera(
+							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
+							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+							scale_x = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+							scale_y = 1,
+						)
 
 			# otherwise we take the (lightfield) viewport matrices
 			else:
@@ -1303,6 +1318,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 								# draw the lightfield mouse cursor if desired
 								if self.settings.viewport_show_cursor == True:
 
+									# TODO: Maybe there is a better way to check this?
 									# but only, if the mouse cursor is inside the fullscreen lightfield window
 									if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (self.mouse_x < LookingGlassAddon.lightfieldWindow.width and self.mouse_y < LookingGlassAddon.lightfieldWindow.height):
 
@@ -1406,13 +1422,27 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix = view_matrix.inverted()
 
 				# get the camera's projection matrix
-				projection_matrix = camera.calc_matrix_camera(
-						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
-						x = LookingGlassAddon.qs[self.preset]["viewWidth"],# for final renders: x = bpy.context.scene.render.resolution_x,
-						y = LookingGlassAddon.qs[self.preset]["viewHeight"],# for final renders: y = bpy.context.scene.render.resolution_y,
-						scale_x = ((LookingGlassAddon.lightfieldWindow.width / LookingGlassAddon.lightfieldWindow.height) / (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"])), # for final renders: bpy.context.scene.render.pixel_aspect_x,
-						scale_y = 1, # for final renders: bpy.context.scene.render.pixel_aspect_y,
-					)
+				# for landscape type displays
+				if self.device['aspectRatio'] > 1.0:
+
+					projection_matrix = camera.calc_matrix_camera(
+							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
+							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+							scale_x = 1.0,
+							scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+						)
+
+				# for portrait type displays
+				elif self.device['aspectRatio'] < 1.0:
+
+					projection_matrix = camera.calc_matrix_camera(
+							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
+							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+							scale_x = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+							scale_y = 1,
+						)
 
 			# otherwise we take the (lightfield) viewport matrices
 			else:
