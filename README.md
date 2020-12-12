@@ -7,7 +7,7 @@
 ## General Information
 This add-on was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new 3D display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
 
-If you like this add-on, I would be grateful if you would support its development with a donation. **LINK MISSING**
+If you like this add-on and would like to support me, I would be really happy about a small donation. 
 
 ## Features
 - seamless integration into the common Blender workflow
