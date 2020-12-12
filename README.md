@@ -7,13 +7,18 @@
 ## General Information
 This add-on was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new 3D display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
 
-If you like this add-on and would like to support me, I would be really happy about a small donation. 
+If you like this add-on and would like to support me, I would be really happy about a small [donation](LINK MISSING). 
 
 ## Features
 - seamless integration into the common Blender workflow
-- lightfield viewport in the Looking Glass with automatic and manual view refresh
-- option to display a viewcone representing the Looking Glass volume in the scene
+- a viewcone representing the Looking Glass volume in the scene
+- lightfield viewport in the Looking Glass with:
+   - automatic and manual view refresh modes
+   - a holographic mouse cursor
+   - most of the features of a native Blender viewport
 - render any camera view as single quilt image or animation
+- support for multiple scenes and view layers
+- addon settings are saved in & loaded from your Blender file
 
 ## System Requirements
 - Windows or macOS (Linux not tested yet)
@@ -22,9 +27,11 @@ If you like this add-on and would like to support me, I would be really happy ab
 
 ## Installation
 
-1. Install the Holoplay Service App on your PC or Mac.
+1. Download the [zip file](LINK MISSING) of this addon
 
-2. Install the Alice/LG add-on:
+2. Install the Holoplay Service App on your PC or Mac.
+
+3. Install the Alice/LG add-on:
    - Open Blender
    - In the main menu, navigate to _Edit → Preferences → Add-ons → Install → Install Add-on_
    - Select the zip file and click "Install"
