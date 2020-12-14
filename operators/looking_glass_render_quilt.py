@@ -229,7 +229,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# get the calibration data of the selected Looking Glass from the deviceList
-		self.device_current = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
 		# RENDER SETTINGS
@@ -391,7 +391,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# start at viewCone * 0.5 and go up to -viewCone * 0.5
 				# TODO: The Looking Glass Factory dicumentation suggests to use a viewcone of 35°, but the device calibration has 40° by default.
 				#		Which one should we take?
-				offsetAngle = (0.5 - self.rendering_view / (self.rendering_totalViews - 1)) * radians(self.device_current['viewCone'])
+				offsetAngle = (0.5 - self.rendering_view / (self.rendering_totalViews - 1)) * radians(self.device['viewCone'])
 
 				# calculate the offset that the camera should move
 				offset = cameraDistance * tan(offsetAngle)
