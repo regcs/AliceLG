@@ -130,6 +130,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	updateQuilt = True
 	depsgraph_update_time = 0.000
 	viewportViewMatrix = None
+	activeSpace = None
 
 	# LIGHTFIELD CURSOR
 	cursor = Vector((0, 0, 0))
@@ -141,7 +142,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	_handle_trackViewportUpdates = None
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
-	_handle_trackActiveSpaceView3D = None
+	_handle_trackActiveWindow = None
 
 	# DEBUGING VARIABLES
 	start_multi_view = 0
@@ -193,7 +194,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		bpy.app.handlers.frame_change_post.remove(self.trackDepsgraphUpdates)
 
 		# remove the handler for the viewport tracking
-		if self._handle_trackActiveSpaceView3D: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackActiveSpaceView3D, 'WINDOW')
+		if self._handle_trackActiveWindow: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackActiveWindow, 'WINDOW')
 
 		# remove the handler for the viewport tracking
 		if self._handle_trackViewportUpdates: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackViewportUpdates, 'WINDOW')
@@ -204,6 +205,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# clear the list of handles
 		self._handle_viewDrawing.clear()
+
+		# remove the draw handler for the lightfield cursor
+		if self._handle_lightfieldCursor: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldCursor, 'WINDOW')
 
 		# remove the draw handler for the lightfield window
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
@@ -226,7 +230,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# set status variables to default state
 		LookingGlassAddon.lightfieldWindow = None
 		LookingGlassAddon.lightfieldSpace = None
-		LookingGlassAddon.BlenderWindow = None
+		#LookingGlassAddon.BlenderWindow = None
 		LookingGlassAddon.BlenderViewport = None
 
 		# set the button controls for the lightfield window to False
@@ -249,6 +253,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# update the variable for the current Looking Glass device
 		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+
 
 
 		# PREPARE THE SHADERS AND LIGHTFIELD RENDERING
@@ -378,7 +383,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# HANDLERS FOR CONTROL PURPOSES
 		# ++++++++++++++++++++++++++++++
 		# we exploit the draw_hanlder of the SpaceView3D to track the SpaceView which is currently modified by the user
-		self._handle_trackActiveSpaceView3D = bpy.types.SpaceView3D.draw_handler_add(self.trackActiveSpaceView3D, (context,), 'WINDOW', 'PRE_VIEW')
+		self._handle_trackActiveWindow = bpy.types.SpaceView3D.draw_handler_add(self.trackActiveWindow, (context,), 'WINDOW', 'PRE_VIEW')
 
 		# we exploit the draw_hanlder of the SpaceView3D to track the SpaceView which is currently modified by the user
 		self._handle_trackViewportUpdates = bpy.types.SpaceView3D.draw_handler_add(self.trackViewportUpdates, (context,), 'WINDOW', 'PRE_VIEW')
@@ -402,6 +407,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# draw callback to draw the lightfield in the window
 		self._handle_lightfieldDrawing = bpy.types.SpaceView3D.draw_handler_add(self.drawLightfield, (context,), 'WINDOW', 'POST_PIXEL')
+
+		# draw callback to draw the lightfield cursor
+		self._handle_lightfieldCursor = bpy.types.SpaceView3D.draw_handler_add(self.updateLightfieldCursor, (context,), 'WINDOW', 'PRE_VIEW')
 
 
 
@@ -571,8 +579,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE') or event.type == 'MOUSEMOVE':
 
 			# save current mouse position
-			mouse_x = self.mouse_x = event.mouse_x
-			mouse_y = self.mouse_y = event.mouse_y
+			self.mouse_x = self.modified_mouse_x = event.mouse_x
+			self.mouse_y = self.modified_mouse_y = event.mouse_y
 
 			# currently selected camera
 			camera = self.settings.lookingglassCamera
@@ -586,7 +594,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				#		  does not fill the complete window area
 
 				# get modelview matrix
-				view_matrix = camera.matrix_world # cameraLookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
+				view_matrix = camera.matrix_world
 
 				# obtain the viewframe of the camera in 3D coordinates
 				view_frame = camera.data.view_frame(scene=context.scene)
@@ -602,16 +610,43 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
 
 				# remap mouse coordinates in complete window to corresponding coordinates in the camera view frame
-				mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
-				mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
+				self.modified_mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
+				self.modified_mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
+
+			# force area redraw to draw the cursor
+			if context.area:
+				context.area.tag_redraw()
+
+			# if the left mouse button was clicked
+			if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
+
+				# select the object
+				bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(self.modified_mouse_x, self.modified_mouse_y))
+
+			return {'RUNNING_MODAL'}
 
 
-			# CALCULATE CUSTOM CURSOR POSITION AND SIZE
-			# +++++++++++++++++++++++++++++++++++++++++++++
-			# a custom cursor is drawn in the Looking Glass viewport
-			# because the standard cursor was too small
-			view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
-			ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (mouse_x, mouse_y))
+		# if the live view mode is inactive
+		elif int(self.settings.lightfieldMode) != 0:
+
+			# we prevent any event handling by Blender in the lightfield viewport
+			return {'RUNNING_MODAL'}
+
+		# pass event through
+		return {'PASS_THROUGH'}
+
+
+	# calculate hit position of a ray cast into the viewport to find the location
+	# for the lightfield cursor in the lightfield
+	def updateLightfieldCursor(self, context):
+
+		# if this call belongs to the lightfield window
+		if context.window == LookingGlassAddon.lightfieldWindow:
+
+			# lightfield cursor is drawn in the Looking Glass viewport
+			# because the standard cursor is too small and ... just 2D
+			view_direction = region_2d_to_vector_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (self.modified_mouse_x, self.modified_mouse_y))
+			ray_start = region_2d_to_origin_3d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, (self.modified_mouse_x, self.modified_mouse_y))
 
 			# calculate the ray end point (10000 is just an arbitrary length)
 			ray_end = ray_start + (view_direction * 10000)
@@ -631,32 +666,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				self.cursor = ray_start + (view_direction * self.settings.focalPlane)
 
 
-			# force area redraw to draw the cursor
-			if context.area:
-				context.area.tag_redraw()
 
-			# if the left mouse button was clicked
-			if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
-
-				# select the object
-				bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(mouse_x, mouse_y))
-
-			return {'RUNNING_MODAL'}
-
-
-		# if the live view mode is inactive
-		elif int(self.settings.lightfieldMode) != 0:
-
-			# we prevent any event handling by Blender in the lightfield viewport
-			return {'RUNNING_MODAL'}
-
-		# pass event through
-		return {'PASS_THROUGH'}
-
-
-
-	# Application handler that continously checks for changes of the
-	# Multiview used for Looking Glass rendering
+	# draw handler that continously checks for changes in the
+	# the lightfield viewport
 	def trackViewportUpdates(self, context):
 
 		# if this call belongs to the lightfield window
@@ -690,16 +702,19 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# Multiview used for Looking Glass rendering
 	def trackDepsgraphUpdates(self, scene, depsgraph):
 
-		# adjust the scene in the lightfield window
-		# NOTE: We need this to handle multiple scenes with the Looking Glass
+		# adjust the scene and view layer in the lightfield window
+		# NOTE: We need this to handle multiple scenes & layers with the Looking Glass
 		if LookingGlassAddon.lightfieldWindow != None:
 			LookingGlassAddon.lightfieldWindow.scene = scene
+			LookingGlassAddon.lightfieldWindow.view_layer = depsgraph.view_layer
 
 
 
 		# if automatic live view is activated AND something in the scene has changed
 		if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
 			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), scene)
+
+
 
 			# invoke an update of the Looking Glass viewport
 			self.modal_redraw = True
@@ -717,30 +732,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 	# this function is called as a draw handler to enable the Looking Glass Addon
 	# to keep track of the SpaceView3D which is currently manipulated by the User
-	def trackActiveSpaceView3D(self, context):
+	def trackActiveWindow(self, context):
 
 		# if the space data exists
-		if context.space_data != None and LookingGlassAddon.BlenderWindow != LookingGlassAddon.lightfieldWindow:
+		if context.space_data != None and context.window != LookingGlassAddon.lightfieldWindow and LookingGlassAddon.BlenderWindow != context.window:
 
 			# in any case, we need to track the active window
 			# NOTE: this is important for finding the correct "Scene" and "View Layer"
 			LookingGlassAddon.BlenderWindow = context.window
-
-			# if the user chose to automatically track the viewport
-			if self.settings.blender_track_viewport == True:
-
-				# if the user activated the option to
-				# use the shading and overlay settings of the currently used Blender 3D viewport
-				if self.settings.viewportMode == 'BLENDER' and context.space_data != LookingGlassAddon.lightfieldSpace:
-
-					# save the current space data in the global variable
-					LookingGlassAddon.BlenderViewport = context.space_data
-
-					# set the Workspace list to the current workspace
-					self.settings.blender_workspace = context.workspace.name
-
-					# set the 3D View list to the current 3D view
-					self.settings.blender_view3d = str(LookingGlassAddon.BlenderViewport)
 
 
 
@@ -866,7 +865,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# Adjust the viewport render settings
 		######################################################
 
-		# if the settings shall be taken from the current viewport
+		# if the settings shall be taken from a Blender viewport
 		if self.settings.viewportMode == 'BLENDER':
 
 			# check if the space still exists

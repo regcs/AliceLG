@@ -27,9 +27,9 @@ bl_info = {
 	"description": "Alice/LG takes your artworks thorugh the Looking Glass (lightfield displays)",
 	"category": "View",
 	"wiki_url": "",
-    "warning": "",
-    "doc_url": "",
-    "tracker_url": ""
+	"warning": "",
+	"doc_url": "",
+	"tracker_url": ""
 }
 
 # this is only for debugging purposes
@@ -242,6 +242,9 @@ class LookingGlassAddonFunctions:
 		# if the bool property was set to True
 		if self['ShowLightfieldWindow'] == True:
 
+			# assign the current viewport for the shading & overlay settings
+			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
+
 			# Create a new main window
 			bpy.ops.wm.window_new_main()
 
@@ -289,36 +292,6 @@ class LookingGlassAddonFunctions:
 				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
 
 
-
-	# update function for the viewport mode
-	def update_track_viewport(self, context):
-
-		if context != None:
-
-			# if the settings shall be taken from the current viewport
-			if context.scene.settings.viewportMode == 'BLENDER':
-
-				# if the viewport tracking is not active
-				if context.scene.settings.blender_track_viewport == False:
-
-					# save the current space data in a global variable
-					LookingGlassAddon.BlenderViewport = context.space_data
-
-					# set the Workspace list to the current workspace
-					context.scene.settings.blender_workspace = context.workspace.name
-
-					# set the 3D View list to the current 3D view
-					context.scene.settings.blender_view3d = str(LookingGlassAddon.BlenderViewport)
-
-			# if the settings shall be taken from the current viewport
-			elif context.scene.settings.viewportMode == 'CUSTOM':
-
-				# reset the global variable
-				LookingGlassAddon.BlenderViewport = None
-
-		return None
-
-
 	# update function for the workspace selection
 	def update_workspace_selection(self, context):
 
@@ -327,49 +300,44 @@ class LookingGlassAddonFunctions:
 			# if the settings shall be taken from the current viewport
 			if context.scene.settings.viewportMode == 'BLENDER':
 
-				# if the viewport tracking is not active
-				if context.scene.settings.blender_track_viewport == False:
+				# status variable
+				success = False
 
-					# status variable
-					success = False
+				# find the correct SpaceView3D object
+				for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
+					for area in screen.areas:
+						for space in area.spaces:
 
-					# TODO: At the moment, we only
+							# if this is the correct space
+							if str(space) == str(context.scene.settings.blender_view3d):
 
-					# find the correct SpaceView3D object
+								# save the space object in the global variable
+								LookingGlassAddon.BlenderViewport = space
+								success = True
+								break
+
+				# if the current space was not found in the chosen workspace
+				if success == False:
+
+					# find and use the first SpaceView3D object of the workspace
 					for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
 						for area in screen.areas:
 							for space in area.spaces:
-
-								# if this is the correct space
-								if str(space) == str(context.scene.settings.blender_view3d):
+								if space.type == 'VIEW_3D':
 
 									# save the space object in the global variable
 									LookingGlassAddon.BlenderViewport = space
 									success = True
 									break
 
-					# if the current space was not found in the chosen workspace
-					if success == False:
+				# if there is no 3D View in this workspace, use the active 3D View instead
+				if success == False:
 
-						# find and use the first SpaceView3D object of the workspace
-						for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
-							for area in screen.areas:
-								for space in area.spaces:
-									if space.type == 'VIEW_3D':
+					# update the viewport selection
+					context.scene.settings.blender_view3d = "None"
 
-										# save the space object in the global variable
-										LookingGlassAddon.BlenderViewport = space
-										success = True
-										break
-
-					# if there is no 3D View in this workspace, use the active 3D View instead
-					if success == False:
-
-						# update the viewport selection
-						context.scene.settings.blender_view3d = "None"
-
-						# fall back to the use of the custom settings
-						LookingGlassAddon.BlenderViewport = None
+					# fall back to the use of the custom settings
+					LookingGlassAddon.BlenderViewport = None
 
 		return None
 
@@ -382,27 +350,25 @@ class LookingGlassAddonFunctions:
 			# if the settings shall be taken from the current viewport
 			if context.scene.settings.viewportMode == 'BLENDER':
 
-				# if the viewport tracking is not active
-				if context.scene.settings.blender_track_viewport == False:
+				# if a viewport is chosen
+				if str(context.scene.settings.blender_view3d) != "None":
 
-					# if a viewport is chosen
-					if str(context.scene.settings.blender_view3d) != "None":
+					# find the correct SpaceView3D object
+					for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
+						for area in screen.areas:
+							for space in area.spaces:
 
-						# find the correct SpaceView3D object
-						for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
-							for area in screen.areas:
-								for space in area.spaces:
+								# if this is the correct space
+								if str(space) == str(context.scene.settings.blender_view3d):
 
-									# if this is the correct space
-									if str(space) == str(context.scene.settings.blender_view3d):
+									# save the space object in the global variable
+									LookingGlassAddon.BlenderViewport = space
+									break
 
-										# save the space object in the global variable
-										LookingGlassAddon.BlenderViewport = space
-										break
-					else:
+				else:
 
-						# fall back to the use of the custom settings
-						LookingGlassAddon.BlenderViewport = None
+					# fall back to the use of the custom settings
+					LookingGlassAddon.BlenderViewport = None
 
 		return None
 
@@ -712,8 +678,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 	viewport_cursor_color: bpy.props.FloatVectorProperty(name="Lightfield Cursor Color",
-                                    subtype='COLOR',
-                                    default=[1.0, 0.627451, 0.156863])
+									subtype='COLOR',
+									default=[1.0, 0.627451, 0.156863])
 
 
 
@@ -725,13 +691,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 												],
 										default='BLENDER',
 										name="Viewport Mode",
-										)
-
-	blender_track_viewport: bpy.props.BoolProperty(
-										name="Use Active Viewport Settings",
-										description="If enabled, the Looking Glass automatically adjusts to the settings of the currently used Blender viewport",
-										default = True,
-										update = LookingGlassAddonFunctions.update_track_viewport
 										)
 
 	blender_workspace: bpy.props.EnumProperty(
@@ -877,12 +836,18 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 @persistent
 def LookingGlassAddonInitHandler(dummy1, dummy2):
 
-	# Invoke modal operator for the camera frustum rendering
+	# # invoke the mouse position tracking operator
+	# bpy.ops.wm.mouse_tracker('INVOKE_DEFAULT')
+
+	# invoke the camera frustum rendering operator
 	bpy.ops.render.frustum('INVOKE_DEFAULT')
+
+	# get the active window
+	LookingGlassAddon.BlenderWindow = bpy.context.window
 
 	# if the lightfield window is active
 	if bpy.context.scene.settings.ShowLightfieldWindow == True and bpy.context.scene.settings.lightfieldWindowIndex != -1:
-		print("WindowIndex: ", bpy.context.scene.settings.lightfieldWindowIndex)
+
 		# get the lightfield window by the index of this window in the list of windows in the WindowManager
 		LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows.values()[bpy.context.scene.settings.lightfieldWindowIndex]
 
@@ -1173,6 +1138,28 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 
 # ------------- Panel for overlay settings ----------------
+# Operator for manual redrawing of the Looking Glass (for manual Live View Mode)
+class LOOKINGGLASS_OT_blender_viewport_assign(bpy.types.Operator):
+	bl_idname = "lookingglass.blender_viewport_assign"
+	bl_label = "Assign Active Viewport"
+	bl_description = "Use the shading and overlay settings of the current Blender viewport"
+	bl_options = {'REGISTER', 'INTERNAL'}
+
+	def execute(self, context):
+
+		# if the user activated the option to
+		# use the shading and overlay settings of the currently used Blender 3D viewport
+		if context.scene.settings.viewportMode == 'BLENDER':
+
+			# set the Workspace list to the current workspace
+			context.scene.settings.blender_workspace = context.workspace.name
+
+			# set the 3D View list to the current 3D view
+			context.scene.settings.blender_view3d = str(context.space_data)
+
+		return {'FINISHED'}
+
+# Panel for shading & overlay setting
 class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 	""" Looking Glass Properties """
@@ -1229,27 +1216,27 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 			# if the current mode is "BLENDER"
 			if context.scene.settings.viewportMode == "BLENDER":
 
+				#column.separator()
+
+				row = column.row(align = True)
+				column = layout.column(align = True)
+				row = column.row(align = True)
+				row.label(text="Mirror Settings From:")
+				row = column.row(align = True)
+				row.prop(context.scene.settings, "blender_workspace")
+				row = column.row(align = True)
+				row.prop(context.scene.settings, "blender_view3d")
+
 				column.separator()
 
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "blender_track_viewport")
+				row.operator("lookingglass.blender_viewport_assign")
 
-				# if the viewport tracking is not activated
-				if context.scene.settings.blender_track_viewport == False:
+				# if the chosen workspace has no 3D View
+				if context.scene.settings.blender_view3d == "None":
 
-					column = layout.column(align = True)
-					row = column.row(align = True)
-					row.label(text="Viewport to Copy Settings from:")
-					row = column.row(align = True)
-					row.prop(context.scene.settings, "blender_workspace")
-					row = column.row(align = True)
-					row.prop(context.scene.settings, "blender_view3d")
-
-					# if the chosen workspace has no 3D View
-					if context.scene.settings.blender_view3d == "None":
-
-						# disable the manual selection options
-						row.enabled = False
+					# disable the manual selection options
+					row.enabled = False
 
 			# if the current mode is "CUSTOM"
 			elif context.scene.settings.viewportMode == "CUSTOM":
@@ -1321,6 +1308,61 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 
 
+# ---------- MOUSE POSITION OPERATOR -------------
+class LOOKINGGLASS_OT_wm_mouse_position(bpy.types.Operator):
+	bl_idname = "wm.mouse_position"
+	bl_label = "Invoke Mouse Operator"
+	bl_options = {'REGISTER', 'INTERNAL'}
+
+	x: bpy.props.IntProperty()
+	y: bpy.props.IntProperty()
+
+	def execute(self, context):
+		# save mouse position in global variable
+		LookingGlassAddon.mouse_x = self.x
+		LookingGlassAddon.mouse_y = self.y
+
+		#print("Tracker: ", (LookingGlassAddon.mouse_x, LookingGlassAddon.mouse_y))
+
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		self.x = event.mouse_x
+		self.y = event.mouse_y
+
+		return self.execute(context)
+
+
+class LOOKINGGLASS_OT_wm_mouse_tracker(bpy.types.Operator):
+	bl_idname = "wm.mouse_tracker"
+	bl_label = "Mouse Position Tracker"
+	bl_options = {'REGISTER', 'INTERNAL'}
+
+	def modal(self, context, event):
+
+		if event.type == 'MOUSEMOVE':
+
+			if LookingGlassAddon.lightfieldWindow != None:
+
+				LookingGlassAddon.mouse_x = event.mouse_x
+				LookingGlassAddon.mouse_y = event.mouse_y
+				# invoke the mouse position tracking operator
+				#bpy.ops.wm.mouse_position('INVOKE_DEFAULT')
+				#print((event.mouse_x, event.mouse_region_x))
+				print((LookingGlassAddon.mouse_x, LookingGlassAddon.mouse_y))
+				#print("")
+
+		return {'PASS_THROUGH'}
+
+	def invoke(self, context, event):
+
+		# Create timer event that runs every 10 ms to check the mouse position
+		#self.timerEvent = context.window_manager.event_timer_add(0.010, window=context.window)
+
+		context.window_manager.modal_handler_add(self)
+		return {'RUNNING_MODAL'}
+
+
 
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
@@ -1335,11 +1377,12 @@ def register():
 	errco = hpc.InitializeApp(LookingGlassAddon.name.encode(), hpc.license_type.LICENSE_NONCOMMERCIAL.value)
 
 	# register all classes of the addon
-	# Preferences
+	# Preferences & Settings
 	bpy.utils.register_class(LookingGlassAddonPreferences)
 	bpy.utils.register_class(LookingGlassAddonSettings)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
+	bpy.utils.register_class(LOOKINGGLASS_OT_blender_viewport_assign)
 	bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
 
 	# Looking Glass quilt rendering
@@ -1348,6 +1391,10 @@ def register():
 	# Looking Glass viewport & camera frustum
 	bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
+
+	# Mouse position tracker
+	bpy.utils.register_class(LOOKINGGLASS_OT_wm_mouse_position)
+	bpy.utils.register_class(LOOKINGGLASS_OT_wm_mouse_tracker)
 
 	# UI elements
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
@@ -1397,6 +1444,7 @@ def register():
 		LookingGlassAddon.lightfieldVertexShaderSource = hpc.LightfieldVertShaderGLSL
 		LookingGlassAddon.lightfieldFragmentShaderSource = hpc.LightfieldFragShaderGLSL
 
+
 		print("########################################################################")
 		print("Initialized the Looking Glass Addon.")
 
@@ -1442,24 +1490,31 @@ def unregister():
 	# remove initialization helper app handler
 	bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
 
-	# unregister all classes
+	# register all classes of the addon
+	# Preferences & Settings
 	bpy.utils.unregister_class(LookingGlassAddonPreferences)
 	bpy.utils.unregister_class(LookingGlassAddonSettings)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
+
+	# Looking Glass quilt rendering
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
+
+	# Looking Glass viewport & camera frustum
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
+
+	# Mouse position tracker
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_wm_mouse_tracker)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_wm_mouse_position)
+
+	# UI elements
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
-
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
-
 	# delete all variables
 	del bpy.types.Scene.settings
-
-	print("########################################################################")
-	print("Deinitialized the Looking Glass Addon.")
