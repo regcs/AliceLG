@@ -326,7 +326,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++
 			if self.operator_state == "INVOKE_RENDER":
 
-				#print("[INFO] Invoking new render job.")
+				# print("[INFO] Invoking new render job.")
 
 				# FRAME AND VIEW
 				# ++++++++++++++++++++++
@@ -336,18 +336,22 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# get the subframe, that will be rendered
 				self.rendering_subframe = self.render_setting_scene.frame_subframe
 
-				# set the filepath so that the filename adheres to:
-				# filepath + "_view_XX_YYYY"
-				self.rendering_filepath
-
 
 
 				# STORE USER CAMERA SETTINGS
 				# ++++++++++++++++++++++++++++++++++
 				# NOTE: - we do this here, since each frame could contain a different
 				#		 camera setting
-				# remember active camera as well as its original location and shift value
-				self.camera_active = self.render_setting_scene.camera
+				# if a camera is selected in the add-on settings
+				if self.settings.lookingglassCamera != None:
+
+					# use the selected camera
+					self.camera_active = self.settings.lookingglassCamera
+
+				else:
+
+					# use the active camera of the scene
+					self.camera_active = self.render_setting_scene.camera
 
 				# if this is the first view of the current frame
 				# NOTE: - we do it this way in case the camera is animated and its position changes each frame
@@ -409,7 +413,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 				# start rendering
-				bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True, use_viewport=True)
+				bpy.ops.render.render("INVOKE_DEFAULT", animation=False)#, write_still=True)
+
 
 
 			# INIT STEP
@@ -434,15 +439,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					if os.path.isdir(self.rendering_filepath) == True or os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 						# define the frame number as the filename
-						self.render_setting_scene.render.filepath = self.rendering_filepath + "####"
-						self.rendering_filepath = self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
+						self.render_setting_scene.render.filepath = self.rendering_filepath + "Quilt Render Result" + self.render_setting_scene.render.file_extension
+						self.rendering_filepath = self.render_setting_scene.render.filepath#self.render_setting_scene.render.frame_path(frame=self.rendering_frame)
 
 					# if this path + extension is a file
 					elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
 
-						# add the file file_extension
-						self.rendering_filepath = self.rendering_filepath + self.render_setting_scene.render.file_extension
-
+						# add the file file_extension, only if option is selected
+						if self.render_setting_scene.render.use_file_extension == True:
+							self.rendering_filepath = self.rendering_filepath + self.render_setting_scene.render.file_extension
 
 
 				# Some status infos
@@ -470,8 +475,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "PRE_RENDER":
 
-				#print("[INFO] Rendering view is going to be prepared.")
-
+				# print("[INFO] Rendering view is going to be prepared.")
+				#
 				# # output current status
 				# print(" # active camera: ", self.camera_active)
 				# print(" # current frame: ", self.rendering_frame)
@@ -553,12 +558,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					quiltPixels = np.vstack(verticalStack.copy())
 					quiltPixels = np.reshape(quiltPixels, (self.rendering_columns * self.rendering_rows * (self.render_setting_scene.render.resolution_x * self.render_setting_scene.render.resolution_y * 4)))
 
-					# create a Blender image with the obtained pixeö data
-					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
+					# create a Blender image with the obtained pixel data
+					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath).replace(self.render_setting_scene.render.file_extension, ""), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
 					quiltImage.pixels = quiltPixels
 
-					# save the quilt in a file
-					quiltImage.save_render(filepath=self.rendering_filepath)
+					# if a filename was specified or an animation is to be rendered
+					if (self.animation == False and (not "Quilt Render Result" in self.rendering_filepath)) or self.animation == True:
+
+						# save the quilt in a file
+						quiltImage.save_render(filepath=self.rendering_filepath)
+
+					else:
+
+						# remove the file
+						os.remove(self.rendering_filepath)
+
 
 					# QUILT DISPLAY AS RENDER RESULT
 					# ++++++++++++++++++++++++++++++++++++++++++++
@@ -672,7 +686,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "CANCEL_RENDER":
 
-				#print("[INFO] Render job cancelled.")
+				# print("[INFO] Render job cancelled.")
+
+				# if already a file exists
+				# NOTE: - don't include this in the self.cancel() method,
+				# 		  because this method is also called on successful completion
+				if os.path.isfile(self.rendering_filepath) == True:
+
+					# remove that file
+					os.remove(self.rendering_filepath)
 
 				# cancel the operator
 				# NOTE: - this includes recovering all original user settings

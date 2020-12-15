@@ -1202,7 +1202,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if context.window == LookingGlassAddon.lightfieldWindow and context.area == LookingGlassAddon.lightfieldArea:
 			start_timer = time.time()
 			# current camera object
-			camera = context.scene.settings.lookingglassCamera
+			camera = self.settings.lookingglassCamera
 
 			# Calculate view & projection matrix
 			# ++++++++++++++++++++++++++++++++++++++

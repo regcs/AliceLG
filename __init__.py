@@ -958,14 +958,14 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# Button to start rendering a single quilt using the current render settings
 		row_3 = column.row()
 		render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
-		#render_quilt.animation = False
+		render_quilt.animation = False
 		#row_3.enabled = True
 
 		# Button to start rendering a animation quilt using the current render settings
 		row_4 = column.row()
 		render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
 		render_quilt.animation = True
-		row_4.enabled = True
+		#row_4.enabled = True
 
 
 		# if the HoloPlay Service is NOT available
