@@ -202,7 +202,7 @@ class LookingGlassAddonFunctions:
 
 			# we add a dummy element
 			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'portrait', 'type': "7.9'' Looking Glass", 'x': -1536, 'y': 0, 'width': 1536, 'height': 2048, 'aspectRatio': 0.75, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 58.0})
-			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
+			#LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
 			print("   - device info:", LookingGlassAddon.deviceList[len(LookingGlassAddon.deviceList) - 1])
 
 
@@ -619,7 +619,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										items = looking_glass_list_callback,
 										default=0,
 										name="Please select a Looking Glass.",
-										update=LookingGlassAddonFunctions.update_render_setting
+										update=LookingGlassAddonFunctions.update_render_setting,
 										)
 
 	# a boolean to toogle the render window on or off
@@ -720,6 +720,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										name="Use Device Settings",
 										description="If enabled, the render settings are taken from the selected device",
 										default = True,
+										update=LookingGlassAddonFunctions.update_render_setting,
 										)
 
 	# Orientation of the views

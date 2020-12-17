@@ -72,6 +72,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_rows = None	# rendering width of the view
 	rendering_columns = None	# rendering height of the view
 	rendering_totalViews = None	# rendering height of the view
+	rendering_viewCone = None 	# view cone the quilt is rendered for
 	rendering_filepath = None	# aspect ratio of the view
 
 	# camera settings
@@ -258,6 +259,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
 			self.rendering_columns = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["columns"]
 			self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["totalViews"]
+			self.rendering_viewCone = self.device['viewCone']
 
 			# apply the render resolution
 			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
@@ -285,12 +287,18 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if for Looking Glass Portrait
 			if self.render_setting_scene.settings.render_device_type == 'portrait':
 
+				# set the correct view cone
+				self.rendering_viewCone = 58.0
+
 				# apply the correct aspect ratio
 				self.render_setting_scene.render.pixel_aspect_x = 1.0
 				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
 
 			# if for Looking Glass 8.9''
 			elif self.render_setting_scene.settings.render_device_type == 'standard':
+
+				# set the correct view cone
+				self.rendering_viewCone = 40.0
 
 				# apply the correct aspect ratio
 				self.render_setting_scene.render.pixel_aspect_x = 1.0
@@ -299,11 +307,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if for Looking Glass 15.6'' or 8k
 			elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
 
+				# set the correct view cone
+				self.rendering_viewCone = 50.0
+
 				# apply the correct aspect ratio
 				self.render_setting_scene.render.pixel_aspect_x = 1.0
 				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
-
-
 
 
 		# if the operator was called with the animation flag set
@@ -425,7 +434,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				cameraSize = cameraDistance * tan(fov / 2)
 
 				# start at viewCone * 0.5 and go up to -viewCone * 0.5
-				offsetAngle = (0.5 - self.rendering_view / (self.rendering_totalViews - 1)) * radians(self.device['viewCone'])
+				offsetAngle = (0.5 - self.rendering_view / (self.rendering_totalViews - 1)) * radians(self.rendering_viewCone)
 
 				# calculate the offset that the camera should move
 				offset = cameraDistance * tan(offsetAngle)
