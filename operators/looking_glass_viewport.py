@@ -565,7 +565,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				context.scene.settings.viewport_manual_refresh = False
 
 				# update the viewport settings
-				self.updateViewportSettings()
+				self.updateViewportSettings(context)
 
 				# running modal
 				return {'RUNNING_MODAL'}
@@ -860,7 +860,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 	# Update the viewport settings
-	def updateViewportSettings(self):
+	def updateViewportSettings(self, context):
 
 		# Adjust the viewport render settings
 		######################################################
@@ -949,10 +949,14 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.override['space_data'].overlay.show_face_orientation = bool(int(self.settings.viewport_show_face_orientation))
 
 		# if the low quality quilt settings are active AND the user selected the "SOLID SHADER PREVIEW" option
-		if self.preset == 3 and self.settings.viewport_use_solid_preview == True:
+		if LookingGlassAddon.lightfieldSpace.shading.type == 'RENDERED' and context.engine == 'CYCLES':
 
 			# change the shading type to SOLID
 			LookingGlassAddon.lightfieldSpace.shading.type = 'SOLID'
+
+			# notify user
+			self.report({"WARNING"}, "Render engine (%s) not supported in lightfield viewport. Switched to SOLID mode." % context.engine)
+
 
 		# always disable the hdri preview spheres
 		self.override['space_data'].overlay.show_look_dev = False

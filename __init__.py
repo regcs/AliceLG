@@ -780,13 +780,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	viewport_use_lowres_preview: bpy.props.BoolProperty(
 										name="Low-resolution Preview",
 										description="If enabled, a low-resolution lightfield is rendered during scene changes (for higher render speed)",
-										default = True,
-										)
-
-	viewport_use_solid_preview: bpy.props.BoolProperty(
-										name="Solid Shading Preview",
-										description="If enabled, the lightfield is rendered in solid shading mode during scene changes (for higher render speed)",
-										default = True,
+										default = False,
 										)
 
 	viewport_manual_refresh: bpy.props.BoolProperty(
@@ -1304,7 +1298,6 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			row_3.prop(context.scene.settings, "lightfield_preview_resolution", text="")
 			row_3.separator()
 			row_3.prop(context.scene.settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
-			row_3.prop(context.scene.settings, "viewport_use_solid_preview", text="", icon='SHADING_SOLID')
 			column.separator()
 
 			# Lightfield cursor settings
@@ -1334,7 +1327,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 class LOOKINGGLASS_OT_blender_viewport_assign(bpy.types.Operator):
 	bl_idname = "lookingglass.blender_viewport_assign"
 	bl_label = "Assign Active Viewport"
-	bl_description = "Use the shading and overlay settings of the current Blender viewport"
+	bl_description = "Use the shading and overlay settings of this Blender viewport"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 	def execute(self, context):
@@ -1359,7 +1352,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
-	#bl_options = {'DEFAULT_CLOSED'}
+	bl_options = {'DEFAULT_CLOSED'}
 
 
 	# define own poll method to be able to hide / show the panel on demand
