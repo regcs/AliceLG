@@ -663,9 +663,9 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# PANEL: CAMERA SETTINGS
 	# pointer property that can be used to load a pre-rendered quilt image
 	lookingglassCamera: bpy.props.PointerProperty(
-										name="",
+										name="Looking Glass Camera",
 										type=bpy.types.Object,
-										description = "Camera object, which defines the Looking Glass content",
+										description = "Select a camera, which defines the view for your Looking Glass or quilt image",
 										poll = LookingGlassAddonFunctions.camera_selection_poll,
 										update = LookingGlassAddonFunctions.update_camera_selection
 										)
@@ -973,7 +973,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	# get the active window
 	LookingGlassAddon.BlenderWindow = bpy.context.window
 
-	# if the lightfield window is active
+	# if the lightfield window was active
 	if bpy.context.scene.settings.ShowLightfieldWindow == True and bpy.context.scene.settings.lightfieldWindowIndex != -1:
 
 		# get the lightfield window by the index of this window in the list of windows in the WindowManager
@@ -985,21 +985,33 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# close this window
 			bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
 
-			# Create a new main window
-			bpy.ops.wm.window_new_main(dict(window=bpy.context.window_manager.windows[0]))
+			# if the device list is not empty, create a new lightfield window
+			if len(LookingGlassAddon.deviceList) > 0:
 
-			# assume the last window in the screen list is the created window
-			LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows[-1]
+				# Create a new main window
+				bpy.ops.wm.window_new_main(dict(window=bpy.context.window_manager.windows[0]))
 
-			# Change the area type of the last area of the looking glass window to SpaceView3D
-			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
-			area.type = "VIEW_3D"
+				# assume the last window in the screen list is the created window
+				LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows[-1]
 
-			# hide all panels in the image editor and make the area full screen
-			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
+				# Change the area type of the last area of the looking glass window to SpaceView3D
+				area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
+				area.type = "VIEW_3D"
 
-			# Invoke modal operator for the lightfield rendering
-			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+				# hide all panels in the image editor and make the area full screen
+				bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
+
+				# Invoke modal operator for the lightfield rendering
+				bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+
+			else:
+
+				# reset the window variable
+				LookingGlassAddon.lightfieldWindow = None
+
+				# deactivate the corresponding UI elements
+				bpy.context.scene.settings.toggleLightfieldWindowFullscreen = False
+				bpy.context.scene.settings.ShowLightfieldWindow = False
 
 
 	# if no Looking Glass was detected
@@ -1008,6 +1020,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 		# set the "use device" checkbox in quilt setup to False
 		# (because there is no device we could take the settings from)
 		bpy.context.scene.settings.render_use_device = False
+
 
 
 # ----------------- PANEL FOR GENERAL SETTINGS --------------------
@@ -1065,6 +1078,12 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		row_2.prop(context.scene.settings, "quiltPreset", text="")
 		row_2.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 		#column.separator()
+
+		# if no Looking Glass was detected
+		if len(LookingGlassAddon.deviceList) == 0:
+
+			# deactivate quilt preset and debug buttons
+			row_2.enabled = False
 
 
 		# if the HoloPlay Service is NOT available
@@ -1141,7 +1160,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		column = layout.column(align = True)
 
 		row_1 = column.row(align = True)
-		row_1.prop(context.scene.settings, "lookingglassCamera", icon='VIEW_CAMERA')
+		row_1.prop(context.scene.settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
 		row_1.operator("object.add_lookingglass_camera", text="", icon='ADD')
 		row_1.separator()
 		row_1.prop(context.scene.settings, "showFrustum", text="", icon='MESH_CUBE')
