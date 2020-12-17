@@ -120,6 +120,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# WINDOW RELATED VARIABLES
 	window_manager = None
 	WindowCheck = False
+	mouse_click = False
 
 	# SETTINGS VARIABLES
 	preset = 1
@@ -451,7 +452,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 				# make the window fullscreen
-				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 				# set the "toogle fullscreen button" to True
 				self.settings.toggleLightfieldWindowFullscreen = True
@@ -576,7 +577,12 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# Control events & lightfield cursor in the viewport
 		################################################################
 		# if left mouse click was released
-		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE') or event.type == 'MOUSEMOVE':
+		if (event.type == 'LEFTMOUSE' and event.value == 'PRESS'):
+			# this is saved because otherwise we cant detect a real click
+			self.mouse_click = True
+
+		# if left mouse click was released
+		if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE' and self.mouse_click == True) or event.type == 'MOUSEMOVE':
 
 			# save current mouse position
 			self.mouse_x = self.modified_mouse_x = event.mouse_x
@@ -618,10 +624,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				context.area.tag_redraw()
 
 			# if the left mouse button was clicked
-			if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE'):
+			if (event.type == 'LEFTMOUSE' and event.value == 'RELEASE' and self.mouse_click == True):
 
 				# select the object
 				bpy.ops.view3d.select({'window': LookingGlassAddon.lightfieldWindow, 'region': LookingGlassAddon.lightfieldRegion, 'area': LookingGlassAddon.lightfieldArea}, location=(self.modified_mouse_x, self.modified_mouse_y))
+
+				# reset variable
+				self.mouse_click = False
 
 			return {'RUNNING_MODAL'}
 
