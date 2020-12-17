@@ -1,4 +1,4 @@
-# Alice/LG - A Blender Add-on for Looking Glass displays
+# Alice/LG - A Blender Add-on for Looking Glass Displays
 
 **Author:** Christian Stolze
 
@@ -11,16 +11,17 @@ If you like this add-on and would like to do a private donation, you may do this
 
 [![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
 
-## Features
-- seamless integration into the common Blender workflow
-- a viewcone representing the Looking Glass volume in the scene
+## Main Features
+- integration into the common Blender workflow
+- an optional viewcone representing the Looking Glass volume in the scene
 - lightfield viewport in the Looking Glass with:
-   - automatic and manual view refresh modes
+   - automatic and manual refresh modes
    - a holographic mouse cursor
    - most of the features of a native Blender viewport
 - render any camera view as single quilt image or animation
 - support for multiple scenes and view layers
 - addon settings are saved in & loaded from your Blender file
+- support for all available Looking Glass displays (including the new Looking Glass Portrait)
 
 ## System Requirements
 - Windows or macOS (Linux not tested yet)
