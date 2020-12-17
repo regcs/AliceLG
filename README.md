@@ -7,7 +7,9 @@
 ## About Alice/LG
 This add-on was created for the use with the Looking Glass lightfield display. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new 3D display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
 
-If you like this add-on and would like to support me, I would be really happy about a small [donation](LINK MISSING). 
+If you like this add-on and would like to express this with a private donation, you may do this via PayPal:
+
+[![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
 
 ## Features
 - seamless integration into the common Blender workflow
