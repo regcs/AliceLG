@@ -232,7 +232,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# get the calibration data of the selected Looking Glass from the deviceList
-		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
 		# RENDER SETTINGS

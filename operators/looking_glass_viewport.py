@@ -252,7 +252,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# update the variable for the current Looking Glass device
-		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
 
@@ -502,7 +502,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# update the variable for the current Looking Glass device
-		self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
 
 
