@@ -1238,7 +1238,6 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 		return {'FINISHED'}
 
 class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
-	""" Lightfield Viewport Settings """
 	bl_idname = "LOOKINGGLASS_PT_panel_lightfield" # unique identifier for buttons and menu items to reference.
 	bl_label = "Lightfield Window" # display name in the interface.
 	bl_space_type = "VIEW_3D"
@@ -1298,16 +1297,6 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			row_3.prop(context.scene.settings, "lightfield_preview_resolution", text="")
 			row_3.separator()
 			row_3.prop(context.scene.settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
-			column.separator()
-
-			# Lightfield cursor settings
-			row_4 = column.row()
-			row_4.label(text="Lightfield Cursor:")
-			row_5 = column.row(align = True)
-			row_5.prop(context.scene.settings, "viewport_cursor_size", text="Size", slider=True)
-			row_5.prop(context.scene.settings, "viewport_show_cursor", text="", icon='RESTRICT_SELECT_OFF')
-			row_6 = column.row()
-			row_6.prop(context.scene.settings, "viewport_cursor_color", text="")
 
 
 		# if the lightfield window is in quilt viewer mode
@@ -1322,7 +1311,49 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 
 
-# ------------- Panel for overlay settings ----------------
+# ------------- Subpanel for lightfield cursor settings ----------------
+class LOOKINGGLASS_PT_panel_lightfield_cursor(bpy.types.Panel):
+	bl_idname = "LOOKINGGLASS_PT_panel_lightfield_cursor" # unique identifier for buttons and menu items to reference.
+	bl_label = "Lightfield Cursor Settings" # display name in the interface.
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+	bl_category = "Looking Glass"
+	bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
+
+
+	# define own poll method to be able to hide / show the panel on demand
+	@classmethod
+	def poll(self, context):
+
+		# if no Looking Glass is selected OR no lightfield window exists OR lightfield window is in viewport mode
+		if int(context.scene.settings.activeDisplay) == -1 or context.scene.settings.ShowLightfieldWindow == False or context.scene.settings.renderMode == '1':
+
+			# this panel is not needed, so return False:
+			# the panel will not be drawn
+			return False
+
+		else:
+
+			# this panel is needed, so return True:
+			# the panel will be drawn
+			return True
+
+
+	# draw the IntProperties for the tiles in the panel
+	def draw(self, context):
+		layout = self.layout
+
+		# Lightfield cursor settings
+		column = layout.column(align = True)
+		row_1 = column.row()
+		row_1.prop(context.scene.settings, "viewport_cursor_size", text="Size", slider=True)
+		row_1.prop(context.scene.settings, "viewport_show_cursor", text="", icon='RESTRICT_SELECT_OFF')
+		row_2 = column.row()
+		row_2.prop(context.scene.settings, "viewport_cursor_color", text="")
+
+
+
+# ------------- Subpanel for overlay & shading settings ----------------
 # Operator for manual redrawing of the Looking Glass (for manual Live View Mode)
 class LOOKINGGLASS_OT_blender_viewport_assign(bpy.types.Operator):
 	bl_idname = "lookingglass.blender_viewport_assign"
@@ -1346,13 +1377,12 @@ class LOOKINGGLASS_OT_blender_viewport_assign(bpy.types.Operator):
 
 # Panel for shading & overlay setting
 class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
-
-	""" Looking Glass Properties """
 	bl_label = "Shading & Overlays Settings" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
 	bl_options = {'DEFAULT_CLOSED'}
+	bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
 
 
 	# define own poll method to be able to hide / show the panel on demand
@@ -1585,6 +1615,7 @@ def register():
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
+	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield_cursor)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
 	# load the panel variables
@@ -1700,6 +1731,7 @@ def unregister():
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield_cursor)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
 	# delete all variables
