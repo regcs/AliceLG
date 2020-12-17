@@ -553,7 +553,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.lightfieldMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
 
 					# set to the currently chosen quality
-					self.preset = int(context.scene.settings.viewResolution)
+					self.preset = int(context.scene.settings.quiltPreset)
 
  					# set to redraw
 					self.modal_redraw = True
@@ -1008,27 +1008,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix = view_matrix.inverted()
 
 				# get the camera's projection matrix
-				# for landscape type displays
-				if self.device['aspectRatio'] > 1.0:
-
-					projection_matrix = camera.calc_matrix_camera(
-							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
-							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
-							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
-							scale_x = 1.0,
-							scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
-						)
-
-				# for portrait type displays
-				elif self.device['aspectRatio'] < 1.0:
-
-					projection_matrix = camera.calc_matrix_camera(
-							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
-							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
-							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
-							scale_x = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
-							scale_y = 1,
-						)
+				projection_matrix = camera.calc_matrix_camera(
+						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
+						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+						scale_x = 1.0,
+						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+					)
 
 			# otherwise we take the (lightfield) viewport matrices
 			else:
@@ -1221,27 +1207,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix = view_matrix.inverted()
 
 				# get the camera's projection matrix
-				# for landscape type displays
-				if self.device['aspectRatio'] > 1.0:
-
-					projection_matrix = camera.calc_matrix_camera(
-							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
-							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
-							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
-							scale_x = 1.0,
-							scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
-						)
-
-				# for portrait type displays
-				elif self.device['aspectRatio'] < 1.0:
-
-					projection_matrix = camera.calc_matrix_camera(
-							bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
-							x = LookingGlassAddon.qs[self.preset]["viewWidth"],
-							y = LookingGlassAddon.qs[self.preset]["viewHeight"],
-							scale_x = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
-							scale_y = 1,
-						)
+				projection_matrix = camera.calc_matrix_camera(
+						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
+						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+						scale_x = 1.0,
+						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+					)
 
 			# otherwise we take the (lightfield) viewport matrices
 			else:

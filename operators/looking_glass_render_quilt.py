@@ -79,6 +79,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	camera_original_location = None
 	camera_original_shift_x = None
 	camera_original_sensor_fit = None
+	view_matrix = None
+	view_matrix_inv = None
 
 	# Blender images
 	viewImagesPixels = []
@@ -245,30 +247,63 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_scene = context.scene
 		self.render_setting_filepath = context.scene.render.filepath
 
-		# SET RENDER SETTINGS
+		# APPLY RENDER SETTINGS
 		# ++++++++++++++++++++++++
 		# settings of the current preset
-		self.rendering_viewWidth = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["viewWidth"]
-		self.rendering_viewHeight = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["viewHeight"]
-		self.rendering_rows = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["rows"]
-		self.rendering_columns = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["columns"]
-		self.rendering_totalViews = LookingGlassAddon.qs[int(context.scene.settings.viewResolution)]["totalViews"]
+		# if the settings are to be taken from device selection
+		if self.settings.render_use_device == True:
 
-		# apply the render resolution
-		self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
-		self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+			self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewWidth"]
+			self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewHeight"]
+			self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
+			self.rendering_columns = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["columns"]
+			self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["totalViews"]
 
-		# for landscape type displays
-		if self.device['aspectRatio'] > 1.0:
+			# apply the render resolution
+			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
+			self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
 
+			# apply the correct aspect ratio
 			self.render_setting_scene.render.pixel_aspect_x = 1.0
 			self.render_setting_scene.render.pixel_aspect_y = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
 
-		# for portrait type displays
-		elif self.device['aspectRatio'] < 1.0:
+		# else, if the settings were specified separately
+		else:
 
-			self.render_setting_scene.render.pixel_aspect_x = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
-			self.render_setting_scene.render.pixel_aspect_y = 1.0
+			self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewWidth"]
+			self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewHeight"]
+			self.rendering_rows = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["rows"]
+			self.rendering_columns = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["columns"]
+			self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["totalViews"]
+
+			# apply the render resolution
+			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
+			self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+
+			# TODO: At the moment this is hardcoded.
+			# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
+			# if for Looking Glass Portrait
+			if self.render_setting_scene.settings.render_device_type == 'portrait':
+
+				# apply the correct aspect ratio
+				self.render_setting_scene.render.pixel_aspect_x = 1.0
+				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
+
+			# if for Looking Glass 8.9''
+			elif self.render_setting_scene.settings.render_device_type == 'standard':
+
+				# apply the correct aspect ratio
+				self.render_setting_scene.render.pixel_aspect_x = 1.0
+				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
+
+			# if for Looking Glass 15.6'' or 8k
+			elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
+
+				# apply the correct aspect ratio
+				self.render_setting_scene.render.pixel_aspect_x = 1.0
+				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
+
+
 
 
 		# if the operator was called with the animation flag set
@@ -362,21 +397,19 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					self.camera_original_shift_x = self.camera_active.data.shift_x
 					self.camera_original_sensor_fit = self.camera_active.data.sensor_fit
 
+					# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
+					# +++++++++++++++++++++++++++++++++++++++++++++++
 
+					# get camera's modelview matrix
+					self.view_matrix = self.camera_active.matrix_world.copy()
 
-				# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
-				# +++++++++++++++++++++++++++++++++++++++++++++++
+					# correct for the camera scaling
+					self.view_matrix = self.view_matrix @ Matrix.Scale(1/self.camera_active.scale.x, 4, (1, 0, 0))
+					self.view_matrix = self.view_matrix @ Matrix.Scale(1/self.camera_active.scale.y, 4, (0, 1, 0))
+					self.view_matrix = self.view_matrix @ Matrix.Scale(1/self.camera_active.scale.z, 4, (0, 0, 1))
 
-				# get camera's modelview matrix
-				view_matrix = self.camera_active.matrix_world.copy()
-
-				# correct for the camera scaling
-				view_matrix = view_matrix @ Matrix.Scale(1/self.camera_active.scale.x, 4, (1, 0, 0))
-				view_matrix = view_matrix @ Matrix.Scale(1/self.camera_active.scale.y, 4, (0, 1, 0))
-				view_matrix = view_matrix @ Matrix.Scale(1/self.camera_active.scale.z, 4, (0, 0, 1))
-
-				# calculate the inverted view matrix because this is what the draw_view_3D function requires
-				view_matrix_inv = view_matrix.inverted()
+					# calculate the inverted view matrix because this is what the draw_view_3D function requires
+					self.view_matrix_inv = self.view_matrix.inverted()
 
 
 
@@ -388,13 +421,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				fov = self.camera_active.data.angle
 
 				# calculate cameraSize from its distance to the focal plane and the FOV
-				# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-				cameraDistance = self.settings.focalPlane#self.camera_active.data.dof.focus_distance
+				cameraDistance = self.settings.focalPlane
 				cameraSize = cameraDistance * tan(fov / 2)
 
 				# start at viewCone * 0.5 and go up to -viewCone * 0.5
-				# TODO: The Looking Glass Factory dicumentation suggests to use a viewcone of 35°, but the device calibration has 40° by default.
-				#		Which one should we take?
 				offsetAngle = (0.5 - self.rendering_view / (self.rendering_totalViews - 1)) * radians(self.device['viewCone'])
 
 				# calculate the offset that the camera should move
@@ -402,12 +432,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# translate the camera by the calculated offset in x-direction
 				# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
-				#		then we apply the offset and transform back to the normal world coordinates
-				self.camera_active.location = view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (view_matrix_inv @ self.camera_original_location.copy()))
+				#		then we apply the offset and transform back to world coordinates
+				self.camera_active.location = self.view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self.view_matrix_inv @ self.camera_original_location.copy()))
 
-				# modify the projection matrix, relative to the camera size.
-				# NOTE: - we need to take into account the view aspect ratio and the pixel aspect ratio
-				self.camera_active.data.shift_x = self.camera_original_shift_x + offset / (cameraSize * self.rendering_viewWidth / self.rendering_viewHeight * self.render_setting_scene.render.pixel_aspect_x * self.render_setting_scene.render.pixel_aspect_y)
+				# modify the projection matrix, relative to the camera size
+				self.camera_active.data.shift_x = self.camera_original_shift_x + 0.5 * offset / cameraSize
 
 
 

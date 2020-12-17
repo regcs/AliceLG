@@ -199,9 +199,10 @@ class LookingGlassAddonFunctions:
 
 		# TODO: Remove this, it's only for debugging
 		if debugging_use_dummy_device == True:
+
 			# we add a dummy element
 			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'portrait', 'type': "7.9'' Looking Glass", 'x': -1536, 'y': 0, 'width': 1536, 'height': 2048, 'aspectRatio': 0.75, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 58.0})
-			#LookingGlassAddon.deviceList.append({'index': 0, 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
+			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
 			print("   - device info:", LookingGlassAddon.deviceList[len(LookingGlassAddon.deviceList) - 1])
 
 
@@ -373,6 +374,107 @@ class LookingGlassAddonFunctions:
 		return None
 
 
+	# update function for property updates concerning render settings
+	def update_render_setting(self, context):
+
+		# if a camera is selected
+		if context.scene.settings.lookingglassCamera != None:
+
+			# UPDATE RENDER SETTINGS
+			# +++++++++++++++++++++++++++++++++++++++++++++++++++++
+			# if the settings are to be taken from device selection
+			if context.scene.settings.render_use_device == True:
+
+				# currently selected device
+				device = LookingGlassAddon.deviceList[int(context.scene.settings.activeDisplay)]
+
+				# apply render settings for the scene to get the correct rendering frustum
+				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewWidth"]
+				context.scene.render.resolution_y = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewHeight"]
+
+				# apply the correct aspect ratio
+				context.scene.render.pixel_aspect_x = 1.0
+				context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / device['aspectRatio']
+
+			else:
+
+				# apply render settings for the scene to get the correct rendering frustum
+				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.render_quilt_preset)]["viewWidth"]
+				context.scene.render.resolution_y = LookingGlassAddon.qs[int(context.scene.settings.render_quilt_preset)]["viewHeight"]
+
+				# TODO: At the moment this is hardcoded.
+				# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
+				# if for Looking Glass Portrait
+				if context.scene.settings.render_device_type == 'portrait':
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = 1.0
+					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 0.75
+
+				# if for Looking Glass 8.9''
+				elif context.scene.settings.render_device_type == 'standard':
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = 1.0
+					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 1.6
+
+				# if for Looking Glass 15.6'' or 8k
+				elif context.scene.settings.render_device_type == 'large' or context.scene.settings.render_device_type == '8k':
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = 1.0
+					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 1.777777777
+
+
+		return None
+
+
+	# update function for property updates concerning camera selection
+	def update_camera_selection(self, context):
+
+		# if a camera was selected
+		if context.scene.settings.lookingglassCamera != None:
+
+			# apply the settings to the selected camera object
+			camera = context.scene.settings.lookingglassCamera
+
+			# TODO: Check if this is really helpful. Maybe remove later or refine.
+			# keep clip end behind the clip start
+			if context.scene.settings.clip_end < context.scene.settings.clip_start:
+				context.scene.settings.clip_end = context.scene.settings.clip_start
+
+			# keep clip start in front of the clip end
+			if context.scene.settings.clip_start > context.scene.settings.clip_end:
+				context.scene.settings.clip_start = context.scene.settings.clip_end
+
+			# keep focal plane within the clipping volume
+			if context.scene.settings.focalPlane < context.scene.settings.clip_start:
+				context.scene.settings.focalPlane = context.scene.settings.clip_start
+			elif context.scene.settings.focalPlane > context.scene.settings.clip_end:
+				context.scene.settings.focalPlane = context.scene.settings.clip_end
+
+			# apply the clipping values to the selected camera
+			camera.data.clip_start = context.scene.settings.clip_start
+			camera.data.clip_end = context.scene.settings.clip_end
+
+			# update render settings
+			LookingGlassAddonFunctions.update_render_setting(self, context)
+
+		else:
+
+			# if a valid space is existing
+			if LookingGlassAddon.lightfieldSpace != None:
+
+				# set space camera to None
+				LookingGlassAddon.lightfieldSpace.camera = None
+
+				# set view mode to "PERSPECTIVE VIEW"
+				LookingGlassAddon.lightfieldSpace.region_3d.view_perspective = 'PERSP'
+
+
+		return None
+
+
 	# update function for property updates concerning camera clipping in the livew view
 	def update_camera_setting(self, context):
 
@@ -400,7 +502,7 @@ class LookingGlassAddonFunctions:
 
 
 
-			# apply the clipping value of the camera
+			# apply the clipping values to the selected camera
 			camera.data.clip_start = context.scene.settings.clip_start
 			camera.data.clip_end = context.scene.settings.clip_end
 
@@ -516,7 +618,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	activeDisplay: bpy.props.EnumProperty(
 										items = looking_glass_list_callback,
 										default=0,
-										name="Please select a Looking Glass."
+										name="Please select a Looking Glass.",
+										update=LookingGlassAddonFunctions.update_render_setting
 										)
 
 	# a boolean to toogle the render window on or off
@@ -541,11 +644,11 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											default = -1,
 											)
 
-	viewResolution: bpy.props.EnumProperty(
+	quiltPreset: bpy.props.EnumProperty(
 										items = [
-												('0', 'Resolution: 512 x 256 px', '2k quilt, 32 views'),
-												('1', 'Resolution: 819 x 455 px', '4k quilt, 45 views'),
-												('2', 'Resolution: 1638 x 910 px', '8k quilt, 45 views')],
+												('0', 'Resolution: 2k Quilt, 32 Views', 'Display a 2k quilt with 32 views in the connected Looking Glass.'),
+												('1', 'Resolution: 4k Quilt, 45 Views', 'Display a 4k quilt with 45 views in the connected Looking Glass.'),
+												('2', 'Resolution: 8k Quilt, 45 Views', 'Display an 8k quilt with 45 views in the connected Looking Glass.')],
 										default='1',
 										name="View Resolution"
 										)
@@ -564,7 +667,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										type=bpy.types.Object,
 										description = "Camera object, which defines the Looking Glass content",
 										poll = LookingGlassAddonFunctions.camera_selection_poll,
-										update = LookingGlassAddonFunctions.update_camera_setting
+										update = LookingGlassAddonFunctions.update_camera_selection
 										)
 
 	showFocalPlane: bpy.props.BoolProperty(
@@ -609,6 +712,36 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										description = "Virtual distance to the focal plane. (This plane is directly mapped to the LCD display of the Looking Glass)",
 										update = LookingGlassAddonFunctions.update_camera_setting,
 										)
+
+
+	# PANEL: RENDER SETTINGS
+	# Use the device to set device settings
+	render_use_device: bpy.props.BoolProperty(
+										name="Use Device Settings",
+										description="If enabled, the render settings are taken from the selected device",
+										default = True,
+										)
+
+	# Orientation of the views
+	render_device_type: bpy.props.EnumProperty(
+										items = [('portrait', 'Looking Glass Portrait', 'Render the quilt for the Looking Glasses Portrait.'),
+												 ('standard', 'Looking Glass 8.9''', 'Render the quilt for the Looking Glass 8.9''.'),
+ 												 ('large', 'Looking Glass 15.6''', 'Render the quilt for the Looking Glass 15.6''.'),
+		 										 ('8k', 'Looking Glass 8K', 'Render the quilt for the Looking Glass 8k.')],
+										default='portrait',
+										name="Device Type",
+										update = LookingGlassAddonFunctions.update_render_setting,
+										)
+
+	# Quilt presets
+	render_quilt_preset: bpy.props.EnumProperty(
+									items = [('0', '2k Quilt, 32 view', 'Render a 2k quilt with 32 views.'),
+											 ('1', '4k Quilt, 45 view', 'Render a 4k quilt with 45 views.'),
+		 									 ('2', '8k Quilt, 45 view', 'Render a 8k quilt with 45 views.'),],
+									default='1',
+									name="Quilt Preset",
+									update = LookingGlassAddonFunctions.update_render_setting,
+									)
 
 
 	# PANEL: LIGHTFIELD WINDOW SETTINGS
@@ -890,38 +1023,6 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 		return {'FINISHED'}
 
 
-# an operator that refreshes the list of connected Looking Glasses
-class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
-	bl_idname = "object.add_lookingglass_camera"
-	bl_label = "Add Looking Glass Camera"
-	bl_description = "Creates a new camera object with settings optimized for the Looking Glass"
-	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
-
-	def execute(self, context):
-
-		# first we add a new camera
-		camera_data = bpy.data.cameras.new(name='Looking Glass Camera')
-		camera = bpy.data.objects.new('Looking Glass Camera', camera_data)
-		bpy.context.scene.collection.objects.link(camera)
-
-		# set the camera position
-		camera.location.z = context.scene.settings.focalPlane
-
-		# then we apply all the default settings to the camera
-		camera.data.sensor_fit = 'VERTICAL'
-		camera.data.angle_y = radians(14)
-		camera.data.clip_start = context.scene.settings.clip_start
-		camera.data.clip_end = context.scene.settings.clip_end
-
-		# if currently no camera is selected
-		if context.scene.settings.lookingglassCamera == None:
-
-			# use the new camera as the Looking Glass Camera
-			context.scene.settings.lookingglassCamera = camera
-
-		return {'FINISHED'}
-
-
 class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 	bl_idname = "LOOKINGGLASS_PT_panel_general" # unique identifier for buttons and menu items to reference.
 	bl_label = "Looking Glass" # display name in the interface.
@@ -951,21 +1052,9 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 
 		# Resolution selection of the quilt views
 		row_2 = column.row()
-		row_2.prop(context.scene.settings, "viewResolution", text="")
+		row_2.prop(context.scene.settings, "quiltPreset", text="")
 		row_2.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
-		column.separator()
-
-		# Button to start rendering a single quilt using the current render settings
-		row_3 = column.row()
-		render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
-		render_quilt.animation = False
-		#row_3.enabled = True
-
-		# Button to start rendering a animation quilt using the current render settings
-		row_4 = column.row()
-		render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
-		render_quilt.animation = True
-		#row_4.enabled = True
+		#column.separator()
 
 
 		# if the HoloPlay Service is NOT available
@@ -986,12 +1075,45 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 
 
 # ------------- The Camera Settings Panel ----------------
+# an operator that adds a camera to the scene
+class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
+	bl_idname = "object.add_lookingglass_camera"
+	bl_label = "Add Looking Glass Camera"
+	bl_description = "Creates a new camera object with settings optimized for the Looking Glass"
+	bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
+
+	def execute(self, context):
+
+		# first we add a new camera
+		camera_data = bpy.data.cameras.new(name='Looking Glass Camera')
+		camera = bpy.data.objects.new('Looking Glass Camera', camera_data)
+		bpy.context.scene.collection.objects.link(camera)
+
+		# set the camera position
+		camera.location.z = context.scene.settings.focalPlane
+
+		# then we apply all the default settings to the camera
+		camera.data.sensor_fit = 'VERTICAL'
+		camera.data.angle_y = radians(14)
+		camera.data.clip_start = context.scene.settings.clip_start
+		camera.data.clip_end = context.scene.settings.clip_end
+
+		# if currently no camera is selected
+		if context.scene.settings.lookingglassCamera == None:
+
+			# use the new camera as the Looking Glass Camera
+			context.scene.settings.lookingglassCamera = camera
+
+			return {'FINISHED'}
+
+# the panel for the camera settings
 class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 	bl_idname = "LOOKINGGLASS_PT_panel_camera" # unique identifier for buttons and menu items to reference.
-	bl_label = "Camera Settings" # display name in the interface.
+	bl_label = "Camera Setup" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
+	bl_parent_id = "LOOKINGGLASS_PT_panel_general"
 
 
 	# define own poll method to be able to hide / show the panel on demand
@@ -1033,6 +1155,75 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 			row_3.enabled = False
 			row_4.enabled = False
 
+# ------------- The Render Settings Panel ----------------
+# the panel for the camera settings
+class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
+	bl_idname = "LOOKINGGLASS_PT_panel_render" # unique identifier for buttons and menu items to reference.
+	bl_label = "Render Setup" # display name in the interface.
+	bl_space_type = "VIEW_3D"
+	bl_region_type = "UI"
+	bl_category = "Looking Glass"
+	bl_parent_id = "LOOKINGGLASS_PT_panel_general"
+
+
+	# define own poll method to be able to hide / show the panel on demand
+	@classmethod
+	def poll(self, context):
+
+		# the panel should always be drawn
+		return True
+
+	# draw the IntProperties for the tiles in the panel
+	def draw(self, context):
+		layout = self.layout
+
+		# Render orientation
+		row_1 = layout.row(align = True)
+		row_1.prop(context.scene.settings, "render_use_device")
+
+		# Render orientation
+		row_1 = layout.row(align = True)
+		column_1 = row_1.row(align = True)
+		column_1.label(text="Device:")
+		column_1.scale_x = 0.3
+		column_2 = row_1.row(align = True)
+		column_2.prop(context.scene.settings, "render_device_type", text="")
+		column_2.scale_x = 0.7
+
+		# Quilt preset
+		row_2 = layout.row(align = True)
+		column_1 = row_2.row(align = True)
+		column_1.label(text="Quilt:")
+		column_1.scale_x = 0.3
+		column_2 = row_2.row(align = True)
+		column_2.prop(context.scene.settings, "render_quilt_preset", text="")
+		column_2.scale_x = 0.7
+
+		# Button to start rendering a single quilt using the current render settings
+		row_3 = layout.row(align = True)
+		render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+		render_quilt.animation = False
+
+		# Button to start rendering a animation quilt using the current render settings
+		row_4 = layout.row(align = True)
+		render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+		render_quilt.animation = True
+
+		# if no camera is selected
+		if context.scene.settings.lookingglassCamera == None:
+
+			# disable all elements
+			row_1.enabled = False
+			row_2.enabled = False
+			row_3.enabled = False
+			row_4.enabled = False
+
+		# if the settings are to be taken from device selection
+		elif context.scene.settings.render_use_device == True:
+
+			# disable all elements
+			row_1.enabled = False
+			row_2.enabled = False
 
 
 
@@ -1163,7 +1354,6 @@ class LOOKINGGLASS_OT_blender_viewport_assign(bpy.types.Operator):
 class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 	""" Looking Glass Properties """
-	#bl_parent_id = "LOOKINGGLASS_PT_panel_lightfield"
 	bl_label = "Shading & Overlays Settings" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
@@ -1399,6 +1589,7 @@ def register():
 	# UI elements
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
+	bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
@@ -1513,6 +1704,7 @@ def unregister():
 	# UI elements
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
+	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
