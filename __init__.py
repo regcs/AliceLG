@@ -33,7 +33,7 @@ bl_info = {
 }
 
 # this is only for debugging purposes
-debugging_use_dummy_device = True
+debugging_use_dummy_device = False
 
 
 
@@ -1002,6 +1002,14 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 
+	# if no Looking Glass was detected
+	if len(LookingGlassAddon.deviceList) == 0:
+
+		# set the "use device" checkbox in quilt setup to False
+		# (because there is no device we could take the settings from)
+		bpy.context.scene.settings.render_use_device = False
+
+
 # ----------------- PANEL FOR GENERAL SETTINGS --------------------
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
@@ -1014,6 +1022,13 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 
 		# update the global list of all connected devices
 		LookingGlassAddonFunctions.LookingGlassDeviceList()
+
+		# if no Looking Glass was detected
+		if len(LookingGlassAddon.deviceList) == 0:
+
+			# set the checkbox to False (because there is no device we
+			# could take the settings from)
+			context.scene.settings.render_use_device = False
 
 		return {'FINISHED'}
 
@@ -1079,7 +1094,7 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 
 	def execute(self, context):
 
-		# first we add a new camera
+		# first we add a new camera and link it to the scene
 		camera_data = bpy.data.cameras.new(name='Looking Glass Camera')
 		camera = bpy.data.objects.new('Looking Glass Camera', camera_data)
 		bpy.context.scene.collection.objects.link(camera)
@@ -1154,7 +1169,7 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 # the panel for the camera settings
 class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 	bl_idname = "LOOKINGGLASS_PT_panel_render" # unique identifier for buttons and menu items to reference.
-	bl_label = "Render Setup" # display name in the interface.
+	bl_label = "Quilt Setup & Rendering" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
@@ -1173,8 +1188,8 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		layout = self.layout
 
 		# Render orientation
-		row_1 = layout.row(align = True)
-		row_1.prop(context.scene.settings, "render_use_device")
+		row_0 = layout.row(align = True)
+		render_use_device = row_0.prop(context.scene.settings, "render_use_device")
 
 		# Render orientation
 		row_1 = layout.row(align = True)
@@ -1208,6 +1223,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		if context.scene.settings.lookingglassCamera == None:
 
 			# disable all elements
+			row_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1220,6 +1236,11 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_1.enabled = False
 			row_2.enabled = False
 
+		# if no Looking Glass was detected
+		if len(LookingGlassAddon.deviceList) == 0:
+
+			# deactivate the checkbox
+			row_0.enabled = False
 
 
 # ------------- The Lightfield Settings Panel ----------------
