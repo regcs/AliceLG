@@ -431,18 +431,15 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						# move the window to the Looking Glass Screen and resize it
 						NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
 
-						# make window invisible
-						#NSApp._.windows[-1].setIsVisible_(False)
-
-						# make the window a fullscreen window
-						# NSApp._.windows[-1].toggleFullScreen_(0)
 						break
 
 
 				# make the window fullscreen
-				bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+				# bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 				# set the "toogle fullscreen button" to True
+				# NOTE: - via the update function of the boolean property,
+				# 		  this already executes the window_fullscreen_toggle button
 				self.settings.toggleLightfieldWindowFullscreen = True
 
 			except:
