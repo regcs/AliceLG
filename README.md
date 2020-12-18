@@ -47,13 +47,13 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 After the installation you find a _Looking Glass_ tab in each Blender viewport. Depending on your current selections, the tab shows up to four control panels & subpanels:
 
-- **Looking Glass.** Contains the Looking Glass display selection, a view resolution selection, and a button to turn on/off the Lightfield Window. Furthermore, it has two subpanels:
+- **Looking Glass.** Contains the Looking Glass display selection, a view resolution selection, and a button to turn on/off the lightfield window. Furthermore, it has two subpanels:
 
    - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering. Once
 
    - **Quilt Setup & Rendering.** Controls for starting a quilt render.
 
-- **Lightfield Window.** The lightfield / hologram is rendered to a separate window, which needs to be placed inside your Looking Glass display. In this category you find options to switch between two different modes for the lightfield Window: _Viewport_ and _Quilt Viewer_.
+- **Lightfield Window.** The lightfield / hologram is rendered to a separate window, which needs to be placed inside your Looking Glass display. In this category you find options to switch between two different modes for the lightfield Window: _Viewport_ and _Quilt Viewer_. It has two subpanels:
 
    - **Lightfield Cursor.** In _Viewport_ mode you have the option to display a lightfield mouse cursor in the lightfield window. Only works if the lightfield window is the active window.
 
