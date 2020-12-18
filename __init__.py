@@ -235,6 +235,10 @@ class LookingGlassAddonFunctions:
 	# this prevents that an object is picked, which is no camera
 	def camera_selection_poll(self, object):
 
+		# TODO
+		# notify user
+		# if not object.type == 'CAMERA': self.report({"ERROR"}, "Selected object", object, "is no camera.")
+
 		return object.type == 'CAMERA'
 
 
@@ -402,6 +406,9 @@ class LookingGlassAddonFunctions:
 
 		# if a camera was selected
 		if context.scene.settings.lookingglassCamera != None:
+
+			# if the frustum drawing operator is not invoked, but should be
+			if LookingGlassAddon.FrustumInitialized == False and context.scene.settings.showFrustum == True: bpy.ops.render.frustum('INVOKE_DEFAULT')
 
 			# apply the settings to the selected camera object
 			camera = context.scene.settings.lookingglassCamera
@@ -1147,7 +1154,7 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 			# use the new camera as the Looking Glass Camera
 			context.scene.settings.lookingglassCamera = camera
 
-			return {'FINISHED'}
+		return {'FINISHED'}
 
 # the panel for the camera settings
 class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):

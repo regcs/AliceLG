@@ -249,7 +249,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_filepath = context.scene.render.filepath
 
 		# check if a valid path is given in output settings
-		if os.path.isdir(self.render_setting_filepath) == False and os.path.isfile(self.render_setting_filepath) == False:
+		if os.path.exists(self.render_setting_filepath) == False:
 
 			# notify user
 			self.report({"ERROR"}, "Output path: ", self.render_setting_filepath, " is not a valid directory. Please change the output path in the render settings.")
