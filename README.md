@@ -45,7 +45,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 ### Add-on Controls
 
-After the installation you find a _Looking Glass_ tab in each Blender viewport. Depending your current selections, the tab shows up to four control panels & subpanels:
+After the installation you find a _Looking Glass_ tab in each Blender viewport. Depending on your current selections, the tab shows up to four control panels & subpanels:
 
 - **Looking Glass.** Contains the Looking Glass display selection, a view resolution selection, and a button to turn on/off the Lightfield Window. Furthermore, it has two subpanels:
 
