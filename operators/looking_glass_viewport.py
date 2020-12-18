@@ -74,27 +74,6 @@ elif platform.system() == "Windows":
 
 		# load the user32.dll system dll
 		user32 = ctypes.windll.user32
-	#
-	# 	# prepare callback function types for window enumeration
-	# 	WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
-	#
-	# 	# load / define functions and argument types to get window information
-	# 	user32.EnumWindows.argtypes = [WNDENUMPROC, wintypes.LPARAM]
-	# 	user32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
-	# 	user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
-	#
-	# 	# define callback
-	# 	EnumWindowsList = []
-	# 	def _callback(hwnd, lParam):
-	# 		length = user32.GetWindowTextLengthW(hwnd) + 1
-	# 		buffer = ctypes.create_unicode_buffer(length)
-	# 		user32.GetWindowTextW(hwnd, buffer, length)
-	#
-	# 		# only list Blender windows
-	# 		if buffer.value == 'Blender':
-	# 			EnumWindowsList.append(hwnd)
-	# 			print("Buff: ", hwnd, buffer.value)
-	# 			return True
 
 	except:
 		self.report({"WARNING"}, "Could not load User32.dll. Need to position lightfield window manually.")
@@ -464,36 +443,30 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			except:
 				pass
 
-		# # if on Windows
-		# elif platform.system() == "Windows":
+		# if on Windows
+		elif platform.system() == "Windows":
 
-			# # TODO: Add a class function that handles this task for the different
-			# # operating systems automatically
-			# try:
-			#
-			# 	# call EnumWindows function with the defined _callback function
-			# 	# to find all Blender windows
-			# 	if not user32.EnumWindows(WNDENUMPROC(_callback), 42):
-			# 		raise ctypes.WinError()
-			# 	# get handle for Notepad window
-			# 	# non-zero value for handle should mean it found a window that matches
-			# 	handle = user32.FindWindowW(u'Notepad', None)
-			# 	# or
-			# 	handle = user32.FindWindowW(None, u'Blender')
-			#
-			# 	# meaning of 2nd parameter defined here
-			# 	# https://msdn.microsoft.com/en-us/library/windows/desktop/ms633548(v=vs.85).aspx
-			# 	# minimize window using handle
-			# 	user32.ShowWindow(handle, 6)
-			# 	# maximize window using handle
-			# 	user32.ShowWindow(handle, 9)
-			#
-			# 	# move window using handle
-			# 	# MoveWindow(handle, x, y, height, width, repaint(bool))
-			# 	user32.MoveWindow(handle, 100, 100, 400, 400, True)
-			#
-			# except:
-			# 	pass
+			# TODO: Add a class function that handles this task for the different
+			# operating systems automatically
+			try:
+
+				# get the handle of the created window
+				lightfielfWindow_hWnd = user32.GetActiveWindow()
+
+				# move window to the left
+				user32.MoveWindow(lightfielfWindow_hWnd, -self.device['width'], 0, self.device['width'], self.device['height'], True)
+
+				# make the window fullscreen
+				#bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+
+				# set the "toogle fullscreen button" to True
+				# NOTE: - via the update function of the boolean property,
+				# 		  this already executes the window_fullscreen_toggle button
+				self.settings.toggleLightfieldWindowFullscreen = True
+
+			except Exception as e:
+				print(e)
+				pass
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
