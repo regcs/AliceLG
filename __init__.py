@@ -404,6 +404,13 @@ class LookingGlassAddonFunctions:
 	# update function for property updates concerning camera selection
 	def update_camera_selection(self, context):
 
+		# if no Looking Glass was detected
+		if len(LookingGlassAddon.deviceList) == 0:
+
+			# set the checkbox to False (because there is no device we
+			# could take the settings from)
+			context.scene.settings.render_use_device = False
+
 		# if a camera was selected
 		if context.scene.settings.lookingglassCamera != None:
 
