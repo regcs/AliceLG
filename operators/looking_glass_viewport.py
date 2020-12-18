@@ -582,6 +582,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		################################################################
 		# if left mouse click was released
 		if (event.type == 'LEFTMOUSE' and event.value == 'PRESS'):
+
 			# this is saved because otherwise we cant detect a real click
 			self.mouse_click = True
 

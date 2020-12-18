@@ -19,7 +19,7 @@
 
 import bpy
 import time
-import os
+import os, platform
 import numpy as np
 from math import *
 from mathutils import *
@@ -247,6 +247,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_original_aspect_y = context.scene.render.pixel_aspect_y
 		self.render_setting_scene = context.scene
 		self.render_setting_filepath = context.scene.render.filepath
+
+		# check if a valid path is given in output settings
+		if os.path.isdir(self.render_setting_filepath) == False and os.path.isfile(self.render_setting_filepath) == False:
+
+			# notify user
+			self.report({"ERROR"}, "Output path: ", self.render_setting_filepath, " is not a valid directory. Please change the output path in the render settings.")
+
+			# keep the modal operator running
+			return {'FINISHED'}
 
 		# APPLY RENDER SETTINGS
 		# ++++++++++++++++++++++++
@@ -486,6 +495,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						# add the file file_extension, only if option is selected
 						if self.render_setting_scene.render.use_file_extension == True:
 							self.rendering_filepath = self.rendering_filepath + self.render_setting_scene.render.file_extension
+
+				# replace path delimiters depending on the OS
+				if platform.system() == "Darwin": self.rendering_filepath = self.rendering_filepath.replace("\\", "/")
+				if platform.system() == "Windows": self.rendering_filepath = self.rendering_filepath.replace("/", "\\")
 
 
 				# Some status infos
