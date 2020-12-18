@@ -33,7 +33,7 @@ bl_info = {
 }
 
 # this is only for debugging purposes
-debugging_use_dummy_device = False
+debugging_use_dummy_device = True
 
 
 
@@ -237,38 +237,6 @@ class LookingGlassAddonFunctions:
 
 		return object.type == 'CAMERA'
 
-	# Update the Boolean property that creates the hologram rendering window
-	def ShowLightfieldWindow_update(self, context):
-
-		# if the bool property was set to True
-		if self['ShowLightfieldWindow'] == True:
-
-			# assign the current viewport for the shading & overlay settings
-			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
-
-			# Create a new main window
-			bpy.ops.wm.window_new_main()
-
-			# assume the last window in the screen list is the created window
-			LookingGlassAddon.lightfieldWindow = context.window_manager.windows[-1]
-
-			# Change the area type of the last area of the looking glass window to SpaceView3D
-			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
-			area.type = "VIEW_3D"
-
-			# hide all panels in the image editor and make the area full screen
-			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), 'INVOKE_DEFAULT', use_hide_panels=True)
-
-			# Invoke modal operator for the lightfield rendering
-			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
-
-		else:
-
-			# if a lightfield window still exists
-			if LookingGlassAddon.lightfieldWindow != None:
-
-				# close this window
-				bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
 
 
 
@@ -627,7 +595,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											name="Lightfield Window",
 											description = "Creates a window for the lightfield rendering. You need to move the window manually to the Looking Glass screen and toogle it fullscreen",
 											default = False,
-											update=LookingGlassAddonFunctions.ShowLightfieldWindow_update
 											)
 
 	# a boolean to toogle the render window on or off
@@ -1046,6 +1013,53 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 		return {'FINISHED'}
 
 
+# an operator that controls lightfield window opening and closing
+class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
+	bl_idname = "lookingglass.lightfield_window"
+	bl_label = "Lightfield Window"
+	bl_description = "Creates a window for the lightfield rendering. You need to move the window manually to the Looking Glass screen and toogle it fullscreen"
+	bl_options = {'REGISTER', 'INTERNAL'}
+
+	# Update the Boolean property that creates the hologram rendering window
+	def execute(self, context):
+
+		# set the property to the correct value
+		context.scene.settings.ShowLightfieldWindow = (not context.scene.settings.ShowLightfieldWindow)
+
+		# if the bool property was set to True
+		if context.scene.settings.ShowLightfieldWindow == True:
+
+			# assign the current viewport for the shading & overlay settings
+			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
+
+			# Create a new main window
+			bpy.ops.wm.window_new_main('INVOKE_DEFAULT')
+
+			# assume the last window in the screen list is the created window
+			LookingGlassAddon.lightfieldWindow = context.window_manager.windows[-1]
+
+			# Change the area type of the last area of the looking glass window to SpaceView3D
+			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
+			area.type = "VIEW_3D"
+
+			# hide all panels in the image editor and make the area full screen
+			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), 'INVOKE_DEFAULT', use_hide_panels=True)
+
+			# Invoke modal operator for the lightfield rendering
+			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+
+		else:
+
+			# if a lightfield window still exists
+			if LookingGlassAddon.lightfieldWindow != None:
+
+				# close this window
+				bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
+
+		return {'FINISHED'}
+
+
+
 class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 	bl_idname = "LOOKINGGLASS_PT_panel_general" # unique identifier for buttons and menu items to reference.
 	bl_label = "Looking Glass" # display name in the interface.
@@ -1071,7 +1085,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		column_2 = row_1.column(align=True)
 		row_1b = column_2.row(align = True)
 		if LookingGlassAddon.lightfieldWindow != None: row_1b.prop(context.scene.settings, "toggleLightfieldWindowFullscreen", text="", toggle=True, icon='FULLSCREEN_ENTER')
-		row_1b.prop(context.scene.settings, "ShowLightfieldWindow", text="", toggle=True, icon='WINDOW')
+		row_1b.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.settings.ShowLightfieldWindow)
 
 		# Resolution selection of the quilt views
 		row_2 = column.row()
@@ -1635,6 +1649,7 @@ def register():
 	bpy.utils.register_class(LookingGlassAddonPreferences)
 	bpy.utils.register_class(LookingGlassAddonSettings)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
+	bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_OT_blender_viewport_assign)
 	bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
@@ -1752,6 +1767,7 @@ def unregister():
 	bpy.utils.unregister_class(LookingGlassAddonSettings)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
 
