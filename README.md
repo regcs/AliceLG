@@ -20,7 +20,7 @@ If you like this add-on and want to do a private donation, thank you for your su
    - most of the features of a native Blender viewport
 - render any camera view as single quilt image or animation
 - support for multiple scenes and view layers
-- addon settings are saved in & loaded from your Blender file
+- camera & quilt settings are saved with your Blender file
 - support for all available Looking Glass displays (including the new Looking Glass Portrait)
 
 ## System Requirements
