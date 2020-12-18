@@ -87,7 +87,7 @@ You can render still scenes and animation frames as complete quilt images. You c
 - choose the quilt preset/resolution you want to render for from the list _Looking Glass → Quilt Setup & Rendering → Quilt
 - locate the camera to the specific view you would like to render
 - adjust the render and post-processing settings in the usual Blender panels (_NOTE: Image dimensions are overwritten by the add-on based on your connected Looking Glass or your manual settings under _Looking Glass → Quilt Setup & Rendering__)
-- click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
+- click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or (if you want to render animation frames) _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
 
 The _Render Quilt_ option will render the different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image or animation frames have to be handled in the same way as normal renders. You can still render normal (non-holographic) images in Blender as you usually do. 
 
