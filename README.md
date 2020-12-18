@@ -69,7 +69,7 @@ The lightfield window is the place where the hologram is rendered. It can be ope
 
 ### Camera Setup & Quilt Rendering
 
-You can render still scenes and animation frames as complete quilt images. You can render any quilt for your currently connected device or for any other Looking Glass:
+You can render still scenes and animation frames as complete quilt images. You can render for your currently connected device or for any other Looking Glass:
 
 **(1) Rendering for your currently connected device** 
 - select your connected Looking Glass (if not aleady selected) and a quilt resolution under _Looking Glass → Resolution_
