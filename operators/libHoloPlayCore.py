@@ -73,12 +73,24 @@ elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
 # if on 64-bit Windows
 elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
 
-    print(" # Automatic detection:", find_library('HoloPlayCore.dll'))
-
     # if the library is in the addon directory
     if os.path.isfile(LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll") == True:
 
         libpath = LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll"
+
+    else:
+
+        # try to find the library elsewhere
+        libpath = find_library('HoloPlayCore')
+
+
+# if on 64-bit Windows
+elif platform.system() == "Linux":
+
+    # if the library is in the addon directory
+    if os.path.isfile(LookingGlassAddon.path + "\lib\linux\libHoloPlayCore.so") == True:
+
+        libpath = LookingGlassAddon.path + "\lib\linux\libHoloPlayCore.so"
 
     else:
 

@@ -499,6 +499,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# replace path delimiters depending on the OS
 				if platform.system() == "Darwin": self.rendering_filepath = self.rendering_filepath.replace("\\", "/")
 				if platform.system() == "Windows": self.rendering_filepath = self.rendering_filepath.replace("/", "\\")
+				if platform.system() == "Linux": self.rendering_filepath = self.rendering_filepath.replace("\\", "/")
 
 
 				# Some status infos

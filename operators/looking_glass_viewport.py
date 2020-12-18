@@ -79,6 +79,11 @@ elif platform.system() == "Windows":
 		self.report({"WARNING"}, "Could not load User32.dll. Need to position lightfield window manually.")
 		pass
 
+# if on 32-bit Windows
+elif platform.system() == "Linux":
+
+	print("")
+
 else:
 	self.report({"ERROR"}, "Unsupported operating system.")
 	raise OSError
