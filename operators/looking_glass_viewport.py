@@ -120,7 +120,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# WINDOW RELATED VARIABLES
 	window_manager = None
 	WindowCheck = False
-	mouse_click = False
 
 	# SETTINGS VARIABLES
 	preset = 1
@@ -134,6 +133,11 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	activeSpace = None
 
 	# LIGHTFIELD CURSOR
+	mouse_click = False
+	modified_mouse_x = 0
+	modified_mouse_y = 0
+	mouse_x = 0
+	mouse_y = 0
 	cursor = Vector((0, 0, 0))
 	normal = Vector((0, 0, 1))
 
