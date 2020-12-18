@@ -65,21 +65,33 @@ The lightfield window is the place where the hologram is rendered. It can be ope
 
 - **Viewport.** In viewport mode, it basically acts like a normal Blender viewport in the Looking Glass - except that it is holographic. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode, the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to the restrictions in the rendering pipeline Blender currently has for add-on developers, this mode can be quite slow. Hopefully, their will be a solution for that provided in future versions of Blender._
 
-- **Quilt Viewer.** In the quilt viewer mode, you can load or select a rendered quilt image and display it as a hologram in the Looking Glass. So, this mode is basically here to enjoy the fruits of your work. Playing animations is not supported ... yet.
+- **Quilt Viewer.** In the quilt viewer mode, you can load or select a rendered quilt image and display it as a hologram in the Looking Glass. So, this mode is basically here to enjoy the fruits of your work. Playing animations is not supported yet. _NOTE: To display the quilt correctly, the correct quilt preset must be selected under _Looking Glass → Resolution__
 
 ### Camera Setup & Quilt Rendering
 
-You can render still scenes and animation frames as complete quilt images. To start the rendering process, you basically follow the usual Blender workflow:
+You can render still scenes and animation frames as complete quilt images. You can render any quilt for your currently connected device or for any other Looking Glass:
 
+**(1) Rendering for your currently connected device** 
+- select your connected Looking Glass (if not aleady selected) and a quilt resolution under _Looking Glass → Resolution_
 - select an existing camera in _Looking Glass → Camera Setup → Camera_ or create a new camera by clicking "+" in the same panel
-- select _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ to adjust the render settings based on your currently selected Looking Glass or use the controls below the checkbox to manually control the quilt output
+- check the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox
 - locate the camera to the specific view you would like to render
 - adjust the render and post-processing settings in the usual Blender panels (_NOTE: Image dimensions are overwritten by the add-on based on your connected Looking Glass or your manual settings under _Looking Glass → Quilt Setup & Rendering__)
 - click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
 
-The _Render Quilt_ option will render the different different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image or animation frames have to be handled in the same way as normal renders. You can still render normal (non-holographic) images in Blender as you usually do. 
+**(2) Rendering for other Looking Glasses** 
+- select your connected Looking Glass (if not aleady selected) and a quilt resolution under _Looking Glass → Resolution_
+- select an existing camera in _Looking Glass → Camera Setup → Camera_ or create a new camera by clicking "+" in the same panel
+- uncheck the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox
+- choose the Looking Glass you want to render for from the list _Looking Glass → Quilt Setup & Rendering → Device_
+- choose the quilt preset/resolution you want to render for from the list _Looking Glass → Quilt Setup & Rendering → Quilt
+- locate the camera to the specific view you would like to render
+- adjust the render and post-processing settings in the usual Blender panels (_NOTE: Image dimensions are overwritten by the add-on based on your connected Looking Glass or your manual settings under _Looking Glass → Quilt Setup & Rendering__)
+- click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
 
-_NOTE: This functionality of the add-on can be used even if no Looking Glass is connected._
+The _Render Quilt_ option will render the different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image or animation frames have to be handled in the same way as normal renders. You can still render normal (non-holographic) images in Blender as you usually do. 
+
+_NOTE: Option (2) can be used even if no Looking Glass is connected._
 
 ## License
 
