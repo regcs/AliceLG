@@ -30,11 +30,6 @@ from .looking_glass_global_variables import *
 # get path of this addon
 LookingGlassAddon.path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
 
-# TODO: That doesn't work?
-# append this path to syspath: that enables find_library to find the
-# dynamic linked library in the addon folder
-sys.path.append(LookingGlassAddon.path + "\lib\Win64")
-
 # Load the HoloPlay Core SDK Library
 print("Loading HoloPlay Core SDK library")
 print(" # Running on OS: ", platform.system())
@@ -60,9 +55,9 @@ if platform.system() == "Darwin":
 elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
 
     # if the library is in the addon directory
-    if os.path.isfile(LookingGlassAddon.path + "\lib\Win32\HoloPlayCore.dll") == True:
+    if os.path.isfile(LookingGlassAddon.path + "/lib/Win32/HoloPlayCore.dll") == True:
 
-        libpath = LookingGlassAddon.path + "\lib\Win32\HoloPlayCore.dll"
+        libpath = LookingGlassAddon.path + "/lib/Win32/HoloPlayCore.dll"
 
     else:
 
@@ -74,9 +69,9 @@ elif platform.system() == "Windows" and platform.architecture()[0] == "32bit":
 elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
 
     # if the library is in the addon directory
-    if os.path.isfile(LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll") == True:
+    if os.path.isfile(LookingGlassAddon.path + "/lib/Win64/HoloPlayCore.dll") == True:
 
-        libpath = LookingGlassAddon.path + "\lib\Win64\HoloPlayCore.dll"
+        libpath = LookingGlassAddon.path + "/lib/Win64/HoloPlayCore.dll"
 
     else:
 
@@ -88,9 +83,9 @@ elif platform.system() == "Windows" and platform.architecture()[0] == "64bit":
 elif platform.system() == "Linux":
 
     # if the library is in the addon directory
-    if os.path.isfile(LookingGlassAddon.path + "\lib\linux\libHoloPlayCore.so") == True:
+    if os.path.isfile(LookingGlassAddon.path + "/lib/linux/libHoloPlayCore.so") == True:
 
-        libpath = LookingGlassAddon.path + "\lib\linux\libHoloPlayCore.so"
+        libpath = LookingGlassAddon.path + "/lib/linux/libHoloPlayCore.so"
 
     else:
 
