@@ -725,6 +725,18 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 									update = LookingGlassAddonFunctions.update_render_setting,
 									)
 
+	# Progress bar
+	render_progress: bpy.props.FloatProperty(
+										name = "",
+										subtype='PERCENTAGE',
+										default = 0,
+										min = 0,
+										max = 100,
+										precision = 1,
+										step = 100,
+										description = "Total quilt rendering progress",
+										)
+
 
 	# PANEL: LIGHTFIELD WINDOW SETTINGS
 	# UI elements for user control
@@ -1256,15 +1268,26 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_2.prop(context.scene.settings, "render_quilt_preset", text="")
 		column_2.scale_x = 0.7
 
-		# Button to start rendering a single quilt using the current render settings
-		row_3 = layout.row(align = True)
-		render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
-		render_quilt.animation = False
 
-		# Button to start rendering a animation quilt using the current render settings
-		row_4 = layout.row(align = True)
-		render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
-		render_quilt.animation = True
+		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:
+			# Show the corresponding progress bar for the rendering process
+			row_3 = layout.row(align = True)
+			row_3.prop(context.scene.settings, "render_progress", text="", slider=True)
+		else:
+			# Button to start rendering a single quilt using the current render settings
+			row_3 = layout.row(align = True)
+			render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+			render_quilt.animation = False
+
+		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
+			# Show the corresponding progress bar for the rendering process
+			row_4 = layout.row(align = True)
+			row_4.prop(context.scene.settings, "render_progress", text="", slider=True)
+		else:
+			# Button to start rendering a animation quilt using the current render settings
+			row_4 = layout.row(align = True)
+			render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+			render_quilt.animation = True
 
 		# if no camera is selected
 		if context.scene.settings.lookingglassCamera == None:

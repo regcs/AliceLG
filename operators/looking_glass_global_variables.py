@@ -51,6 +51,9 @@ class LookingGlassAddon:
 	mouse_x = 0
 	mouse_y = 0
 
+	# Rendering status
+	RenderInvoked = False
+	RenderAnimation = None
 
 	# SHADER SOURCES
 	# +++++++++++++++++++++++++++++++++++++++

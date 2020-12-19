@@ -219,6 +219,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
 		self.render_setting_scene.render.pixel_aspect_y = self.render_setting_original_aspect_y
 
+
+
+		# RESET STATUS VARIABLES FOR PROGRESSBAR
+		# ++++++++++++++++++++++++++++++++++
+		self.settings.render_progress = 0.0
+		LookingGlassAddon.RenderInvoked = False
+		LookingGlassAddon.RenderAnimation = None
+
 		# return None since this is expected by the operator
 		return None
 
@@ -361,6 +369,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# add the modal operator handler
 		context.window_manager.modal_handler_add(self)
 
+		# SET STATUS VARIABLES FOR PROGRESSBAR
+		# ++++++++++++++++++++++++++++++++++
+		LookingGlassAddon.RenderInvoked = True
+		LookingGlassAddon.RenderAnimation = self.animation
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
@@ -646,6 +658,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 									break
 
 
+
+				# UPDATE PROGRESS BAR
+				# +++++++++++++++++++++++++++++++++++++++++++
+				# if a single frame shall be rendered
+				if self.animation == False:
+					self.settings.render_progress = self.rendering_view / ((self.rendering_totalViews - 1)) * 100
+				else:
+					self.settings.render_progress = ((self.rendering_frame - self.render_setting_scene.frame_start) * (self.rendering_totalViews - 1) + self.rendering_view) / ((self.rendering_totalViews - 1) * (self.render_setting_scene.frame_end - self.render_setting_scene.frame_start + 1)) * 100
 
 
 
