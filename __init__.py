@@ -81,7 +81,7 @@ from bpy.app.handlers import persistent
 
 # check, if a supported version of Blender is executed
 if bpy.app.version < (2, 90, 0):
-	raise Exception()
+	raise Exception("This version of Blender is not supported by Alice/LG. Please use v2.90 or higher.")
 
 
 
@@ -732,7 +732,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										default = 0,
 										min = 0,
 										max = 100,
-										precision = 1,
+										precision = 0,
 										step = 100,
 										description = "Total quilt rendering progress",
 										)

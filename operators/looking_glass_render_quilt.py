@@ -289,6 +289,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# don't execute operator
 					return {'FINISHED'}
 
+
+
 		# APPLY RENDER SETTINGS
 		# ++++++++++++++++++++++++
 		# settings of the current preset
