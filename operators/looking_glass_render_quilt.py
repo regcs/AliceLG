@@ -257,13 +257,37 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_filepath = context.scene.render.filepath
 
 		# check if a valid path is given in output settings
-		if os.path.exists(self.render_setting_filepath) == False:
+		if self.render_setting_scene.render.use_file_extension == True:
+			if os.path.exists(os.path.dirname(self.render_setting_filepath + self.render_setting_scene.render.file_extension)) == False:
 
-			# notify user
-			self.report({"ERROR"}, "Output path: ", self.render_setting_filepath, " is not a valid directory. Please change the output path in the render settings.")
+				# notify user
+				self.report({"ERROR"}, "Output path: " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
 
-			# keep the modal operator running
-			return {'FINISHED'}
+				# don't execute operator
+				return {'FINISHED'}
+
+		elif self.render_setting_scene.render.use_file_extension == False:
+
+			# was a file extension entered by the user?
+			filepath, extension = os.path.splitext(self.render_setting_filepath)
+			if extension == '':
+
+				# if not, notify user
+				self.report({"ERROR"}, "Output path: " + self.render_setting_filepath + " is missing a valid file extension.")
+
+				# don't execute operator
+				return {'FINISHED'}
+
+			else:
+
+				# is a valid directory path given?
+				if os.path.exists(os.path.dirname(self.render_setting_filepath)) == False:
+
+					# if not, notify user
+					self.report({"ERROR"}, "Output path: " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
+
+					# don't execute operator
+					return {'FINISHED'}
 
 		# APPLY RENDER SETTINGS
 		# ++++++++++++++++++++++++
