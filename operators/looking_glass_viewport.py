@@ -470,9 +470,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			try:
 
 				# Thanks to LoneTech for contributing!
-            	subprocess.run(['xdotool', 'getactivewindow',
-                                    'windowmove', '--sync', str(self.device['x']), str(self.device['y']),
-                                    ]) #, check=True)
+				subprocess.run(['xdotool', 'getactivewindow', 'windowmove', '--sync', str(self.device['x']), str(self.device['y']), ]) #, check=True)
 
 				# may not be necessary
 				time.sleep(0.1)
