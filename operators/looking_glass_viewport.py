@@ -82,7 +82,7 @@ elif platform.system() == "Windows":
 # if on 32-bit Windows
 elif platform.system() == "Linux":
 
-	print("")
+	import subprocess
 
 else:
 	self.report({"ERROR"}, "Unsupported operating system.")
@@ -434,9 +434,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						break
 
 
-				# make the window fullscreen
-				# bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
-
 				# set the "toogle fullscreen button" to True
 				# NOTE: - via the update function of the boolean property,
 				# 		  this already executes the window_fullscreen_toggle button
@@ -456,18 +453,36 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				lightfielfWindow_hWnd = user32.GetActiveWindow()
 
 				# move window to the left
-				user32.MoveWindow(lightfielfWindow_hWnd, -self.device['width'], 0, self.device['width'], self.device['height'], True)
-
-				# make the window fullscreen
-				#bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+				user32.MoveWindow(lightfielfWindow_hWnd, self.device['x'], self.device['y'], self.device['width'], self.device['height'], True)
 
 				# set the "toogle fullscreen button" to True
 				# NOTE: - via the update function of the boolean property,
 				# 		  this already executes the window_fullscreen_toggle button
 				self.settings.toggleLightfieldWindowFullscreen = True
 
-			except Exception as e:
-				print(e)
+			except:
+				pass
+
+		elif platform.system() == "Linux":
+
+			# TODO: Add a class function that handles this task for the different
+			# operating systems automatically
+			try:
+
+				# Thanks to LoneTech for contributing!
+            	subprocess.run(['xdotool', 'getactivewindow',
+                                    'windowmove', '--sync', str(self.device['x']), str(self.device['y']),
+                                    ]) #, check=True)
+
+				# may not be necessary
+				time.sleep(0.1)
+
+				# set the "toogle fullscreen button" to True
+				# NOTE: - via the update function of the boolean property,
+				# 		  this already executes the window_fullscreen_toggle button
+				self.settings.toggleLightfieldWindowFullscreen = True
+
+			except:
 				pass
 
 		# keep the modal operator running
