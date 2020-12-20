@@ -254,23 +254,24 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_original_aspect_x = context.scene.render.pixel_aspect_x
 		self.render_setting_original_aspect_y = context.scene.render.pixel_aspect_y
 		self.render_setting_scene = context.scene
-		self.render_setting_filepath = os.path.abspath(context.scene.render.filepath)
+		self.render_setting_filepath = context.scene.render.filepath
+		self.rendering_filepath = os.path.abspath(context.scene.render.filepath)
 
 		# check if a valid path is given in output settings
 		if self.render_setting_scene.render.use_file_extension == True:
-			if os.path.exists(os.path.dirname(self.render_setting_filepath + self.render_setting_scene.render.file_extension)) == False:
+			if os.path.exists(os.path.dirname(self.rendering_filepath + self.render_setting_scene.render.file_extension)) == False:
 
 				# notify user
-				self.report({"ERROR"}, "Output path " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
+				self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is not a valid directory. Please change the output path in the render settings.")
 
 				# don't execute operator
 				return {'FINISHED'}
 
 			# if the file already exists and should not be overwritten
-			elif  self.render_setting_scene.render.use_overwrite == False and os.path.exists(self.render_setting_filepath + self.render_setting_scene.render.file_extension) == True:
+			elif  self.render_setting_scene.render.use_overwrite == False and os.path.exists(self.rendering_filepath + self.render_setting_scene.render.file_extension) == True:
 
 				# notify user
-				self.report({"ERROR"}, "Specified file " + self.render_setting_filepath + self.render_setting_scene.render.file_extension + " already exists. Please change the output path in the render settings.")
+				self.report({"ERROR"}, "Specified file " + self.rendering_filepath + self.render_setting_scene.render.file_extension + " already exists. Please change the output path in the render settings.")
 
 				# don't execute operator
 				return {'FINISHED'}
@@ -278,11 +279,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		elif self.render_setting_scene.render.use_file_extension == False:
 
 			# was a file extension entered by the user?
-			filepath, extension = os.path.splitext(self.render_setting_filepath)
+			filepath, extension = os.path.splitext(self.rendering_filepath)
 			if extension == '':
 
 				# if not, notify user
-				self.report({"ERROR"}, "Output path " + self.render_setting_filepath + " is missing a valid file extension.")
+				self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is missing a valid file extension.")
 
 				# don't execute operator
 				return {'FINISHED'}
@@ -290,19 +291,19 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			else:
 
 				# is a valid directory path given?
-				if os.path.exists(os.path.dirname(self.render_setting_filepath)) == False:
+				if os.path.exists(os.path.dirname(self.rendering_filepath)) == False:
 
 					# if not, notify user
-					self.report({"ERROR"}, "Output path " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
+					self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is not a valid directory. Please change the output path in the render settings.")
 
 					# don't execute operator
 					return {'FINISHED'}
 
 				# if the file already exists and should not be overwritten
-				elif  self.render_setting_scene.render.use_overwrite == False and os.path.exists(self.render_setting_filepath) == True:
+				elif  self.render_setting_scene.render.use_overwrite == False and os.path.exists(self.rendering_filepath) == True:
 
 					# notify user
-					self.report({"ERROR"}, "Specified file " + self.render_setting_filepath + " already exists. Please change the output path in the render settings.")
+					self.report({"ERROR"}, "Specified file " + self.rendering_filepath + " already exists. Please change the output path in the render settings.")
 
 					# don't execute operator
 					return {'FINISHED'}
@@ -536,7 +537,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				elif self.animation == False:
 
 					# set the file path to the current render path
-					self.rendering_filepath = self.render_setting_filepath
+					self.rendering_filepath = os.path.abspath(self.render_setting_filepath)
 
 					# if this path is a directory and not a file
 					if os.path.isdir(self.rendering_filepath) == True or os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
