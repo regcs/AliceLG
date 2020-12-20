@@ -29,7 +29,7 @@ Please keep in mind that this beta version of the add-on may contain errors that
 - support for all available Looking Glass displays (including the new Looking Glass Portrait)
 
 ## System Requirements
-- Windows or macOS (Linux not tested yet)
+- Windows, macOS, or Linux
 - Blender 2.9x
 - Holoplay Service App
 
