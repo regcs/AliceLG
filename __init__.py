@@ -80,8 +80,8 @@ from bpy.props import FloatProperty, PointerProperty
 from bpy.app.handlers import persistent
 
 # check, if a supported version of Blender is executed
-if bpy.app.version < (2, 90, 0):
-	raise Exception("This version of Blender is not supported by Alice/LG. Please use v2.90 or higher.")
+if bpy.app.version < bl_info['blender']:
+	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
 
 
 
