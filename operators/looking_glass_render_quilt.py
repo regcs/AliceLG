@@ -254,14 +254,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_original_aspect_x = context.scene.render.pixel_aspect_x
 		self.render_setting_original_aspect_y = context.scene.render.pixel_aspect_y
 		self.render_setting_scene = context.scene
-		self.render_setting_filepath = context.scene.render.filepath
+		self.render_setting_filepath = os.path.abspath(context.scene.render.filepath)
 
 		# check if a valid path is given in output settings
 		if self.render_setting_scene.render.use_file_extension == True:
 			if os.path.exists(os.path.dirname(self.render_setting_filepath + self.render_setting_scene.render.file_extension)) == False:
 
 				# notify user
-				self.report({"ERROR"}, "Output path: " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
+				self.report({"ERROR"}, "Output path " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
+
+				# don't execute operator
+				return {'FINISHED'}
+
+			# if the file already exists and should not be overwritten
+			elif  self.render_setting_scene.render.use_overwrite == True and os.path.exists(self.render_setting_filepath + self.render_setting_scene.render.file_extension) == True:
+
+				# notify user
+				self.report({"ERROR"}, "Specified file " + self.render_setting_filepath + self.render_setting_scene.render.file_extension + " already exists. Please change the output path in the render settings.")
 
 				# don't execute operator
 				return {'FINISHED'}
@@ -273,7 +282,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if extension == '':
 
 				# if not, notify user
-				self.report({"ERROR"}, "Output path: " + self.render_setting_filepath + " is missing a valid file extension.")
+				self.report({"ERROR"}, "Output path " + self.render_setting_filepath + " is missing a valid file extension.")
 
 				# don't execute operator
 				return {'FINISHED'}
@@ -284,11 +293,19 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if os.path.exists(os.path.dirname(self.render_setting_filepath)) == False:
 
 					# if not, notify user
-					self.report({"ERROR"}, "Output path: " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
+					self.report({"ERROR"}, "Output path " + self.render_setting_filepath + " is not a valid directory. Please change the output path in the render settings.")
 
 					# don't execute operator
 					return {'FINISHED'}
 
+				# if the file already exists and should not be overwritten
+				elif  self.render_setting_scene.render.use_overwrite == True and os.path.exists(self.render_setting_filepath) == True:
+
+					# notify user
+					self.report({"ERROR"}, "Specified file " + self.render_setting_filepath + " already exists. Please change the output path in the render settings.")
+
+					# don't execute operator
+					return {'FINISHED'}
 
 
 		# APPLY RENDER SETTINGS
@@ -498,7 +515,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 				# start rendering
-				bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True)
+				# NOTE: Not using write_still because we save the images manually
+				bpy.ops.render.render("INVOKE_DEFAULT", animation=False)#, write_still=True)
 
 
 
@@ -523,9 +541,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# if this path is a directory and not a file
 					if os.path.isdir(self.rendering_filepath) == True or os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
-						# define the frame number as the filename
-						self.render_setting_scene.render.filepath = self.rendering_filepath + "Quilt Render Result" + self.render_setting_scene.render.file_extension
-						self.rendering_filepath = self.render_setting_scene.render.filepath
+						# use a temporary filename
+						self.rendering_filepath = os.path.abspath(self.rendering_filepath + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
 
 					# if this path + extension is a file
 					elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
@@ -582,8 +599,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			elif self.operator_state == "POST_RENDER":
 
 				# print("[INFO] Saving file in ", self.rendering_filepath)
-				# print(bpy.data.images["Render Result"].pixels)
-
 
 				# STORE THE PIXEL DATA OF THE RENDERED IMAGE
 				# ++++++++++++++++++++++++++++++++++++++++++++
@@ -649,10 +664,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					quiltImage.pixels = quiltPixels
 
 					# if a filename was specified or an animation is to be rendered
-					if (self.animation == False and (not "Quilt Render Result" in self.rendering_filepath)) or self.animation == True:
+					if (self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True:
 
 						# save the quilt in a file
-						quiltImage.save_render(filepath=self.rendering_filepath)
+						quiltImage.save_render(self.rendering_filepath)
 
 					else:
 
