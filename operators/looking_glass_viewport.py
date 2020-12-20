@@ -472,9 +472,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# Thanks to LoneTech for contributing!
 				subprocess.run(['xdotool', 'getactivewindow', 'windowmove', '--sync', str(self.device['x']), str(self.device['y']), ]) #, check=True)
 
-				# may not be necessary
-				time.sleep(0.1)
-
 				# set the "toogle fullscreen button" to True
 				# NOTE: - via the update function of the boolean property,
 				# 		  this already executes the window_fullscreen_toggle button

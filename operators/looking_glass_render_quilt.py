@@ -69,7 +69,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	rendering_viewWidth = None	# rendering width of the view
 	rendering_viewHeight = None	# rendering height of the view
-	rendering_rows = None	# rendering width of the view
+	rendering_rows = None		# rendering width of the view
 	rendering_columns = None	# rendering height of the view
 	rendering_totalViews = None	# rendering height of the view
 	rendering_viewCone = None 	# view cone the quilt is rendered for
