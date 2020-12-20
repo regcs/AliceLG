@@ -321,7 +321,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						# ADJUST VIEWPORT SETTINGS
 						# set FOV to 14° as suggested by the LookingGlassFactory documentation
 						# we calculate the field of view from the projection matrix
-						self.viewportViewMatrix = space.region_3d.view_matrix.inverted()
+						self.viewportViewMatrix = space.region_3d.view_matrix.inverted_safe()
 						projectionMatrix = space.region_3d.perspective_matrix @ self.viewportViewMatrix
 
 						# FOV = 2 * arctan(sensor_size / focal_length)
@@ -1011,7 +1011,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
 
 				# calculate the inverted view matrix because this is what the draw_view_3D function requires
-				view_matrix = view_matrix.inverted()
+				view_matrix = view_matrix.inverted_safe()
 
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
@@ -1210,7 +1210,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
 
 				# calculate the inverted view matrix because this is what the draw_view_3D function requires
-				view_matrix = view_matrix.inverted()
+				view_matrix = view_matrix.inverted_safe()
 
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(

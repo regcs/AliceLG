@@ -465,7 +465,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					self.view_matrix = self.view_matrix @ Matrix.Scale(1/self.camera_active.scale.z, 4, (0, 0, 1))
 
 					# calculate the inverted view matrix because this is what the draw_view_3D function requires
-					self.view_matrix_inv = self.view_matrix.inverted()
+					self.view_matrix_inv = self.view_matrix.inverted_safe()
 
 
 
