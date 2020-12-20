@@ -267,7 +267,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				return {'FINISHED'}
 
 			# if the file already exists and should not be overwritten
-			elif  self.render_setting_scene.render.use_overwrite == True and os.path.exists(self.render_setting_filepath + self.render_setting_scene.render.file_extension) == True:
+			elif  self.render_setting_scene.render.use_overwrite == False and os.path.exists(self.render_setting_filepath + self.render_setting_scene.render.file_extension) == True:
 
 				# notify user
 				self.report({"ERROR"}, "Specified file " + self.render_setting_filepath + self.render_setting_scene.render.file_extension + " already exists. Please change the output path in the render settings.")
@@ -299,7 +299,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					return {'FINISHED'}
 
 				# if the file already exists and should not be overwritten
-				elif  self.render_setting_scene.render.use_overwrite == True and os.path.exists(self.render_setting_filepath) == True:
+				elif  self.render_setting_scene.render.use_overwrite == False and os.path.exists(self.render_setting_filepath) == True:
 
 					# notify user
 					self.report({"ERROR"}, "Specified file " + self.render_setting_filepath + " already exists. Please change the output path in the render settings.")
