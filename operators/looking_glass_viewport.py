@@ -128,7 +128,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# HANDLER IDENTIFIERS
 	_handle_viewDrawing = []
 	_handle_lightfieldDrawing = None
-	_handle_trackViewportUpdates = None
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
 	_handle_trackActiveWindow = None
@@ -184,9 +183,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# remove the handler for the viewport tracking
 		if self._handle_trackActiveWindow: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackActiveWindow, 'WINDOW')
-
-		# remove the handler for the viewport tracking
-		if self._handle_trackViewportUpdates: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackViewportUpdates, 'WINDOW')
 
 		# remove the draw handlers for all quilt views
 		for handle in self._handle_viewDrawing:
@@ -373,9 +369,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++
 		# we exploit the draw_hanlder of the SpaceView3D to track the SpaceView which is currently modified by the user
 		self._handle_trackActiveWindow = bpy.types.SpaceView3D.draw_handler_add(self.trackActiveWindow, (context,), 'WINDOW', 'PRE_VIEW')
-
-		# we exploit the draw_hanlder of the SpaceView3D to track the SpaceView which is currently modified by the user
-		self._handle_trackViewportUpdates = bpy.types.SpaceView3D.draw_handler_add(self.trackViewportUpdates, (context,), 'WINDOW', 'PRE_VIEW')
 
 		# Register app handlers that check if the LookingGlass shall be updated:
 		#  (1) Every time something in the scene changed (for camera movement and scene editing)
@@ -666,66 +659,39 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# draw handler that continously checks for changes in the
-	# the lightfield viewport
-	def trackViewportUpdates(self, context):
-
-		# if this call belongs to the lightfield window
-		if context.window == LookingGlassAddon.lightfieldWindow:
-
-			# if automatic live view is activated AND the lightfield viewport is in perspective view mode AND a valid lightfield viewport exists
-			if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and LookingGlassAddon.lightfieldSpace != None:
-
-				# if no camera is selected for the Looking Glass AND the viewport perspective matrix has changed
-				if LookingGlassAddon.lightfieldSpace.camera == None and (LookingGlassAddon.lightfieldSpace.region_3d.view_matrix != self.viewportViewMatrix):
-					# print("VIEWPORT UPDATE: ", self.viewportViewMatrix)
-
-					# update the control variable
-					self.viewportViewMatrix = LookingGlassAddon.lightfieldSpace.region_3d.view_matrix.copy()
-
-					# invoke an update of the Looking Glass viewport
-					self.modal_redraw = True
-
-					# remember time of last depsgraph update
-					self.depsgraph_update_time = time.time()
-
-					# if the low quality quilt settings are inactive, but should be active
-					if self.preset < 3 and self.settings.viewport_use_lowres_preview == True:
-
-						# activate them
-						self.preset = 3
-
-
 
 	# Application handler that continously checks for changes of the
 	# Multiview used for Looking Glass rendering
 	def trackDepsgraphUpdates(self, scene, depsgraph):
 
-		# adjust the scene and view layer in the lightfield window
-		# NOTE: We need this to handle multiple scenes & layers with the Looking Glass
-		if LookingGlassAddon.lightfieldWindow != None:
-			LookingGlassAddon.lightfieldWindow.scene = scene
-			LookingGlassAddon.lightfieldWindow.view_layer = depsgraph.view_layer
+		# if no quilt rendering is currently Running
+		if LookingGlassAddon.RenderInvoked == False:
+
+			# adjust the scene and view layer in the lightfield window
+			# NOTE: We need this to handle multiple scenes & layers with the Looking Glass
+			if LookingGlassAddon.lightfieldWindow != None:
+				LookingGlassAddon.lightfieldWindow.scene = scene
+				LookingGlassAddon.lightfieldWindow.view_layer = depsgraph.view_layer
 
 
 
-		# if automatic live view is activated AND something in the scene has changed
-		if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
-			#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), scene)
+			# if automatic live view is activated AND something in the scene has changed
+			if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
+				#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), scene)
 
 
 
-			# invoke an update of the Looking Glass viewport
-			self.modal_redraw = True
+				# invoke an update of the Looking Glass viewport
+				self.modal_redraw = True
 
-			# remember time of last depsgraph update
-			self.depsgraph_update_time = time.time()
+				# remember time of last depsgraph update
+				self.depsgraph_update_time = time.time()
 
-			# if the low quality quilt settings are inactive, but should be active
-			if self.preset < 3 and self.settings.viewport_use_lowres_preview == True:
+				# if the low quality quilt settings are inactive, but should be active
+				if self.preset < 3 and self.settings.viewport_use_lowres_preview == True:
 
-				# activate them
-				self.preset = 3
+					# activate them
+					self.preset = 3
 
 
 
