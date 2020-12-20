@@ -498,7 +498,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 				# start rendering
-				bpy.ops.render.render("INVOKE_DEFAULT", animation=False)#, write_still=True)
+				bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True)
 
 
 
@@ -666,18 +666,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						for area in window.screen.areas:
 
 							if area.type == 'IMAGE_EDITOR':
-								if area.spaces.active.image.name == "Render Result":
 
-									# and change the active image shown here to the quilt
-									area.spaces.active.image = quiltImage
+								if area.spaces.active != None:
 
-									# fit the zoom factor in this window to show the complete quilt
-									bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
+									if area.spaces.active.image != None:
 
-									# remove the render result image
-									bpy.data.images.remove(bpy.data.images["Render Result"])
+										if area.spaces.active.image.name == "Render Result":
 
-									break
+											# and change the active image shown here to the quilt
+											area.spaces.active.image = quiltImage
+
+											# fit the zoom factor in this window to show the complete quilt
+											bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
+
+											# remove the render result image
+											bpy.data.images.remove(bpy.data.images["Render Result"])
+
+											break
 
 
 
