@@ -1289,6 +1289,11 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
 			render_quilt.animation = True
 
+		# disable the buttons, if a rendering process is running
+		if LookingGlassAddon.RenderInvoked == True:
+			if LookingGlassAddon.RenderAnimation == True: row_3.enabled = False
+			if LookingGlassAddon.RenderAnimation == False: row_4.enabled = False
+
 		# if no camera is selected
 		if context.scene.settings.lookingglassCamera == None:
 

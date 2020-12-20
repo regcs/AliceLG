@@ -690,9 +690,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# +++++++++++++++++++++++++++++++++++++++++++
 				# if a single frame shall be rendered
 				if self.animation == False:
-					self.settings.render_progress = self.rendering_view / ((self.rendering_totalViews - 1)) * 100
+					self.settings.render_progress = int(self.rendering_view / ((self.rendering_totalViews - 1)) * 100)
 				else:
-					self.settings.render_progress = ((self.rendering_frame - self.render_setting_scene.frame_start) * (self.rendering_totalViews - 1) + self.rendering_view) / ((self.rendering_totalViews - 1) * (self.render_setting_scene.frame_end - self.render_setting_scene.frame_start + 1)) * 100
+					self.settings.render_progress = int(((self.rendering_frame - self.render_setting_scene.frame_start) * (self.rendering_totalViews - 1) + self.rendering_view) / ((self.rendering_totalViews - 1) * (self.render_setting_scene.frame_end - self.render_setting_scene.frame_start + 1)) * 100)
 
 
 
