@@ -1299,15 +1299,9 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	bl_label = "Looking Glass Frustum Rendering"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
-	# WINDOW RELATED VARIABLES
-	window_manager = None
-
-	# HANDLER IDENTIFIERS
-	_handle_drawCameraFrustum = None
 
 
-
-	# Inititalize the Looking Glass
+	# Inititalize the camera frustum drawing
 	@classmethod
 	def __init__(self):
 
@@ -1315,11 +1309,17 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 
 
-	# # delete all objects
-	# @classmethod
-	# def __del__(self):
-	#
-	# 	print("Stopped the frustum rendering operator ...")
+	# deinititalize the camera frustum drawing
+	@classmethod
+	def __del__(self):
+
+		# remove the draw handler for the frustum drawing
+		if LookingGlassAddon.FrustumDrawHandler:
+			bpy.types.SpaceView3D.draw_handler_remove(LookingGlassAddon.FrustumDrawHandler, 'WINDOW')
+			LookingGlassAddon.FrustumDrawHandler = None
+
+		# reset variable
+		LookingGlassAddon.FrustumInitialized = False
 
 
 
@@ -1337,8 +1337,10 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	# cancel the modal operator
 	def cancel(self, context):
 
-		# remove the handler for the frustum drawing
-		if self._handle_drawCameraFrustum: bpy.types.SpaceView3D.draw_handler_remove(self._handle_drawCameraFrustum, 'WINDOW')
+		# remove the draw handler for the frustum drawing
+		if LookingGlassAddon.FrustumDrawHandler:
+			bpy.types.SpaceView3D.draw_handler_remove(LookingGlassAddon.FrustumDrawHandler, 'WINDOW')
+			LookingGlassAddon.FrustumDrawHandler = None
 
 		LookingGlassAddon.FrustumInitialized = False
 
@@ -1351,7 +1353,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	def invoke(self, context, event):
 		start = time.time()
 
-		# make an internal variable for the window_manager,
+		# make an internal variable for the settings,
 		# which can be accessed from methods that have no "context" parameter
 		self.settings = context.scene.settings
 
@@ -1372,7 +1374,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 		# HANDLERS FOR DRAWING PURPOSES
 		# ++++++++++++++++++++++++++++++
 		# draw handler to display the frustum of the Looking Glass camera
-		self._handle_drawCameraFrustum = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
+		LookingGlassAddon.FrustumDrawHandler = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
 
 		# add the modal handler
 		context.window_manager.modal_handler_add(self)
