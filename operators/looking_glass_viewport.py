@@ -1455,6 +1455,11 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 			# get modelview matrix
 			view_matrix = camera.matrix_world
 
+			# correct for the camera scaling
+			view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
+			view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
+			view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
+
 			# we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
 			# based on the intercept theorems
 			view_frame = camera.data.view_frame(scene=bpy.context.scene)
@@ -1467,6 +1472,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 			# get the clipping settings
 			clipStart = camera.data.clip_start
 			clipEnd = camera.data.clip_end
+			focalPlane = self.settings.focalPlane
 
 			# TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
 			# define the vertices of the camera frustum in camera coordinates
@@ -1479,8 +1485,8 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 							(view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
 							(view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
 							# focal plane
-							(view_frame_lower_right[0] / view_frame_distance * self.settings.focalPlane, view_frame_lower_right[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane), (view_frame_lower_left[0] / view_frame_distance * self.settings.focalPlane, view_frame_lower_left[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane),
-							(view_frame_upper_left[0] / view_frame_distance * self.settings.focalPlane, view_frame_upper_left[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane), (view_frame_upper_right[0] / view_frame_distance * self.settings.focalPlane, view_frame_upper_right[1] / view_frame_distance * self.settings.focalPlane, -self.settings.focalPlane),
+							(view_frame_lower_right[0] / view_frame_distance * focalPlane, view_frame_lower_right[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_lower_left[0] / view_frame_distance * focalPlane, view_frame_lower_left[1] / view_frame_distance * focalPlane, -focalPlane),
+							(view_frame_upper_left[0] / view_frame_distance * focalPlane, view_frame_upper_left[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_upper_right[0] / view_frame_distance * focalPlane, view_frame_upper_right[1] / view_frame_distance * focalPlane, -focalPlane),
 							]
 
 			# if the camera fustum shall be drawn
