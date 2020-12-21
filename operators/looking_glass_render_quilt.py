@@ -603,11 +603,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# STORE THE PIXEL DATA OF THE RENDERED IMAGE
 				# ++++++++++++++++++++++++++++++++++++++++++++
+				print(bpy.data.images["Render Result"].use_view_as_render)
 				# save the rendered image in a file
 				bpy.data.images["Render Result"].save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
 				# append the loaded image to the list
 				viewImage = bpy.data.images.load(filepath=self.rendering_filepath)
+				print(viewImage.use_view_as_render)
 
 				# store the pixel data in an numpy array
 				self.viewImagesPixels.append(np.array(viewImage.pixels[:]).copy())
@@ -619,8 +621,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# reset the operator state to IDLE
 				self.operator_state = "IDLE"
-
-
 
 
 
@@ -664,11 +664,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath).replace(self.render_setting_scene.render.file_extension, ""), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
 					quiltImage.pixels = quiltPixels
 
+					# make sure the quilt is "view as render"
+					quiltImage.use_view_as_render = True
+
 					# if a filename was specified or an animation is to be rendered
 					if (self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True:
 
 						# save the quilt in a file
-						quiltImage.save_render(self.rendering_filepath)
+						quiltImage.save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
 					else:
 
@@ -696,7 +699,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 											bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
 
 											# remove the render result image
-											bpy.data.images.remove(bpy.data.images["Render Result"])
+											#bpy.data.images.remove(bpy.data.images["Render Result"])
 
 											break
 
