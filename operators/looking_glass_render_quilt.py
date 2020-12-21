@@ -603,21 +603,22 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# STORE THE PIXEL DATA OF THE RENDERED IMAGE
 				# ++++++++++++++++++++++++++++++++++++++++++++
-				print(bpy.data.images["Render Result"].use_view_as_render)
 				# save the rendered image in a file
 				bpy.data.images["Render Result"].save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
 				# append the loaded image to the list
 				viewImage = bpy.data.images.load(filepath=self.rendering_filepath)
-				print(viewImage.use_view_as_render)
 
 				# store the pixel data in an numpy array
-				self.viewImagesPixels.append(np.array(viewImage.pixels[:]).copy())
+				# NOTE: we use foreach_get, since this is significantly faster
+				tmp_pixels = np.empty(len(viewImage.pixels), np.float32)
+				viewImage.pixels.foreach_get(tmp_pixels)
+
+				# append the pixel data to the list of views
+				self.viewImagesPixels.append(tmp_pixels)
 
 				# delete the Blender image of this view
 				bpy.data.images.remove(viewImage)
-
-
 
 				# reset the operator state to IDLE
 				self.operator_state = "IDLE"
@@ -636,6 +637,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if this was the last view
 				if self.rendering_view == (self.rendering_totalViews - 1):
+					start = time.time()
 
 					# then assemble the quilt from the views
 					verticalStack = []
@@ -662,7 +664,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					# create a Blender image with the obtained pixel data
 					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath).replace(self.render_setting_scene.render.file_extension, ""), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
-					quiltImage.pixels = quiltPixels
+					quiltImage.pixels.foreach_set(quiltPixels)
 
 					# make sure the quilt is "view as render"
 					quiltImage.use_view_as_render = True
