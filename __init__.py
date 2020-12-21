@@ -26,7 +26,6 @@ bl_info = {
 	"location": "3D View > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks thorugh the Looking Glass (lightfield displays)",
 	"category": "View",
-	"wiki_url": "",
 	"warning": "",
 	"doc_url": "",
 	"tracker_url": ""
