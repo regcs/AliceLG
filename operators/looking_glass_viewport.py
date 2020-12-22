@@ -317,22 +317,23 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						space.use_local_camera = True
 						space.lock_camera = True
 
-						# if a camera is selected
+						# if a looking glass camera is selected
 						if context.scene.settings.lookingglassCamera != None:
 
 							# set space to this camera (automatically None, if none is selected)
 							space.camera = context.scene.settings.lookingglassCamera
 
-							# set viewport view location to active camera location
-							space.region_3d.view_matrix = space.camera.matrix_world.inverted_safe()
-							space.region_3d.update()
+						# set viewport view location to default
+						space.region_3d.view_distance = 15
+						space.region_3d.view_matrix = 	(
+														(0.41, -0.4017, 0.8188, 0.0),
+				               							(0.912, 0.1936, -0.3617, 0.0),
+				               							(-0.0133, 0.8959, 0.4458, 0.0),
+				               							(0.0, 0.0, -14.9892, 1.0)
+														)
 
-						elif space.camera != None:
-
-							# set viewport view location to active camera location
-							space.region_3d.view_matrix = space.camera.matrix_world.inverted_safe()
-							space.region_3d.update()
-
+						# update view transformation matrices
+						space.region_3d.update()
 
 						# set view mode to "CAMERA"
 						if space.region_3d.view_perspective != 'CAMERA': bpy.ops.view3d.view_camera(self.override)

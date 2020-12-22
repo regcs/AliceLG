@@ -19,7 +19,7 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-	"name": "Alice/LG-beta",
+	"name": "Alice/LG",
 	"author": "Christian Stolze",
 	"version": (1, 0, 2),
 	"blender": (2, 90, 0),
