@@ -77,6 +77,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	# camera settings
 	camera_active = None
+	camera_original = None
 	camera_original_location = None
 	camera_original_shift_x = None
 	camera_original_sensor_fit = None
@@ -209,6 +210,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.camera_active.data.shift_x = self.camera_original_shift_x
 			self.camera_active.data.sensor_fit = self.camera_original_sensor_fit
 
+		# restore the origingal active camera
+		self.render_setting_scene.camera = self.camera_original
+
 
 		# RENDER SETTINGS
 		# restore original file path
@@ -262,7 +266,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if os.path.exists(os.path.dirname(self.rendering_filepath + self.render_setting_scene.render.file_extension)) == False:
 
 				# notify user
-				self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is not a valid directory. Please change the output path in the render settings.")
+				self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is not a valid path. Please change the output path in the render settings.")
 
 				# don't execute operator
 				return {'FINISHED'}
@@ -294,7 +298,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if os.path.exists(os.path.dirname(self.rendering_filepath)) == False:
 
 					# if not, notify user
-					self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is not a valid directory. Please change the output path in the render settings.")
+					self.report({"ERROR"}, "Output path " + self.rendering_filepath + " is not a valid path. Please change the output path in the render settings.")
 
 					# don't execute operator
 					return {'FINISHED'}
@@ -307,6 +311,44 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					# don't execute operator
 					return {'FINISHED'}
+
+
+		# check if the directory is accessible
+		# NOTE: One could use os.access, but with regard to documentation,
+		#		the following is more pythonic and more reliable
+		try:
+
+			# set the file path to the current render path
+			test_path = os.path.abspath(self.render_setting_filepath)
+
+			# if this path is a directory and not a file
+			if os.path.isdir(test_path) == True or os.path.basename(test_path + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+
+				# use a temporary filename
+				test_path = os.path.abspath(test_path + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
+
+			# if this path + extension is a file
+			elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
+
+				# add the file file_extension, only if option is selected
+				if self.render_setting_scene.render.use_file_extension == True:
+					test_path = test_path + self.render_setting_scene.render.file_extension
+
+			# try to create the file
+			test_file = open(test_path, 'w')
+			test_file.close()
+
+			# remove the file again
+			os.remove(test_path)
+
+		except IOError:
+
+			# if not, notify user
+			self.report({"ERROR"}, "Cannot write to " + self.rendering_filepath + ". Please change the output path in the render settings.")
+
+			# don't execute operator
+			return {'FINISHED'}
+
 
 
 		# APPLY RENDER SETTINGS
@@ -449,22 +491,26 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# STORE USER CAMERA SETTINGS
 				# ++++++++++++++++++++++++++++++++++
-				# NOTE: - we do this here, since each frame could contain a different
-				#		 camera setting
-				# if a camera is selected in the add-on settings
-				if self.settings.lookingglassCamera != None:
-
-					# use the selected camera
-					self.camera_active = self.settings.lookingglassCamera
-
-				else:
-
-					# use the active camera of the scene
-					self.camera_active = self.render_setting_scene.camera
 
 				# if this is the first view of the current frame
 				# NOTE: - we do it this way in case the camera is animated and its position changes each frame
 				if self.rendering_view == 0:
+
+					# NOTE: - we do this here, since each frame could contain a different
+					#		 camera setting
+					# if a camera is selected in the add-on settings
+					if self.settings.lookingglassCamera != None:
+
+						# use the selected camera
+						self.camera_active = self.settings.lookingglassCamera
+
+					else:
+
+						# use the active camera of the scene
+						self.camera_active = self.render_setting_scene.camera
+
+					# remember the origingally active camera
+					self.camera_original = self.render_setting_scene.camera
 
 					# remember current camera settings
 					self.camera_original_location = self.camera_active.location.copy()
@@ -473,6 +519,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
 					# +++++++++++++++++++++++++++++++++++++++++++++++
+
+					# set the scenes active camera to this camera
+					self.render_setting_scene.camera = self.camera_active
 
 					# get camera's modelview matrix
 					self.view_matrix = self.camera_active.matrix_world.copy()
