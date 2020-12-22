@@ -19,9 +19,9 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-	"name": "Alice/LG",
+	"name": "Alice/LG-beta",
 	"author": "Christian Stolze",
-	"version": (1, 0, 0),
+	"version": (1, 0, 2),
 	"blender": (2, 90, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks thorugh the Looking Glass (lightfield displays)",
