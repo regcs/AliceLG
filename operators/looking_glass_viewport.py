@@ -256,7 +256,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				LookingGlassAddon.qs[i]["viewOffscreens"].append(gpu.types.GPUOffScreen(int(LookingGlassAddon.qs[i]["viewWidth"]), int(LookingGlassAddon.qs[i]["viewHeight"])))
 
-
 		# Load the lightfield shaders
 		if self.loadlightFieldShaders() == None:
 			self.report({"ERROR"}, "Lightfield shader not compiled")
@@ -266,7 +265,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		self.loadCalibrationIntoShader()
 
 		# pass quilt settings to the lightfield shader
-		self.passQuiltSettingsToShader()
+		self.passQuiltSettingsToShader(self.preset)
 
 
 
@@ -709,17 +708,17 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 	# pass quilt values to shader
-	def passQuiltSettingsToShader(self):
+	def passQuiltSettingsToShader(self, preset):
 
 		# Pass quilt settings to the lightfield shader
 		self.lightFieldShader.bind()
 
 		self.lightFieldShader.uniform_int("overscan", 0)
-		self.lightFieldShader.uniform_float("tile", (LookingGlassAddon.qs[self.preset]["columns"], LookingGlassAddon.qs[self.preset]["rows"], LookingGlassAddon.qs[self.preset]["totalViews"]))
+		self.lightFieldShader.uniform_float("tile", (LookingGlassAddon.qs[preset]["columns"], LookingGlassAddon.qs[preset]["rows"], LookingGlassAddon.qs[preset]["totalViews"]))
 
 		# set viewportion to the full view
 		# NOTE: This is always 1 for landscape, but might be different for portait LG?
-		self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
+		self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[preset]["viewWidth"] * LookingGlassAddon.qs[preset]["columns"] / LookingGlassAddon.qs[preset]["width"], LookingGlassAddon.qs[preset]["viewHeight"] * LookingGlassAddon.qs[preset]["rows"] / LookingGlassAddon.qs[preset]["height"]))
 
 
 
@@ -951,7 +950,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					self.last_preset = self.preset
 
 					# pass quilt settings to the lightfield shader
-					self.passQuiltSettingsToShader()
+					self.passQuiltSettingsToShader(self.preset)
 
 			# print("copyViewToQuilt start (view: ", view, ": ", time.time() - self.start_multi_view, (LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].width, LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].height))
 
@@ -1037,8 +1036,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# if this call belongs to the lightfield window
 		if context.window == LookingGlassAddon.lightfieldWindow and context.area == LookingGlassAddon.lightfieldArea:
 
-			# if the live view mode is active
-			if int(self.settings.renderMode) == 0:
+			# VIEWPORT MODE
+			##################################################################
+			if int(self.settings.renderMode) == 0 or (int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage == None):
 
 				start_blit = time.time()
 
@@ -1082,61 +1082,69 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 						#print("Required total time: ", time.time() - start_blit)
 
+
+				# Draw the lightfield
+				# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+				# bind the quilt texture
+				bgl.glActiveTexture(bgl.GL_TEXTURE0)
+				bgl.glEnable(bgl.GL_TEXTURE_2D)
+				bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.qs[self.preset]["quiltOffscreen"].color_texture)
+
+				# bind the lightfield shader for drawing operations
+				self.lightFieldShader.bind()
+
+				# load the current debug view mode into the shader
+				self.lightFieldShader.uniform_int("debug", context.scene.settings.debug_view)
+
+				# draw the quilt texture
+				self.lightFieldShaderBatch.draw(self.lightFieldShader)
+
+
+
+			# QUILT VIEWER MODE
+			##################################################################
+			# TODO: Currently only quilts are supported. Maybe implement support
+			#		for Multiview images later? (context.scene.settings.quiltImage.is_multiview == True)
 			# if the quilt view mode is active AND an image is loaded
 			elif int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage != None:
 
-				# copy the image that is in the quilt view to the quilt offscreen
-				# print("Quilt view mode: ")
-				# print(" # ", context.scene.settings.quiltImage)
+				# default preset is current preset
+				preset = self.preset
 
-				# if the image is a multiview image
-				if context.scene.settings.quiltImage.is_multiview == True:
+				# try to find the fitting preset based on quilt size
+				# TODO: For the moment checking for the quilt size is okay,
+				#		but later we need better checks. Can we access metadata?
+				for i in range(len(LookingGlassAddon.qs)):
+					if LookingGlassAddon.qs[i]['width'] == context.scene.settings.quiltImage.size[0]:
 
-					# Todo: How can I access the views of a multiview to copy them into the quilt?
-					print(" # MULTIVIEW IMAGE")
+						# use this preset
+						preset = i
 
-				else:
+						break
 
-					# Todo: How can I access the views of a multiview to copy them into the quilt?
-					#print(" # QUILT IMAGE")
+				# pass quilt settings to the lightfield shader
+				self.passQuiltSettingsToShader(preset)
 
-					# assume that we have a 45 view quilt image and load it into a OpenGL texture
-					# TODO: Integrate a setting for quilts with 32 images
-					context.scene.settings.quiltImage.gl_load()
+				# if the texture for the quilt images exists
+				if LookingGlassAddon.quiltTextureID != None:
 
-					# bind the offscreen used for the quilt
-					with LookingGlassAddon.qs[self.preset]["quiltOffscreen"].bind(True):
-
-						# reset matrices:
-						# Use normalized device coordinates [-1, 1]
-						gpu.matrix.load_matrix(Matrix.Identity(4))
-						gpu.matrix.load_projection_matrix(Matrix.Identity(4))
-
-						# Blit the image into the quilt texture
-						# (use normalized device coordinates)
-						draw_texture_2d(context.scene.settings.quiltImage.bindcode, (-1, -1), 2, 2)
-
-					# free the previously created OpenGL texture
-					context.scene.settings.quiltImage.gl_free()
+					# bind the quilt texture
+					bgl.glActiveTexture(bgl.GL_TEXTURE0)
+					bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
 
 
-			# Draw the lightfield
-			##################################################################
-			start_blit = time.time()
 
-			# bind the quilt texture
-			bgl.glActiveTexture(bgl.GL_TEXTURE0)
-			bgl.glEnable(bgl.GL_TEXTURE_2D)
-			bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.qs[self.preset]["quiltOffscreen"].color_texture)
+				# Draw the lightfield
+				# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-			# bind the lightfield shader for drawing operations
-			self.lightFieldShader.bind()
+				# bind the lightfield shader for drawing operations
+				self.lightFieldShader.bind()
 
-			# load the current debug view mode into the shader
-			self.lightFieldShader.uniform_int("debug", context.scene.settings.debug_view)
+				# load the current debug view mode into the shader
+				self.lightFieldShader.uniform_int("debug", context.scene.settings.debug_view)
 
-			# draw the quilt texture
-			self.lightFieldShaderBatch.draw(self.lightFieldShader)
+				# draw the quilt texture
+				self.lightFieldShaderBatch.draw(self.lightFieldShader)
 
 
 

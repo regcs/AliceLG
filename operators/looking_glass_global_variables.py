@@ -122,3 +122,10 @@ class LookingGlassAddon:
 			# calculate viewWidth and viewHeight
 			LookingGlassAddon.qs[i]["viewWidth"] = int(round(LookingGlassAddon.qs[i]["width"] / LookingGlassAddon.qs[i]["columns"]))
 			LookingGlassAddon.qs[i]["viewHeight"] = int(round(LookingGlassAddon.qs[i]["height"] / LookingGlassAddon.qs[i]["rows"]))
+
+
+	# GLOBAL QUILT VIEWER DATA
+	# +++++++++++++++++++++++++++++++++++++++
+	quiltPixels = None
+	quiltTextureBuffer = None
+	quiltTextureID = None

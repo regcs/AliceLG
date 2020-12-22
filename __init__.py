@@ -563,6 +563,55 @@ class LookingGlassAddonFunctions:
 
 
 
+	# update function for property updates concerning quilt image selection
+	def update_quilt_selection(self, context):
+
+		# if a quilt was selected
+		if context.scene.settings.quiltImage != None:
+
+			# load the image for OpenGL operations
+			context.scene.settings.quiltImage.gl_load()
+
+			# if no pixel array exists
+			if LookingGlassAddon.quiltPixels is None:
+
+				# create a numpy array for the pixel data
+				LookingGlassAddon.quiltPixels = np.empty(len(context.scene.settings.quiltImage.pixels), np.float32)
+
+			else:
+
+				# resize the numpy array
+				LookingGlassAddon.quiltPixels.resize(len(context.scene.settings.quiltImage.pixels), refcheck=False)
+
+				# delete the texture
+				bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
+
+
+			# create a new texture
+			LookingGlassAddon.quiltTextureID = bgl.Buffer(bgl.GL_INT, [1])
+			bgl.glGenTextures(1, LookingGlassAddon.quiltTextureID)
+
+			# copy pixel data to the array and a BGL Buffer
+			context.scene.settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
+			LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
+
+			# bind the texture and apply bgl.GL_SRGB8_ALPHA8 as internal format
+			# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
+			#		see: https://developer.blender.org/T79788#1034183
+			bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
+			bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
+			bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
+			bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+
+			# free the previously created OpenGL texture
+			context.scene.settings.quiltImage.gl_free()
+
+		# if the quilt selection was deleted
+		else:
+
+			# delete the texture
+			bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
+
 
 # Preferences pane for this Addon in the Blender preferences
 class LookingGlassAddonSettings(bpy.types.PropertyGroup):
@@ -765,7 +814,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	quiltImage: bpy.props.PointerProperty(
 										name="Quilt",
 										type=bpy.types.Image,
-										description = "Quilt image for display in the Looking Glass"
+										description = "Quilt image for display in the Looking Glass",
+										update = LookingGlassAddonFunctions.update_quilt_selection,
 										)
 
 
