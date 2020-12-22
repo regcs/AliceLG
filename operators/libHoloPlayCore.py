@@ -94,8 +94,7 @@ elif platform.system() == "Linux":
 
 
 else:
-    print(" # Unsupported operating system.")
-    raise OSError
+    raise OSError("Unsupported operating system.")
 
 
 # if the library was found
@@ -103,8 +102,7 @@ if os.path.isfile(libpath):
     print(" # HoloPlay Core SDK found in: " + libpath)
     hpc = ctypes.cdll.LoadLibrary(libpath)
 else:
-    print(" # Could not find HoloPlay Core SDK.")
-    raise FileNotFoundError
+    raise FileNotFoundError("Could not find HoloPlay Core SDK.")
 
 
 

@@ -59,7 +59,7 @@ if platform.system() == "Darwin":
 		from Quartz import kCGWindowListOptionOnScreenOnly, kCGNullWindowID, CGWindowListCopyWindowInfo, CGWindowListCreate, kCGWindowNumber
 
 	except:
-		self.report({"WARNING"}, "Could not load PyObjC. Need to position lightfield window manually.")
+		#self.report({"WARNING"}, "Could not load PyObjC. Need to position lightfield window manually.")
 		pass
 
 # if on 32-bit Windows
@@ -76,7 +76,7 @@ elif platform.system() == "Windows":
 		user32 = ctypes.windll.user32
 
 	except:
-		self.report({"WARNING"}, "Could not load User32.dll. Need to position lightfield window manually.")
+		#self.report({"WARNING"}, "Could not load User32.dll. Need to position lightfield window manually.")
 		pass
 
 # if on 32-bit Windows
@@ -85,8 +85,8 @@ elif platform.system() == "Linux":
 	import subprocess
 
 else:
-	self.report({"ERROR"}, "Unsupported operating system.")
-	raise OSError
+	#self.report({"ERROR"}, "Unsupported operating system.")
+	raise OSError("Unsupported operating system.")
 
 
 
