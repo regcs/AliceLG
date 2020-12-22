@@ -617,8 +617,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			return {'RUNNING_MODAL'}
 
 
-		# if the live view mode is inactive
-		elif int(self.settings.lightfieldMode) != 0:
+		# if manual lightfield update OR the quilt viewer is active
+		elif int(self.settings.lightfieldMode) == 1 or int(self.settings.renderMode) == 1:
 
 			# we prevent any event handling by Blender in the lightfield viewport
 			return {'RUNNING_MODAL'}
