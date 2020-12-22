@@ -991,7 +991,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
-						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+						bpy.data.scenes[LookingGlassAddon.lightfieldWindow.scene.name].view_layers[LookingGlassAddon.lightfieldWindow.view_layer.name].depsgraph,
 						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
 						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
 						scale_x = 1.0,
@@ -1018,8 +1018,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].draw_view3d(
 				# we use the "Scene" and the "View Layer" that is active in the Window
 				# the user currently works in
-				LookingGlassAddon.BlenderWindow.scene,
-				LookingGlassAddon.BlenderWindow.view_layer,
+				LookingGlassAddon.lightfieldWindow.scene,
+				LookingGlassAddon.lightfieldWindow.view_layer,
 				self.override['space_data'],
 				self.override['region'],
 				view_matrix,
@@ -1199,7 +1199,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
-						bpy.data.scenes[LookingGlassAddon.BlenderWindow.scene.name].view_layers[LookingGlassAddon.BlenderWindow.view_layer.name].depsgraph,
+						bpy.data.scenes[LookingGlassAddon.lightfieldWindow.scene.name].view_layers[LookingGlassAddon.lightfieldWindow.view_layer.name].depsgraph,
 						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
 						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
 						scale_x = 1.0,

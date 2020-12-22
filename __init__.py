@@ -441,17 +441,25 @@ class LookingGlassAddonFunctions:
 			# update render settings
 			LookingGlassAddonFunctions.update_render_setting(self, context)
 
+			# if a lightfield window exists
+			if LookingGlassAddon.lightfieldWindow != None and LookingGlassAddon.lightfieldSpace != None:
+
+				# set lightfield space to this camera (automatically NONE if no camera is selected)
+				LookingGlassAddon.lightfieldSpace.camera = context.scene.settings.lookingglassCamera
+
+				# set view mode to "CAMERA"
+				if LookingGlassAddon.lightfieldSpace.region_3d.view_perspective != 'CAMERA': bpy.ops.view3d.view_camera(dict(window=LookingGlassAddon.lightfieldWindow, area=LookingGlassAddon.lightfieldArea, region=LookingGlassAddon.lightfieldRegion, space_data=LookingGlassAddon.lightfieldSpace))
+
 		else:
 
 			# if a valid space is existing
-			if LookingGlassAddon.lightfieldSpace != None:
+			if LookingGlassAddon.lightfieldWindow != None and LookingGlassAddon.lightfieldSpace != None:
 
-				# set space camera to None
+				# set lightfield space to no camera
 				LookingGlassAddon.lightfieldSpace.camera = None
 
-				# set view mode to "PERSPECTIVE VIEW"
-				LookingGlassAddon.lightfieldSpace.region_3d.view_perspective = 'PERSP'
-
+				# set view mode to "PERSP"
+				if LookingGlassAddon.lightfieldSpace.region_3d.view_perspective != 'PERSP': bpy.ops.view3d.view_camera(dict(window=LookingGlassAddon.lightfieldWindow, area=LookingGlassAddon.lightfieldArea, region=LookingGlassAddon.lightfieldRegion, space_data=LookingGlassAddon.lightfieldSpace))
 
 		return None
 
