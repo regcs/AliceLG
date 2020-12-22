@@ -312,8 +312,31 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						self.override['scene'] = context.scene
 						self.override['view_layer'] = context.view_layer
 
-
 						# ADJUST VIEWPORT SETTINGS
+						# lock viewport to local camera
+						space.use_local_camera = True
+						space.lock_camera = True
+
+						# if a camera is selected
+						if context.scene.settings.lookingglassCamera != None:
+
+							# set space to this camera (automatically None, if none is selected)
+							space.camera = context.scene.settings.lookingglassCamera
+
+							# set viewport view location to active camera location
+							space.region_3d.view_matrix = space.camera.matrix_world.inverted_safe()
+							space.region_3d.update()
+
+						elif space.camera != None:
+
+							# set viewport view location to active camera location
+							space.region_3d.view_matrix = space.camera.matrix_world.inverted_safe()
+							space.region_3d.update()
+
+
+						# set view mode to "CAMERA"
+						if space.region_3d.view_perspective != 'CAMERA': bpy.ops.view3d.view_camera(self.override)
+
 						# set FOV to 14° as suggested by the LookingGlassFactory documentation
 						# we calculate the field of view from the projection matrix
 						self.viewportViewMatrix = space.region_3d.view_matrix.inverted_safe()
@@ -331,19 +354,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 						# set the new focal length, corresponding to a FOV of 14°
 						space.lens = sensor_size / tan(radians(14 / 2))
-
-						# lock viewport to local camera
-						space.use_local_camera = True
-						space.lock_camera = True
-
-						# set space to a specific camera (automatically None, if none is selected)
-						space.camera = context.scene.settings.lookingglassCamera
-
-						# if a camera is selected
-						if context.scene.settings.lookingglassCamera != None:
-
-							# set view mode to "CAMERA"
-							space.region_3d.view_perspective = 'CAMERA'
 
 						# hide header
 						space.show_region_header = False
@@ -593,13 +603,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# transform world coordinates of each edge to screen coordinates in pixels
 				view_frame_2D = [location_3d_to_region_2d(LookingGlassAddon.lightfieldRegion, LookingGlassAddon.lightfieldSpace.region_3d, p) for p in view_frame]
 
-				# calculate dimensions in pixels
-				view_frame_width = abs(view_frame_2D[2][0] - view_frame_2D[0][0])
-				view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
+				# if all viewframe points were obtained
+				if any(p is None for p in view_frame_2D) == False:
 
-				# remap mouse coordinates in complete window to corresponding coordinates in the camera view frame
-				self.modified_mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
-				self.modified_mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
+					# calculate dimensions in pixels
+					view_frame_width = abs(view_frame_2D[2][0] - view_frame_2D[0][0])
+					view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
+
+					# remap mouse coordinates in complete window to corresponding coordinates in the camera view frame
+					self.modified_mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / LookingGlassAddon.lightfieldRegion.width) * view_frame_width))
+					self.modified_mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / LookingGlassAddon.lightfieldRegion.height) * view_frame_height))
 
 			# force area redraw to draw the cursor
 			if context.area:
