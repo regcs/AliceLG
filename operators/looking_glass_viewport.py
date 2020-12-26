@@ -1515,7 +1515,6 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 				batch_focalplane_outline.draw(self.frustum_shader)
 
 			bgl.glDepthMask(bgl.GL_FALSE)
-			bgl.glDisable(bgl.GL_DEPTH_TEST)
 			bgl.glEnable(bgl.GL_BLEND)
 
 			# if the camera fustum shall be drawn
@@ -1527,9 +1526,10 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 			# if the focal plane shall be drawn
 			if self.settings.showFocalPlane == True:
 				# draw focal plane face
-				self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.1))
+				self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
 				batch_focalplane_face.draw(self.frustum_shader)
 
+			bgl.glDisable(bgl.GL_DEPTH_TEST)
 			bgl.glDisable(bgl.GL_BLEND)
 
 			# reset the matrices to their original state
