@@ -949,8 +949,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# if the quilt must be redrawn AND the current image editor belongs to the lightfield window AND the Multiview object exists
 		if self.modal_redraw == True and context.area == LookingGlassAddon.lightfieldArea:
 
-			# Update quilt settings
-			######################################################
+			# UPDATE QUILT SETTINGS
+			# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 			# if this function call belongs to the first view
 			if view == 0:
@@ -968,8 +968,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 			# print("copyViewToQuilt start (view: ", view, ": ", time.time() - self.start_multi_view, (LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].width, LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].height))
 
-			# Render the current view into an offscreen
-			######################################################
+
+			# PREPARE VIEW & PROJECTION MATRIX
+			# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 			# select camera that belongs to the view
 			camera = context.scene.settings.lookingglassCamera
@@ -991,7 +992,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
-						bpy.data.scenes[LookingGlassAddon.lightfieldWindow.scene.name].view_layers[LookingGlassAddon.lightfieldWindow.view_layer.name].depsgraph,
+						depsgraph=LookingGlassAddon.lightfieldWindow.view_layer.depsgraph,
 						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
 						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
 						scale_x = 1.0,
@@ -1013,17 +1014,21 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 			# RENDER THE VIEW INTO THE OFFSCREEN
+			# ++++++++++++++++++++++++++++++++++++++++++++++++
+			# NOTE: - the draw_view3d method does not apply the color management
+			# 		- files bug report (on 2020-12-28): https://developer.blender.org/T84227
+
 			# draw the viewport rendering to the offscreen for the current view
 			start_test = time.time()
 			LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].draw_view3d(
 				# we use the "Scene" and the "View Layer" that is active in the Window
 				# the user currently works in
-				LookingGlassAddon.lightfieldWindow.scene,
-				LookingGlassAddon.lightfieldWindow.view_layer,
-				self.override['space_data'],
-				self.override['region'],
-				view_matrix,
-				projection_matrix)
+				scene=LookingGlassAddon.lightfieldWindow.scene,
+				view_layer=LookingGlassAddon.lightfieldWindow.view_layer,
+				view3d=self.override['space_data'],
+				region=self.override['region'],
+				view_matrix=view_matrix,
+				projection_matrix=projection_matrix)
 
 
 			#print("draw_view3d (view: ", view, "): ", time.time() - start_test)
@@ -1199,7 +1204,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
-						bpy.data.scenes[LookingGlassAddon.lightfieldWindow.scene.name].view_layers[LookingGlassAddon.lightfieldWindow.view_layer.name].depsgraph,
+						depsgraph = LookingGlassAddon.lightfieldWindow.view_layer.depsgraph,
 						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
 						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
 						scale_x = 1.0,
