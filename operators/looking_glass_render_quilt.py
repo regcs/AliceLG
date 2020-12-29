@@ -84,7 +84,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	view_matrix = None
 	view_matrix_inv = None
 
-	# Blender images
+	# Blender images & pixel data
+	viewImage = None
+	quiltImage = None
 	viewImagesPixels = []
 
 	# event and app handler ids
@@ -194,8 +196,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		context.window_manager.event_timer_remove(self._handle_event_timer)
 
 
-		# CLEAR PIXEL DATA
+		# CLEAR IMAGE & PIXEL DATA
 		# +++++++++++++++++++++++++
+		self.viewImage = None
+		self.quiltImage = None
 		self.viewImagesPixels.clear()
 
 
@@ -656,18 +660,26 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				bpy.data.images["Render Result"].save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
 				# append the loaded image to the list
-				viewImage = bpy.data.images.load(filepath=self.rendering_filepath)
+				self.viewImage = bpy.data.images.load(filepath=self.rendering_filepath)
 
 				# store the pixel data in an numpy array
 				# NOTE: we use foreach_get, since this is significantly faster
-				tmp_pixels = np.empty(len(viewImage.pixels), np.float32)
-				viewImage.pixels.foreach_get(tmp_pixels)
+				tmp_pixels = np.empty(len(self.viewImage.pixels), np.float32)
+				self.viewImage.pixels.foreach_get(tmp_pixels)
 
 				# append the pixel data to the list of views
 				self.viewImagesPixels.append(tmp_pixels)
 
-				# delete the Blender image of this view
-				bpy.data.images.remove(viewImage)
+				# if this was the last view
+				if self.rendering_view == (self.rendering_totalViews - 1):
+					# NOTE: Creating a image via the dedicated operators and methods
+					# 		didn't apply the correct image formats and settings
+					#		and therefore, we use the created image
+					self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
+					self.quiltImage = self.viewImage
+				else:
+					# delete the Blender image of this view
+					bpy.data.images.remove(self.viewImage)
 
 				# reset the operator state to IDLE
 				self.operator_state = "IDLE"
@@ -711,20 +723,20 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					quiltPixels = np.vstack(verticalStack.copy())
 					quiltPixels = np.reshape(quiltPixels, (self.rendering_columns * self.rendering_rows * (self.render_setting_scene.render.resolution_x * self.render_setting_scene.render.resolution_y * 4)))
 
-					# create a Blender image with the obtained pixel data
-					quiltImage = bpy.data.images.new(os.path.basename(self.rendering_filepath).replace(self.render_setting_scene.render.file_extension, ""), self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
-					quiltImage.pixels.foreach_set(quiltPixels)
+					# apply the assembled quilt pixel data
+					self.quiltImage.pixels.foreach_set(quiltPixels)
 
-					# make sure the quilt is "view as render"
-					quiltImage.use_view_as_render = True
-
-					# if a filename was specified or an animation is to be rendered
-					if (self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True:
-
-						# save the quilt in a file
-						quiltImage.save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
-
+					# set "view as render" based on the image format
+					if self.quiltImage.file_format == 'OPEN_EXR_MULTILAYER' or self.quiltImage.file_format == 'OPEN_EXR':
+						self.quiltImage.use_view_as_render = True
 					else:
+						self.quiltImage.use_view_as_render = False
+
+					# save the quilt in a file
+					self.quiltImage.save()
+
+					# if no filename was specified and no animation is to be rendered
+					if not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True):
 
 						# remove the file
 						os.remove(self.rendering_filepath)
@@ -744,7 +756,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 										if area.spaces.active.image.name == "Render Result":
 
 											# and change the active image shown here to the quilt
-											area.spaces.active.image = quiltImage
+											area.spaces.active.image = self.quiltImage
 
 											# fit the zoom factor in this window to show the complete quilt
 											bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
