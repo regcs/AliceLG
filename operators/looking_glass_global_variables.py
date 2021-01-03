@@ -129,3 +129,6 @@ class LookingGlassAddon:
 	quiltPixels = None
 	quiltTextureBuffer = None
 	quiltTextureID = None
+	# TODO: Is there a better way to check for color management setting changes?
+	quiltViewAsRender = None
+	quiltImageColorSpaceSetting = None

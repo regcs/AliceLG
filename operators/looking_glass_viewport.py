@@ -687,12 +687,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				LookingGlassAddon.lightfieldWindow.view_layer = depsgraph.view_layer
 
 
-
 			# if automatic live view is activated AND something in the scene has changed
 			if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
-				#print("DEPSGRAPH UPDATE: ", len(depsgraph.updates.values()), scene)
-
-
+				#print("DEPSGRAPH UPDATE: ", depsgraph.updates.values())
 
 				# invoke an update of the Looking Glass viewport
 				self.modal_redraw = True
@@ -706,7 +703,32 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					# activate them
 					self.preset = 3
 
+			# if quilt viewer is active AND an image is selected
+			elif int(self.settings.renderMode) == 1 and scene.settings.quiltImage != None:
 
+				# set status variable
+				changed = False
+
+				# go through the updates
+				for DepsgraphUpdate in depsgraph.updates.values():
+					#print(" # ", DepsgraphUpdate.is_updated_geometry, DepsgraphUpdate.is_updated_shading, DepsgraphUpdate.is_updated_transform, DepsgraphUpdate.id.name)
+
+					# TODO: Hacky, but this identifies color management changes
+					if DepsgraphUpdate.is_updated_geometry  == True and DepsgraphUpdate.is_updated_shading == True and DepsgraphUpdate.is_updated_transform == True:
+
+						# update status variable
+						changed = True
+
+						break
+
+				# are there any changes in the image or color management settings?
+				if LookingGlassAddon.quiltViewAsRender != scene.settings.quiltImage.use_view_as_render or LookingGlassAddon.quiltImageColorSpaceSetting.name != scene.settings.quiltImage.colorspace_settings.name:
+
+					# update status variable
+					changed = True
+
+				# update the quilt image, if something had changed
+				if changed == True: scene.settings.quiltImage = scene.settings.quiltImage
 
 	# this function is called as a draw handler to enable the Looking Glass Addon
 	# to keep track of the SpaceView3D which is currently manipulated by the User

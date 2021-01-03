@@ -577,8 +577,9 @@ class LookingGlassAddonFunctions:
 		# if a quilt was selected
 		if context.scene.settings.quiltImage != None:
 
-			# load the image for OpenGL operations
-			context.scene.settings.quiltImage.gl_load()
+			# update the setting observers
+			LookingGlassAddon.quiltViewAsRender = context.scene.settings.quiltImage.use_view_as_render
+			LookingGlassAddon.quiltImageColorSpaceSetting = context.scene.settings.quiltImage.colorspace_settings
 
 			# if no pixel array exists
 			if LookingGlassAddon.quiltPixels is None:
@@ -594,25 +595,118 @@ class LookingGlassAddonFunctions:
 				# delete the texture
 				bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
 
-
 			# create a new texture
 			LookingGlassAddon.quiltTextureID = bgl.Buffer(bgl.GL_INT, [1])
 			bgl.glGenTextures(1, LookingGlassAddon.quiltTextureID)
 
-			# copy pixel data to the array and a BGL Buffer
-			context.scene.settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
-			LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
 
-			# bind the texture and apply bgl.GL_SRGB8_ALPHA8 as internal format
-			# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
-			#		see: https://developer.blender.org/T79788#1034183
-			bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
-			bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
-			bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
-			bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
 
-			# free the previously created OpenGL texture
-			context.scene.settings.quiltImage.gl_free()
+			# GET PIXEL DATA
+			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+			# TODO: Change. The current approach is hacky and slow, but I don't
+			#		know of any other way to access the pixel data WITH applied
+			#		color management directly in memory. Seems like Blender
+			#		does not expose this pixel data to the Python API
+			#
+			#		I asked this also on stackexchange but got no better way yet:
+			#		https://blender.stackexchange.com/questions/206910/access-image-pixel-data-with-color-management-settings
+			#
+
+			# if the image has the "view as render" option inactive
+			if context.scene.settings.quiltImage.use_view_as_render == False:
+
+				# save the original settings
+				tempViewTransform = context.scene.view_settings.view_transform
+				tempLook = context.scene.view_settings.look
+				tempExposure = context.scene.view_settings.exposure
+				tempGamma = context.scene.view_settings.gamma
+				tempUseCurveMapping = context.scene.view_settings.use_curve_mapping
+
+				# apply standard settings
+				context.scene.view_settings.view_transform = "Standard"
+				context.scene.view_settings.look = "None"
+				context.scene.view_settings.exposure = 0
+				context.scene.view_settings.gamma = 1
+				context.scene.view_settings.use_curve_mapping = False
+
+
+			# set the temporary file path
+			tempFilepath = bpy.app.tempdir + 'temp' + str(int(time.time())) + '.png'
+
+			# set the output settings
+			tempUseRenderCache = context.scene.render.use_render_cache
+			tempFileFormat = context.scene.render.image_settings.file_format
+			tempColorDepth = context.scene.render.image_settings.color_depth
+			tempColorMode = context.scene.render.image_settings.color_mode
+			context.scene.render.use_render_cache = False
+			context.scene.render.image_settings.file_format = 'PNG'
+			context.scene.render.image_settings.color_depth = '8'
+			context.scene.render.image_settings.color_mode = 'RGBA'
+
+			# save the image to the temporary directory
+			context.scene.settings.quiltImage.save_render(filepath=tempFilepath, scene=context.scene)
+
+			# restore output render settings
+			context.scene.render.use_render_cache = tempUseRenderCache
+			context.scene.render.image_settings.file_format = tempFileFormat
+			context.scene.render.image_settings.color_depth = tempColorDepth
+			context.scene.render.image_settings.color_mode = tempColorMode
+
+			# if the image has the "view as render" option inactive
+			if context.scene.settings.quiltImage.use_view_as_render == False:
+
+				# restore the original settings
+				context.scene.view_settings.view_transform = tempViewTransform
+				context.scene.view_settings.look = tempLook
+				context.scene.view_settings.exposure = tempExposure
+				context.scene.view_settings.gamma = tempGamma
+				context.scene.view_settings.use_curve_mapping = tempUseCurveMapping
+
+			# if the file was created
+			if os.path.isfile(tempFilepath) == True:
+
+				# append the loaded image to the list
+				tempImage = bpy.data.images.load(filepath=tempFilepath)
+
+				# copy pixel data to the array and a BGL Buffer
+				tempImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
+				LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(tempImage.pixels), LookingGlassAddon.quiltPixels)
+
+			# TODO: The following lines would be enough, if the color
+			#		management settings would be applied in memory. Not deleted
+			#		for later
+			#
+			# # copy pixel data to the array and a BGL Buffer
+			# context.scene.settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
+			# LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
+
+
+
+			# APPLY CORRECT COLOR FORMAT TO OPENGL TEXTURE
+			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+			if tempImage.colorspace_settings.name == 'sRGB':
+
+				# bind the texture and apply bgl.GL_SRGB8_ALPHA8 as internal format
+				# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
+				#		see: https://developer.blender.org/T79788#1034183
+				bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
+				bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
+				bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
+				bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+			# else:
+			# 	print("# USING GL_RGBA")
+			# 	# use linear color space
+			# 	bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
+			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
+			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
+			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+
+
+			# delete the temporary Blender image
+			bpy.data.images.remove(tempImage)
+
+			# delete the temporary file
+			os.remove(tempFilepath)
 
 		# if the quilt selection was deleted
 		else:
