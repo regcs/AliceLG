@@ -763,6 +763,28 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# on the LookingGlass as a hologram
 	def loadlightFieldShaders(self):
 
+		# NOTE: For some reason, I don't understand
+		# 	    we need to change uvz * tile.z to (1 + uvz.z) * tile.z) in the shader
+		# 	    in order to get the correct quilt display in Blender 2.83
+		#
+		#		Since this behavior disappeared in Blender 2.90 it might have
+		#		been related to a bug in 2.83 ... I therefore use this hacky solution
+		if bpy.app.version < (2, 90, 0):
+
+			# get all lines of the shader
+			lines = LookingGlassAddon.lightfieldFragmentShaderSource.splitlines(True)
+
+			# go through all lines
+			for i, line in enumerate(lines):
+
+				# if this is the line we want to replace, do it
+				if "floor(uvz.z * tile.z)" in line:
+					lines[i] = "\tfloat z = floor((1 + uvz.z) * tile.z);\n"
+					break
+
+			# write back the modifed shader source to the global variable
+			LookingGlassAddon.lightfieldFragmentShaderSource = "".join(lines)
+
         # Compile lightfield shader via GPU module
 		self.lightFieldShader = gpu.types.GPUShader(LookingGlassAddon.lightfieldVertexShaderSource, LookingGlassAddon.lightfieldFragmentShaderSource)
 
