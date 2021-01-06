@@ -749,7 +749,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# a list of connected Looking Glass displays
 	activeDisplay: bpy.props.EnumProperty(
 										items = looking_glass_list_callback,
-										default=0,
 										name="Please select a Looking Glass.",
 										update=LookingGlassAddonFunctions.update_render_setting,
 										)
@@ -968,14 +967,12 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	blender_workspace: bpy.props.EnumProperty(
 										name="Workspace",
 										items = LookingGlassAddonFunctions.workspaces_list_callback,
-										default=0,
 										update = LookingGlassAddonFunctions.update_workspace_selection
 										)
 
 	blender_view3d: bpy.props.EnumProperty(
 										name="3D View",
 										items = LookingGlassAddonFunctions.view3D_list_callback,
-										default=0,
 										update = LookingGlassAddonFunctions.update_viewport_selection
 										)
 

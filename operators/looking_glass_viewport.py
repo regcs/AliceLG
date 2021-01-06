@@ -1128,7 +1128,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 				# bind the quilt texture
 				bgl.glActiveTexture(bgl.GL_TEXTURE0)
-				bgl.glEnable(bgl.GL_TEXTURE_2D)
 				bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.qs[self.preset]["quiltOffscreen"].color_texture)
 
 				# bind the lightfield shader for drawing operations
