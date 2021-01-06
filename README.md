@@ -25,7 +25,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 ## System Requirements
 - Windows, Linux, or macOS
-- Blender 2.9x
+- Blender 2.83 or later
 - Holoplay Service App
 
 ## Installation
