@@ -21,7 +21,7 @@
 bl_info = {
 	"name": "Alice/LG",
 	"author": "Christian Stolze",
-	"version": (1, 0, 3),
+	"version": (1, 0, 4),
 	"blender": (2, 83, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks thorugh the Looking Glass (lightfield displays)",
@@ -874,6 +874,14 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 									update = LookingGlassAddonFunctions.update_render_setting,
 									)
 
+	# File handling
+	render_output: bpy.props.EnumProperty(
+									items = [('0', 'View and Quilt Files', 'Each view is rendered to a separate file in the output directory in addition to the quilt.'),
+											 ('1', 'Only Quilt File', 'Each view is rendered to a temporary file in the output directory. These files are deleted after the quilt is complete.')],
+									default='1',
+									name="Output",
+									)
+
 	# Progress bar
 	render_progress: bpy.props.FloatProperty(
 										name = "",
@@ -1416,31 +1424,45 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_2.prop(context.scene.settings, "render_quilt_preset", text="")
 		column_2.scale_x = 0.7
 
+		# View file handling
+		row_3 = layout.row(align = True)
+		column_1 = row_3.row(align = True)
+		column_1.label(text="Output:")
+		column_1.scale_x = 0.3
+		column_2 = row_3.row(align = True)
+		column_2.prop(context.scene.settings, "render_output", text="")
+		column_2.scale_x = 0.7
+
 
 		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:
-			# Show the corresponding progress bar for the rendering process
-			row_3 = layout.row(align = True)
-			row_3.prop(context.scene.settings, "render_progress", text="", slider=True)
-		else:
-			# Button to start rendering a single quilt using the current render settings
-			row_3 = layout.row(align = True)
-			render_quilt = row_3.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
-			render_quilt.animation = False
-
-		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
 			# Show the corresponding progress bar for the rendering process
 			row_4 = layout.row(align = True)
 			row_4.prop(context.scene.settings, "render_progress", text="", slider=True)
 		else:
-			# Button to start rendering a animation quilt using the current render settings
+			# Button to start rendering a single quilt using the current render settings
 			row_4 = layout.row(align = True)
-			render_quilt = row_4.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+			render_quilt = row_4.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+			render_quilt.animation = False
+
+		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
+			# Show the corresponding progress bar for the rendering process
+			row_5 = layout.row(align = True)
+			row_5.prop(context.scene.settings, "render_progress", text="", slider=True)
+		else:
+			# Button to start rendering a animation quilt using the current render settings
+			row_5 = layout.row(align = True)
+			render_quilt = row_5.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
 			render_quilt.animation = True
 
-		# disable the buttons, if a rendering process is running
+		# disable the render settings, if a rendering process is running
 		if LookingGlassAddon.RenderInvoked == True:
-			if LookingGlassAddon.RenderAnimation == True: row_3.enabled = False
-			if LookingGlassAddon.RenderAnimation == False: row_4.enabled = False
+			row_0.enabled = False
+			row_1.enabled = False
+			row_2.enabled = False
+			row_3.enabled = False
+
+			if LookingGlassAddon.RenderAnimation == True: row_4.enabled = False
+			if LookingGlassAddon.RenderAnimation == False: row_5.enabled = False
 
 		# if no camera is selected
 		if context.scene.settings.lookingglassCamera == None:
@@ -1451,6 +1473,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_2.enabled = False
 			row_3.enabled = False
 			row_4.enabled = False
+			row_5.enabled = False
 
 		# if the settings are to be taken from device selection
 		elif context.scene.settings.render_use_device == True:
