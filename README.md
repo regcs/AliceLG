@@ -104,7 +104,7 @@ The add-on attempts to detect Blender crashes during quilt rendering as well as 
 
 If you decide to discard the incomplete render jobs, the add-on will try to delete the view files of the incomplete render job.
 
-_NOTE: This feature is considered to be 'experimental'. It might not detect crashes under all circumstances and might not work always. If you encounter a situation were this feature failed, please submit a detailed bug report._
+_NOTE: This feature is considered to be 'experimental'. It might not detect crashes under all circumstances and might not succeed to continue the rendering always. If you encounter a situation were this feature failed, please submit a detailed bug report._
 
 ## License
 
