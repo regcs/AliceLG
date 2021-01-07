@@ -26,6 +26,7 @@ class LookingGlassAddon:
 
 	# path to the addon directory
 	path = None
+	tmp_path = None
 
 	# Was the connection to the holoplay service successfully initialized?
 	HoloPlayService = False
@@ -33,6 +34,9 @@ class LookingGlassAddon:
 	# List of dictionaries with one dictionary for each connected Looking Glass
 	# Each Dictionary contains all available data on the Looking Glass (including calibrations data)
 	deviceList = []
+
+	# Lockfile
+	has_lockfile = False
 
 	# Was the modal operator for the frustum initialized?
 	FrustumInitialized = False

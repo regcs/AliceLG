@@ -1171,6 +1171,11 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 		bpy.context.scene.settings.render_use_device = False
 
 
+	# check if lockfile exists and set status variable
+	LookingGlassAddon.has_lockfile = os.path.exists(os.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
+
+
+
 
 # ----------------- PANEL FOR GENERAL SETTINGS --------------------
 # an operator that refreshes the list of connected Looking Glasses
@@ -1424,7 +1429,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_2.prop(context.scene.settings, "render_quilt_preset", text="")
 		column_2.scale_x = 0.7
 
-		# View file handling
+		# Output file handling
 		row_3 = layout.row(align = True)
 		column_1 = row_3.row(align = True)
 		column_1.label(text="Output:")
@@ -1433,26 +1438,53 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_2.prop(context.scene.settings, "render_output", text="")
 		column_2.scale_x = 0.7
 
+		# if no lockfile was detected on start-up OR the render job is running
+		if LookingGlassAddon.has_lockfile == False or LookingGlassAddon.RenderInvoked == True:
 
-		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:
-			# Show the corresponding progress bar for the rendering process
-			row_4 = layout.row(align = True)
-			row_4.prop(context.scene.settings, "render_progress", text="", slider=True)
-		else:
-			# Button to start rendering a single quilt using the current render settings
-			row_4 = layout.row(align = True)
-			render_quilt = row_4.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
-			render_quilt.animation = False
+			# Buttons and progress bars
+			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:
+				# Show the corresponding progress bar for the rendering process
+				row_4 = layout.row(align = True)
+				row_4.prop(context.scene.settings, "render_progress", text="", slider=True)
+			else:
+				# Button to start rendering a single quilt using the current render settings
+				row_4 = layout.row(align = True)
+				render_quilt = row_4.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+				render_quilt.animation = False
 
-		if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
-			# Show the corresponding progress bar for the rendering process
-			row_5 = layout.row(align = True)
-			row_5.prop(context.scene.settings, "render_progress", text="", slider=True)
+			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
+				# Show the corresponding progress bar for the rendering process
+				row_5 = layout.row(align = True)
+				row_5.prop(context.scene.settings, "render_progress", text="", slider=True)
+			else:
+				# Button to start rendering a animation quilt using the current render settings
+				row_5 = layout.row(align = True)
+				render_quilt = row_5.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+				render_quilt.animation = True
+
+
+		# if a lockfile was detected on start-up
 		else:
-			# Button to start rendering a animation quilt using the current render settings
-			row_5 = layout.row(align = True)
-			render_quilt = row_5.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
-			render_quilt.animation = True
+
+			# disable the UI
+			row_0.enabled = False
+			row_1.enabled = False
+			row_2.enabled = False
+			row_3.enabled = False
+
+			# inform the user and provide options to continue or to discard
+			row_4 = layout.row(align = True)
+			row_4.label(text = "Last render job incomplete:", icon="ERROR")
+
+			row_5 = layout.row(align = False)
+			render_quilt = row_5.operator("render.quilt", text="Continue", icon='RENDER_STILL')
+			render_quilt.use_lockfile = True
+			render_quilt = row_5.operator("render.quilt", text="Discard", icon='CANCEL')
+			render_quilt.use_lockfile = True
+			render_quilt.discard_lockfile = True
+
+
+
 
 		# disable the render settings, if a rendering process is running
 		if LookingGlassAddon.RenderInvoked == True:
@@ -1852,10 +1884,16 @@ def register():
 	# define name for registration
 	LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
 
-	print(" # Registering at Holoplay Service as: " + LookingGlassAddon.name)
+	# get add-on path and set the add-ons tmp path
+	LookingGlassAddon.path = os.path.dirname(os.path.realpath(__file__))
+	LookingGlassAddon.tmp_path = os.path.dirname(os.path.realpath(__file__)) + "/tmp/"
+
+	print(" # Add-on path is: " + LookingGlassAddon.path)
 
 	# initialize HoloPlay Core SDK
 	errco = hpc.InitializeApp(LookingGlassAddon.name.encode(), hpc.license_type.LICENSE_NONCOMMERCIAL.value)
+
+	print(" # Registering at Holoplay Service as: " + LookingGlassAddon.name)
 
 	# register all classes of the addon
 	# Preferences & Settings

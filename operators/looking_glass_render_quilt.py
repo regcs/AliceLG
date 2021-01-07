@@ -39,6 +39,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	# OPERATOR ARGUMENTS
 	animation: bpy.props.BoolProperty(default = False)
+	use_lockfile: bpy.props.BoolProperty(default = False)
+	discard_lockfile: bpy.props.BoolProperty(default = False)	# trigger discarding lockfile
+	force_keep: bpy.props.BoolProperty(default = False)			# only used for lockfile rendering
 
 	# OPERATOR STATE
 	# this is used for handling different rendering steps
@@ -54,6 +57,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 											default='INVOKE_RENDER'
 											)
 
+	# lock file
+	lockfile = None
+	lockfile_path = None
+	lockfile_data = None
+	lockfile_start_frame = None
+	lockfile_start_view = None
 
 	# render settings
 	render_setting_original_width = None
@@ -93,6 +102,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# event and app handler ids
 	_handle_event_timer = None	# modal timer event
 
+	# define cancel standard messages
+	cancel_sign = "INFO"
+	cancel_message = "Quilt rendering was cancelled."
 
 	# callback functions:
 	# NOTE: - we only use this callbacks to enter the correct state. The actual
@@ -102,10 +114,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	def init_render(self, Scene, unknown_param):
 
 		# reset the operator state to IDLE
-		self.operator_state = "INIT_RENDER"
-
-		# since we need to know the scene through the job, we store it in an internal variable
-		self.render_setting_scene = Scene
+		if self.operator_state != "CANCEL_RENDER": self.operator_state = "INIT_RENDER"
 
 		# wait a few milliseconds until the operator processed the step
 		while self.operator_state != "IDLE" and self.operator_state != "CANCEL_RENDER":
@@ -116,7 +125,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	def pre_render(self, Scene, unknown_param):
 
 		# reset the operator state to PRE_RENDER
-		self.operator_state = "PRE_RENDER"
+		if self.operator_state != "CANCEL_RENDER": self.operator_state = "PRE_RENDER"
 
 		# wait a few milliseconds until the operator processed the step
 		while self.operator_state != "IDLE" and self.operator_state != "CANCEL_RENDER":
@@ -127,7 +136,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	def post_render(self, Scene, unknown_param):
 
 		# reset the operator state to PRE_RENDER
-		self.operator_state = "POST_RENDER"
+		if self.operator_state != "CANCEL_RENDER": self.operator_state = "POST_RENDER"
 
 		# wait a few milliseconds until the operator processed the step
 		while self.operator_state != "IDLE" and self.operator_state != "CANCEL_RENDER":
@@ -138,7 +147,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	def completed_render(self, Scene, unknown_param):
 
 		# reset the operator state to COMPLETE_RENDER
-		self.operator_state = "COMPLETE_RENDER"
+		if self.operator_state != "CANCEL_RENDER": self.operator_state = "COMPLETE_RENDER"
 
 		# print("######################################")
 		# # wait a few milliseconds until the operator processed the step
@@ -186,15 +195,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# REMOVE APP HANDLERS
 		# +++++++++++++++++++++++++
-		# remove render app handlers
-		bpy.app.handlers.render_init.remove(self.init_render)
-		bpy.app.handlers.render_pre.remove(self.pre_render)
-		bpy.app.handlers.render_post.remove(self.post_render)
-		bpy.app.handlers.render_cancel.remove(self.cancel_render)
-		bpy.app.handlers.render_complete.remove(self.completed_render)
+		try:
 
-		# remove event timer
-		context.window_manager.event_timer_remove(self._handle_event_timer)
+			# remove render app handlers
+			bpy.app.handlers.render_init.remove(self.init_render)
+			bpy.app.handlers.render_pre.remove(self.pre_render)
+			bpy.app.handlers.render_post.remove(self.post_render)
+			bpy.app.handlers.render_cancel.remove(self.cancel_render)
+			bpy.app.handlers.render_complete.remove(self.completed_render)
+
+			# remove event timer
+			if self._handle_event_timer != None: context.window_manager.event_timer_remove(self._handle_event_timer)
+
+		except:
+			pass
+
 
 
 		# CLEAR IMAGE & PIXEL DATA
@@ -205,12 +220,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
-
-
 		# CLEAN-UP FILES
 		# +++++++++++++++++++++++++++++++++++++++++++
-		# if the view files shall not be kept OR (still was rendered AND no filename was specfied)
-		if self.settings.render_output == '1' or (not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True)):
+		# if the view files shall not be kept OR (still was rendered AND no filename was specfied) OR the file keeping is forced OR the incomplete render job was discarded
+		if ((self.settings.render_output == '1' or (not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True))) and self.force_keep == False) or self.discard_lockfile == True:
 
 			# if it was an animation
 			if self.animation == True:
@@ -220,19 +233,24 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					for view in range(0, self.rendering_totalViews):
 
-						# if this path is a directory and not a file
-						if os.path.isdir(self.render_setting_filepath) == True or os.path.basename(self.render_setting_filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+						# get the file or directory path
+						filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+
+						# if this path is a valid directory path AND not a filename
+						if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 							# include the frame number in the temporary filename
-							filepath = os.path.abspath(self.render_setting_filepath + "/Quilt Render Result" + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end))) + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + self.render_setting_scene.render.file_extension)
+							filepath = os.path.abspath(filepath + "/Quilt Render Result")
 
-						# if this path + extension is a file
-						elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
+						# if no extension is in the filename use Blender's
+						if extension == "":
+							extension = self.render_setting_scene.render.file_extension
 
-							# adjust the file name for current view and frame:
-							# # used format: FILENAME_fXXX_vXXX.EXTENSION
-							filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
-							filepath = filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end))) + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + self.render_setting_scene.render.file_extension
+						# append the frame number
+						filepath = filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
+
+						# append the view number
+						filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
 
 						# delete this file, if it exists
 						if os.path.isfile(filepath) == True: os.remove(filepath)
@@ -243,9 +261,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# for all views
 				for view in range(0, self.rendering_totalViews):
 
+					# get the file or directory path
+					filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+
+					# if this path is a valid directory path AND not a filename
+					if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+
+						# use a temporary filename
+						filepath = os.path.abspath(filepath + "/Quilt Render Result")
+
+					# if no extension is in the filename use Blender's
+					if extension == "":
+						extension = self.render_setting_scene.render.file_extension
+
 					# adjust the file name for current view and frame:
-					# # used format: FILENAME_fXXX_vXXX.EXTENSION
-					filepath, extension = os.path.splitext(self.rendering_filepath)
+					# used format: FILENAME_fXXX_vXXX.EXTENSION
 					filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
 
 					# delete this file, if it exists
@@ -255,27 +285,40 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# RESTORE USER SETTINGS
 		# +++++++++++++++++++++++++
-		# CAMERA
-		# if a active camera exists
-		if self.camera_active != None and self.camera_active.type == 'CAMERA':
+		# if this call was not just invoked to discard an incomplete render job
+		if self.discard_lockfile == False:
 
-			# restore original camera settings
-			self.camera_active.location = self.camera_original_location.copy()
-			self.camera_active.data.shift_x = self.camera_original_shift_x
-			self.camera_active.data.sensor_fit = self.camera_original_sensor_fit
+			# CAMERA
+			# if a active camera exists
+			if self.camera_active != None and self.camera_active.type == 'CAMERA':
 
-		# restore the origingal active camera
-		self.render_setting_scene.camera = self.camera_original
+				# restore original camera settings
+				self.camera_active.location = self.camera_original_location.copy()
+				self.camera_active.data.shift_x = self.camera_original_shift_x
+				self.camera_active.data.sensor_fit = self.camera_original_sensor_fit
+
+			# restore the origingal active camera
+			self.render_setting_scene.camera = self.camera_original
 
 
-		# RENDER SETTINGS
-		# restore original file path
-		self.render_setting_scene.render.filepath = self.render_setting_filepath
-		# restore image settings
-		self.render_setting_scene.render.resolution_x = self.render_setting_original_width
-		self.render_setting_scene.render.resolution_y = self.render_setting_original_height
-		self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
-		self.render_setting_scene.render.pixel_aspect_y = self.render_setting_original_aspect_y
+			# RENDER SETTINGS
+			# restore original file path
+			self.render_setting_scene.render.filepath = self.render_setting_filepath
+			# restore image settings
+			self.render_setting_scene.render.resolution_x = self.render_setting_original_width
+			self.render_setting_scene.render.resolution_y = self.render_setting_original_height
+			self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
+			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_original_aspect_y
+
+
+		# DELETE LOCKFILE
+		# ++++++++++++++++++++++++++++++++++
+		# if a lockfile exists, delete it
+		if os.path.exists(self.lockfile_path) == True: os.remove(self.lockfile_path)
+
+		# reset global and local status variables
+		LookingGlassAddon.has_lockfile = False
+		self.use_lockfile = False
 
 
 
@@ -311,16 +354,72 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_setting_original_height = context.scene.render.resolution_y
 		self.render_setting_original_aspect_x = context.scene.render.pixel_aspect_x
 		self.render_setting_original_aspect_y = context.scene.render.pixel_aspect_y
-		self.render_setting_scene = context.scene
-		self.render_setting_filepath = context.scene.render.filepath
-		self.rendering_filepath = os.path.abspath(context.scene.render.filepath)
+
+
+
+		# SCENE AND PATH SETTINGS
+		# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+		# set the lockfile path
+		self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock")
+
+		# if the lockfile shall be used
+		if self.use_lockfile == True:
+
+			# check if the lockfile still exists and otherwise start a new render job
+			try:
+
+				# READ LOCKFILE DATA
+				# ++++++++++++++++++++++++++++++++++++++++++++
+				self.lockfile = open(self.lockfile_path, 'rt')
+				if self.lockfile != None:
+
+					# read all lines
+					self.lockfile_data = self.lockfile.readlines()
+
+					# strip all line breaks
+					self.lockfile_data = [line.replace("\n", "") for line in self.lockfile_data]
+
+					# close file
+					self.lockfile.close()
+
+			except:
+
+				# reset global and local status variables
+				LookingGlassAddon.has_lockfile = False
+				self.use_lockfile = False
+
+				# notify user
+				self.report({"ERROR"}, "Render job can not be continued. Lockfile not found or corrupted.")
+
+				# don't execute operator
+				return {'FINISHED'}
+
+
+
+		# if the lockfile shall be used
+		if self.use_lockfile == True:
+
+			# get scene and path settings
+			self.render_setting_scene = bpy.data.scenes[self.lockfile_data[1]]
+			self.render_setting_filepath = self.lockfile_data[2]
+			self.rendering_filepath = self.lockfile_data[3]
+
+		else:
+
+			# set scene and path settings from current user settings
+			self.render_setting_scene = context.scene
+			self.render_setting_filepath = context.scene.render.filepath
+			self.rendering_filepath = os.path.abspath(context.scene.render.filepath)
+
+
+
 
 		# get file and extension part of the string
 		filepath, extension = os.path.splitext(self.rendering_filepath)
 
 		# check if a valid path is given in output settings
 		if self.render_setting_scene.render.use_file_extension == True:
-
 
 			if os.path.exists(os.path.dirname(self.rendering_filepath + self.render_setting_scene.render.file_extension)) == False:
 
@@ -429,81 +528,170 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# APPLY RENDER SETTINGS
 		# ++++++++++++++++++++++++
-		# settings of the current preset
-		# if the settings are to be taken from device selection
-		if self.settings.render_use_device == True:
 
-			self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewWidth"]
-			self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewHeight"]
-			self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
-			self.rendering_columns = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["columns"]
-			self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["totalViews"]
-			self.rendering_viewCone = self.device['viewCone']
+		# if the lockfile shall be used
+		if self.use_lockfile == True:
 
-			# apply the render resolution
-			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
-			self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+			# render settings
+			self.rendering_viewWidth = int(self.lockfile_data[4])
+			self.rendering_viewHeight = int(self.lockfile_data[5])
+			self.rendering_rows = int(self.lockfile_data[6])
+			self.rendering_columns = int(self.lockfile_data[7])
+			self.rendering_totalViews = int(self.lockfile_data[8])
+			self.rendering_viewCone = float(self.lockfile_data[9])
 
-			# apply the correct aspect ratio
-			self.render_setting_scene.render.pixel_aspect_x = 1.0
-			self.render_setting_scene.render.pixel_aspect_y = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
+			# animation settings
+			self.animation = (self.lockfile_data[10] == "True")
+			self.render_setting_scene.frame_start = int(self.lockfile_data[11])
+			self.render_setting_scene.frame_end = int(self.lockfile_data[12])
 
-		# else, if the settings were specified separately
-		else:
-
-			self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewWidth"]
-			self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewHeight"]
-			self.rendering_rows = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["rows"]
-			self.rendering_columns = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["columns"]
-			self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["totalViews"]
-
-			# apply the render resolution
-			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
-			self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
-
-			# TODO: At the moment this is hardcoded.
-			# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
-			# if for Looking Glass Portrait
-			if self.render_setting_scene.settings.render_device_type == 'portrait':
-
-				# set the correct view cone
-				self.rendering_viewCone = 58.0
-
-				# apply the correct aspect ratio
-				self.render_setting_scene.render.pixel_aspect_x = 1.0
-				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
-
-			# if for Looking Glass 8.9''
-			elif self.render_setting_scene.settings.render_device_type == 'standard':
-
-				# set the correct view cone
-				self.rendering_viewCone = 40.0
-
-				# apply the correct aspect ratio
-				self.render_setting_scene.render.pixel_aspect_x = 1.0
-				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
-
-			# if for Looking Glass 15.6'' or 8k
-			elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
-
-				# set the correct view cone
-				self.rendering_viewCone = 50.0
-
-				# apply the correct aspect ratio
-				self.render_setting_scene.render.pixel_aspect_x = 1.0
-				self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
-
-
-		# if the operator was called with the animation flag set
-		if self.animation == True:
-
-			# set the rendering frame variable to the first frame of the scene
-			self.rendering_frame = self.render_setting_scene.frame_start
+			# frame and view
+			self.rendering_frame = self.lockfile_start_frame = int(self.lockfile_data[13].split(";")[0])
+			self.rendering_view = self.lockfile_start_view = int(self.lockfile_data[13].split(";")[1])
 
 		else:
 
-			# set the rendering frame variable to the currently active frame
-			self.rendering_frame = self.render_setting_scene.frame_current
+			# settings of the current preset
+			# if the settings are to be taken from device selection
+			if self.settings.render_use_device == True:
+
+				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewWidth"]
+				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewHeight"]
+				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
+				self.rendering_columns = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["columns"]
+				self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["totalViews"]
+				self.rendering_viewCone = self.device['viewCone']
+
+				# apply the render resolution
+				self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
+				self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+
+				# apply the correct aspect ratio
+				self.render_setting_scene.render.pixel_aspect_x = 1.0
+				self.render_setting_scene.render.pixel_aspect_y = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
+
+			# else, if the settings were specified separately
+			else:
+
+				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewWidth"]
+				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewHeight"]
+				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["rows"]
+				self.rendering_columns = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["columns"]
+				self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["totalViews"]
+
+				# apply the render resolution
+				self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
+				self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+
+				# TODO: At the moment this is hardcoded.
+				# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
+				# if for Looking Glass Portrait
+				if self.render_setting_scene.settings.render_device_type == 'portrait':
+
+					# set the correct view cone
+					self.rendering_viewCone = 58.0
+
+					# apply the correct aspect ratio
+					self.render_setting_scene.render.pixel_aspect_x = 1.0
+					self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
+
+				# if for Looking Glass 8.9''
+				elif self.render_setting_scene.settings.render_device_type == 'standard':
+
+					# set the correct view cone
+					self.rendering_viewCone = 40.0
+
+					# apply the correct aspect ratio
+					self.render_setting_scene.render.pixel_aspect_x = 1.0
+					self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
+
+				# if for Looking Glass 15.6'' or 8k
+				elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
+
+					# set the correct view cone
+					self.rendering_viewCone = 50.0
+
+					# apply the correct aspect ratio
+					self.render_setting_scene.render.pixel_aspect_x = 1.0
+					self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
+
+
+			# if the operator was called with the animation flag set
+			if self.animation == True:
+
+				# set the rendering frame variable to the first frame of the scene
+				self.rendering_frame = self.render_setting_scene.frame_start
+
+			else:
+
+				# set the rendering frame variable to the currently active frame
+				self.rendering_frame = self.render_setting_scene.frame_current
+
+
+			# CREATE NEW LOCKFILE
+			# ++++++++++++++++++++++++++++++++++
+
+			# if the current blender session has a file
+			if bpy.data.filepath != "":
+
+				# if no temp directory exists in the add-on path, create one
+				if os.path.exists(LookingGlassAddon.tmp_path) == False:
+					os.mkdir(LookingGlassAddon.tmp_path)
+
+
+				# if the temp directory exists now
+				if os.path.exists(LookingGlassAddon.tmp_path) == True:
+
+					# set the lockfile path
+					self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock")
+
+					# create the lockfile there
+					self.lockfile = open(self.lockfile_path, 'a')
+					if self.lockfile != None:
+
+						# WRITE INFORMATION ABOUT THE RENDER JOB
+						# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+						# blend-file name
+						self.lockfile.write(bpy.data.filepath + "\n")
+
+						# render settings
+						self.lockfile.write(self.render_setting_scene.name + "\n")
+						self.lockfile.write(self.render_setting_filepath + "\n")
+						self.lockfile.write(self.rendering_filepath + "\n")
+						self.lockfile.write(str(self.rendering_viewWidth) + "\n")
+						self.lockfile.write(str(self.rendering_viewHeight) + "\n")
+						self.lockfile.write(str(self.rendering_rows) + "\n")
+						self.lockfile.write(str(self.rendering_columns) + "\n")
+						self.lockfile.write(str(self.rendering_totalViews) + "\n")
+						self.lockfile.write(str(self.rendering_viewCone) + "\n")
+
+						# animation settings
+						self.lockfile.write(str(self.animation) + "\n")
+						self.lockfile.write(str(self.render_setting_scene.frame_start) + "\n")
+						self.lockfile.write(str(self.render_setting_scene.frame_end) + "\n")
+
+						# IMPORTANT: THIS LAST LINE WILL CONTAIN THE CURRENT
+						# FRAME AND VIEW THAT IS RENDERED AND WILL BE UPDATED
+						# DURING RENDERING
+						self.lockfile.write(str(self.rendering_frame) + ";" + str(self.rendering_view))
+
+						# close file
+						self.lockfile.close()
+
+
+
+		# CHECK IF USER OPTED TO DISCARD AN INCOMPLETE RENDER JOB
+		################################################################
+		# if the lockfile shall be discarded
+		if self.discard_lockfile == True:
+
+			# cancel the operator
+			# NOTE: - this includes deleting all view files
+			self.cancel(context)
+
+			# notify user
+			self.report({"INFO"}, "Render job discarded.")
+			return {"CANCELLED"}
 
 
 
@@ -525,9 +713,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# START THE MODAL OPERATOR
 		# ++++++++++++++++++++++++++++++++++
-		# set the INVOKE_RENDER state to directly start the rendering_view
-		self.operator_state == "INVOKE_RENDER"
-
 		# add the modal operator handler
 		context.window_manager.modal_handler_add(self)
 
@@ -568,9 +753,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# STORE USER CAMERA SETTINGS
 				# ++++++++++++++++++++++++++++++++++
 
-				# if this is the first view of the current frame
+				# if this is the first view of the current frame OR the first view of the lockfile
 				# NOTE: - we do it this way in case the camera is animated and its position changes each frame
-				if self.rendering_view == 0:
+				if self.rendering_view == 0 or (self.use_lockfile == True and (self.rendering_frame == self.lockfile_start_frame and self.rendering_view == self.lockfile_start_view)):
 
 					# NOTE: - we do this here, since each frame could contain a different
 					#		 camera setting
@@ -694,6 +879,73 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.rendering_filepath = filepath + extension
 
 
+				# GET THE PIXEL DATA OF THE RENDERED VIEWS
+				# ++++++++++++++++++++++++++++++++++++++++++++
+				# if the lockfile shall be used AND this is the first render
+				if (self.use_lockfile == True and (self.rendering_frame == self.lockfile_start_frame and self.rendering_view == self.lockfile_start_view)):
+
+					# set current frame
+					frame = self.rendering_frame
+
+					# iterate through all views
+					for view in range(0, self.rendering_totalViews):
+
+						# if this view was already rendered
+						if view <= self.lockfile_start_view:
+
+							# adjust the file name for current view:
+							# used format: FILENAME_fXXX_vXXX.EXTENSION
+							self.rendering_view_filepath, extension = os.path.splitext(self.rendering_filepath)
+							self.rendering_view_filepath = self.rendering_view_filepath.replace("_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))), "")
+
+							# append frame number, if a animation is rendered
+							if self.animation == True: self.rendering_view_filepath = self.rendering_view_filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
+
+							# append view number
+							self.rendering_view_filepath = self.rendering_view_filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
+
+							# if the file exists
+							if os.path.exists(self.rendering_view_filepath):
+
+								# load the view image
+								self.viewImage = bpy.data.images.load(filepath=self.rendering_view_filepath)
+
+								# store the pixel data in an numpy array
+								# NOTE: we use foreach_get, since this is significantly faster
+								tmp_pixels = np.empty(len(self.viewImage.pixels), np.float32)
+								self.viewImage.pixels.foreach_get(tmp_pixels)
+
+								# append the pixel data to the list of views
+								self.viewImagesPixels.append(tmp_pixels)
+
+								# if this was the last view
+								if self.rendering_view == (self.rendering_totalViews - 1):
+
+									# NOTE: Creating a new image via the dedicated operators and methods
+									# 		didn't apply the correct image formats and settings
+									#		and therefore, we use the created image
+									self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
+									self.quiltImage = self.viewImage
+
+								else:
+
+									# delete the Blender image of this view
+									bpy.data.images.remove(self.viewImage)
+
+							# if the file does not exist
+							else:
+
+								# cancel the operator
+								self.operator_state = "CANCEL_RENDER"
+
+								# force the operator to keep the view Files
+								self.force_keep = True
+
+								# notify user
+								self.cancel_sign = "ERROR"
+								self.cancel_message = "Render job can not be continued. Missing view file(s) of the previous render job."
+								return {"RUNNING_MODAL"}
+
 
 				# Some status infos
 				# if a single frame shall be rendered
@@ -752,7 +1004,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# save the rendered image in a file
 				bpy.data.images["Render Result"].save_render(filepath=self.rendering_view_filepath, scene=self.render_setting_scene)
 
-				# append the loaded image to the list
+				# load the view image
 				self.viewImage = bpy.data.images.load(filepath=self.rendering_view_filepath)
 
 				# store the pixel data in an numpy array
@@ -765,11 +1017,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# if this was the last view
 				if self.rendering_view == (self.rendering_totalViews - 1):
-					# NOTE: Creating a image via the dedicated operators and methods
+
+					# NOTE: Creating a new image via the dedicated operators and methods
 					# 		didn't apply the correct image formats and settings
 					#		and therefore, we use the created image
 					self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
 					self.quiltImage = self.viewImage
+
 				else:
 					# delete the Blender image of this view
 					bpy.data.images.remove(self.viewImage)
@@ -889,6 +1143,36 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
+				# UPDATE LOCKFILE
+				# +++++++++++++++++++++++++++++++++++++++++++
+				# if the lockfile exists
+				if self.lockfile_path != None and os.path.exists(self.lockfile_path) == True:
+
+					# open the lockfile and read it
+					self.lockfile = open(self.lockfile_path, 'rt')
+					if self.lockfile != None:
+
+						# read all lines but the last
+						lines = self.lockfile.readlines()[:-1]
+
+						# close file
+						self.lockfile.close()
+
+					# open the lockfile and write it with the updated line
+					self.lockfile = open(self.lockfile_path, 'wt')
+					if self.lockfile != None:
+
+						# write the file content
+						self.lockfile.write(''.join(lines))
+
+						# updated line
+						self.lockfile.write(str(self.rendering_frame) + ";" + str(self.rendering_view))
+
+						# close file
+						self.lockfile.close()
+
+
+
 				# VIEW & FRAME RENDERING
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if a single frame shall be rendered
@@ -992,7 +1276,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				self.cancel(context)
 
 				# notify user
-				self.report({"INFO"},"Quilt rendering was cancelled.")
+				self.report({self.cancel_sign}, self.cancel_message)
 				return {"CANCELLED"}
 
 
