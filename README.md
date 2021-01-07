@@ -19,6 +19,7 @@ If you like this add-on and want to do a private donation, thank you for your su
    - a holographic mouse cursor
    - most of the features of a native Blender viewport
 - render any camera view as single quilt image or animation
+- decide if you want to keep the separate view files or just the final quilt
 - support for multiple scenes and view layers
 - camera & quilt settings are saved with your Blender file
 - support for all available Looking Glass displays (including the new Looking Glass Portrait)
@@ -92,6 +93,18 @@ You can render still scenes and animation frames as complete quilt images. You c
 The _Render Quilt_ option will render the different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image or animation frames have to be handled in the same way as normal renders. You can still render normal (non-holographic) images in Blender as you usually do. 
 
 _NOTE: Option (2) can be used even if no Looking Glass is connected._
+
+### Incomplete Render Jobs
+
+The add-on attempts to detect Blender crashes during quilt rendering as well as quilt animation rendering and prompts you with an option to continue or to discard an incomplete render job the next time you open the crashed file. The successful continuation of the render job can only happen if:
+
+- the filename of the .blend-file did not change
+- the file was saved before starting the render job **OR** no significant changes happended to the setup (e.g., camera position, render settings, etc.)
+- the (temporary) view files of the incomplete render job are still on disk and not corrupted
+
+If you decide to discard the incomplete render jobs, the add-on will try to delete the view files of the incomplete render job.
+
+_NOTE: This feature is considered to be 'experimental'. It might not detect crashes under all circumstances and might not work always. If you encounter a situation were this feature failed, please submit a detailed bug report._
 
 ## License
 
