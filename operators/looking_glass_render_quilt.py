@@ -944,7 +944,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 								# notify user
 								self.cancel_sign = "ERROR"
 								self.cancel_message = "Render job can not be continued. Missing view file(s) of the previous render job."
-								return {"RUNNING_MODAL"}
+
+								return {"PASS_THROUGH"}
 
 
 				# Some status infos
@@ -1192,14 +1193,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# if this was the last view
 					else:
 
+						# # cancel the operator
+						# # NOTE: - this includes recovering all original user settings
+						# # reset the operator state to IDLE
+						# self.cancel(context)
+						#
+						# # notify user
+						# self.report({"INFO"},"Complete quilt rendered.")
+						# return {"CANCELLED"}
+
 						# cancel the operator
-						# NOTE: - this includes recovering all original user settings
-						# reset the operator state to IDLE
-						self.cancel(context)
+						self.operator_state = "CANCEL_RENDER"
 
 						# notify user
-						self.report({"INFO"},"Complete quilt rendered.")
-						return {"CANCELLED"}
+						self.cancel_sign = "INFO"
+						self.cancel_message = "Complete quilt rendered."
+
+						return {"PASS_THROUGH"}
 
 				# if an animation shall be rendered
 				elif self.animation == True:
@@ -1242,15 +1252,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# if this was the last frame
 						else:
+							
+							# # cancel the operator
+							# # NOTE: - this includes recovering all original user settings
+							# self.cancel(context)
+							#
+							# # notify user
+							# self.report({"INFO"},"Complete animation quilt rendered.")
+							# return {"CANCELLED"}
 
 							# cancel the operator
-							# NOTE: - this includes recovering all original user settings
-							self.cancel(context)
+							self.operator_state = "CANCEL_RENDER"
 
 							# notify user
-							self.report({"INFO"},"Complete animation quilt rendered.")
-							return {"CANCELLED"}
+							self.cancel_sign = "INFO"
+							self.cancel_message = "Complete animation quilt rendered."
 
+							return {"PASS_THROUGH"}
 
 
 
