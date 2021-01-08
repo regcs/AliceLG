@@ -65,6 +65,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	lockfile_start_view = None
 
 	# render settings
+	render_setting_original_engine = None
 	render_setting_original_width = None
 	render_setting_original_height = None
 	render_setting_original_aspect_x = None
@@ -305,7 +306,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# RENDER SETTINGS
 			# restore original file path
 			self.render_setting_scene.render.filepath = self.render_setting_filepath
-			# restore image settings
+
+			# restore engine and image settings
+			self.render_setting_scene.render.engine = self.render_setting_original_engine
 			self.render_setting_scene.render.resolution_x = self.render_setting_original_width
 			self.render_setting_scene.render.resolution_y = self.render_setting_original_height
 			self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
@@ -351,6 +354,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# STORE ORIGINAL SETTINGS
 		# ++++++++++++++++++++++++
 		# we need to restore these at the end
+		self.render_setting_original_engine = context.scene.render.engine
 		self.render_setting_original_width = context.scene.render.resolution_x
 		self.render_setting_original_height = context.scene.render.resolution_y
 		self.render_setting_original_aspect_x = context.scene.render.pixel_aspect_x
@@ -401,10 +405,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# if the lockfile shall be used
 		if self.use_lockfile == True:
 
+			# try to apply the render engine
+			try:
+
+				context.scene.render.engine = self.lockfile_data[1]
+
+			except:
+
+				# if this does not work, notify user
+				self.report({"ERROR"}, "Render job can not be continued. Could not find the previously used render engine: " + self.lockfile_data[1] + ".")
+
+				# don't execute operator
+				return {'FINISHED'}
+
 			# get scene and path settings
-			self.render_setting_scene = bpy.data.scenes[self.lockfile_data[1]]
-			self.render_setting_filepath = self.lockfile_data[2]
-			self.rendering_filepath = self.lockfile_data[3]
+			self.render_setting_scene = bpy.data.scenes[self.lockfile_data[2]]
+			self.render_setting_filepath = self.lockfile_data[3]
+			self.rendering_filepath = self.lockfile_data[4]
 
 		else:
 
@@ -534,25 +551,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		if self.use_lockfile == True:
 
 			# render settings
-			self.rendering_deviceType = self.lockfile_data[4]
-			self.rendering_viewWidth = int(self.lockfile_data[5])
-			self.rendering_viewHeight = int(self.lockfile_data[6])
-			self.rendering_rows = int(self.lockfile_data[7])
-			self.rendering_columns = int(self.lockfile_data[8])
-			self.rendering_totalViews = int(self.lockfile_data[9])
+			self.rendering_deviceType = self.lockfile_data[5]
+			self.rendering_viewWidth = int(self.lockfile_data[6])
+			self.rendering_viewHeight = int(self.lockfile_data[7])
+			self.rendering_rows = int(self.lockfile_data[8])
+			self.rendering_columns = int(self.lockfile_data[9])
+			self.rendering_totalViews = int(self.lockfile_data[10])
 
 			# animation settings
-			self.animation = (self.lockfile_data[10] == "True")
-			self.render_setting_scene.frame_start = int(self.lockfile_data[11])
-			self.render_setting_scene.frame_end = int(self.lockfile_data[12])
+			self.animation = (self.lockfile_data[11] == "True")
+			self.render_setting_scene.frame_start = int(self.lockfile_data[12])
+			self.render_setting_scene.frame_end = int(self.lockfile_data[13])
 
 			# frame and view
-			self.rendering_frame = self.lockfile_start_frame = int(self.lockfile_data[13].split(";")[0])
-			self.rendering_view = self.lockfile_start_view = int(self.lockfile_data[13].split(";")[1])
-
-			# apply the render resolution
-			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
-			self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+			self.rendering_frame = self.lockfile_start_frame = int(self.lockfile_data[14].split(";")[0])
+			self.rendering_view = self.lockfile_start_view = int(self.lockfile_data[14].split(";")[1])
 
 		else:
 
@@ -625,6 +638,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.lockfile.write(bpy.data.filepath + "\n")
 
 						# render settings
+						self.lockfile.write(self.render_setting_scene.render.engine + "\n")
 						self.lockfile.write(self.render_setting_scene.name + "\n")
 						self.lockfile.write(self.render_setting_filepath + "\n")
 						self.lockfile.write(self.rendering_filepath + "\n")
@@ -656,9 +670,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# apply the render resolution to Blender render settings
 		self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
 		self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
-		print("DEVICE TYPE: ", self.rendering_deviceType)
+
 		# TODO: At the moment this is hardcoded.
 		# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
+		#		This would be more future proof and allow users to add presets manually.
 		# if for Looking Glass Portrait
 		if self.render_setting_scene.settings.render_device_type == 'portrait':
 
