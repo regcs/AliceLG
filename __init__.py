@@ -131,12 +131,12 @@ class LookingGlassAddonFunctions:
 				#
 				print(" ### Display ", dev_index, ":")
 
-				# get device name
+				# get device HDMI name
 				hpc.GetDeviceHDMIName(dev_index, buffer, 1000)
-				dev_name = buffer.value.decode('ascii').strip()
+				dev_hdmi = buffer.value.decode('ascii').strip()
 
 				# get device serial
-				hpc.GetDeviceType(dev_index, buffer, 1000)
+				hpc.GetDeviceSerial(dev_index, buffer, 1000)
 				dev_serial = buffer.value.decode('ascii').strip()
 
 				# get device type
@@ -144,23 +144,23 @@ class LookingGlassAddonFunctions:
 				dev_type = buffer.value.decode('ascii').strip()
 				if dev_type == "standard":
 
-					dev_type = "8.9'' Looking Glass"
+					dev_name = "8.9'' Looking Glass"
 
 				elif dev_type == "portrait":
 
-					dev_type = "7.9'' Looking Glass Portrait"
+					dev_name = "7.9'' Looking Glass Portrait"
 
 				elif dev_type == "large":
 
-					dev_type = "15.6'' Looking Glass"
+					dev_name = "15.6'' Looking Glass"
 
 				elif dev_type == "pro":
 
-					dev_type = "15.6'' Pro Looking Glass"
+					dev_name = "15.6'' Pro Looking Glass"
 
-				if dev_type == "8k":
+				elif dev_type == "8k":
 
-					dev_type = "8k Looking Glass"
+					dev_name = "8k Looking Glass"
 
 
 				# make an entry in the deviceList
@@ -168,6 +168,7 @@ class LookingGlassAddonFunctions:
 												{
 													# device information
 													'index': dev_index,
+													'hdmi': dev_hdmi,
 													'name': dev_name,
 													'serial': dev_serial,
 													'type': dev_type,
@@ -200,8 +201,8 @@ class LookingGlassAddonFunctions:
 		if debugging_use_dummy_device == True:
 
 			# we add a dummy element
-			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'portrait', 'type': "7.9'' Looking Glass", 'x': -1536, 'y': 0, 'width': 1536, 'height': 2048, 'aspectRatio': 0.75, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 58.0})
-			#LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'name': 'LKG03xABNYQtR', 'serial': 'standard', 'type': "8.9'' Looking Glass", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
+			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'hdmi': 'LKG79PxDUMMY', 'name': "7.9'' Looking Glass", 'serial': 'LKG-2K-XXXXX', 'type': "portrait", 'x': -1536, 'y': 0, 'width': 1536, 'height': 2048, 'aspectRatio': 0.75, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 58.0})
+			#LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'hdmi': 'LKG89LxDUMMY', 'name': "8.9'' Looking Glass", 'serial': 'LKG-2K-XXXXX', 'type': "standard", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
 			print("   - device info:", LookingGlassAddon.deviceList[len(LookingGlassAddon.deviceList) - 1])
 
 
@@ -218,7 +219,7 @@ class LookingGlassAddonFunctions:
 			for device in LookingGlassAddon.deviceList:
 
 				# add an entry in the item list
-				items.append((str(device['index']), 'Display ' + str(device['index']) + ': ' + device['type'], 'Use this Looking Glass for lightfield rendering.'))
+				items.append((str(device['index']), 'Display ' + str(device['index']) + ': ' + device['name'], 'Use this Looking Glass for lightfield rendering.'))
 
 		else:
 
@@ -718,37 +719,10 @@ class LookingGlassAddonFunctions:
 # Preferences pane for this Addon in the Blender preferences
 class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
-	# This callback is required to be able to update the list of connected Looking Glass devices
-	def looking_glass_list_callback(self, context):
-
-		# prepare a item list with entries of the form "identifier, name, description"
-		items = []
-
-		# if at least one Looking Glass is connected
-		if len(LookingGlassAddon.deviceList) > 0:
-
-			# then for each display in the device list
-			for device in LookingGlassAddon.deviceList:
-
-				# add an entry in the item list
-				items.append((str(device['index']), 'Display ' + str(device['index']) + ': ' + device['type'], 'Use this Looking Glass for lightfield rendering.'))
-
-		else:
-
-			# add an entry to notify the user about the missing Looking Glass
-			items.append(('-1', 'No Looking Glass Found', 'Please connect a Looking Glass.'))
-
-
-
-		# return the item list
-		return items
-
-
-
 	# PANEL: GENERAL
 	# a list of connected Looking Glass displays
 	activeDisplay: bpy.props.EnumProperty(
-										items = looking_glass_list_callback,
+										items = LookingGlassAddonFunctions.looking_glass_list_callback,
 										name="Please select a Looking Glass.",
 										update=LookingGlassAddonFunctions.update_render_setting,
 										)

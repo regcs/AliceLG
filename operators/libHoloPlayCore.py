@@ -210,6 +210,11 @@ GetDeviceHDMIName = hpc.hpc_GetDeviceHDMIName
 GetDeviceHDMIName.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
 GetDeviceHDMIName.restype = ctypes.c_int
 
+# int hpc_GetDeviceSerial(int DEV_INDEX, const char *buffer, int bufferSize)
+GetDeviceSerial = hpc.hpc_GetDeviceSerial
+GetDeviceSerial.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
+GetDeviceSerial.restype = ctypes.c_int
+
 # int hpc_GetDeviceType(int DEV_INDEX, const char *buffer, int bufferSize)
 GetDeviceType = hpc.hpc_GetDeviceType
 GetDeviceType.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int]
