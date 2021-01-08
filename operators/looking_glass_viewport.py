@@ -429,7 +429,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# find the NSScreen representing the Looking Glass
 				for screen in NSScreen.screens():
 
-					if screen.localizedName() == LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]['name']:
+					if screen.localizedName() == LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]['hdmi']:
 
 						# move the window to the Looking Glass Screen and resize it
 						NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
