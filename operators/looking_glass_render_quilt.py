@@ -76,6 +76,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_subframe = 0.0	# the subframe that is currently rendered
 	rendering_view = 0	  		# the view of the frame that is currently rendered
 
+	rendering_deviceType = None
 	rendering_viewWidth = None
 	rendering_viewHeight = None
 	rendering_rows = None
@@ -526,19 +527,19 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
-		# APPLY RENDER SETTINGS
+		# GET RENDER SETTINGS
 		# ++++++++++++++++++++++++
 
 		# if the lockfile shall be used
 		if self.use_lockfile == True:
 
 			# render settings
-			self.rendering_viewWidth = int(self.lockfile_data[4])
-			self.rendering_viewHeight = int(self.lockfile_data[5])
-			self.rendering_rows = int(self.lockfile_data[6])
-			self.rendering_columns = int(self.lockfile_data[7])
-			self.rendering_totalViews = int(self.lockfile_data[8])
-			self.rendering_viewCone = float(self.lockfile_data[9])
+			self.rendering_deviceType = self.lockfile_data[4]
+			self.rendering_viewWidth = int(self.lockfile_data[5])
+			self.rendering_viewHeight = int(self.lockfile_data[6])
+			self.rendering_rows = int(self.lockfile_data[7])
+			self.rendering_columns = int(self.lockfile_data[8])
+			self.rendering_totalViews = int(self.lockfile_data[9])
 
 			# animation settings
 			self.animation = (self.lockfile_data[10] == "True")
@@ -549,12 +550,17 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.rendering_frame = self.lockfile_start_frame = int(self.lockfile_data[13].split(";")[0])
 			self.rendering_view = self.lockfile_start_view = int(self.lockfile_data[13].split(";")[1])
 
+			# apply the render resolution
+			self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
+			self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+
 		else:
 
 			# settings of the current preset
 			# if the settings are to be taken from device selection
 			if self.settings.render_use_device == True:
 
+				self.rendering_deviceType = self.device['type']
 				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewWidth"]
 				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewHeight"]
 				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
@@ -573,48 +579,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# else, if the settings were specified separately
 			else:
 
+				self.rendering_deviceType = self.render_setting_scene.settings.render_device_type
 				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewWidth"]
 				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewHeight"]
 				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["rows"]
 				self.rendering_columns = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["columns"]
 				self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["totalViews"]
-
-				# apply the render resolution
-				self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
-				self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
-
-				# TODO: At the moment this is hardcoded.
-				# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
-				# if for Looking Glass Portrait
-				if self.render_setting_scene.settings.render_device_type == 'portrait':
-
-					# set the correct view cone
-					self.rendering_viewCone = 58.0
-
-					# apply the correct aspect ratio
-					self.render_setting_scene.render.pixel_aspect_x = 1.0
-					self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
-
-				# if for Looking Glass 8.9''
-				elif self.render_setting_scene.settings.render_device_type == 'standard':
-
-					# set the correct view cone
-					self.rendering_viewCone = 40.0
-
-					# apply the correct aspect ratio
-					self.render_setting_scene.render.pixel_aspect_x = 1.0
-					self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
-
-				# if for Looking Glass 15.6'' or 8k
-				elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
-
-					# set the correct view cone
-					self.rendering_viewCone = 50.0
-
-					# apply the correct aspect ratio
-					self.render_setting_scene.render.pixel_aspect_x = 1.0
-					self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
-
 
 			# if the operator was called with the animation flag set
 			if self.animation == True:
@@ -658,12 +628,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.lockfile.write(self.render_setting_scene.name + "\n")
 						self.lockfile.write(self.render_setting_filepath + "\n")
 						self.lockfile.write(self.rendering_filepath + "\n")
+						self.lockfile.write(str(self.rendering_deviceType) + "\n")
 						self.lockfile.write(str(self.rendering_viewWidth) + "\n")
 						self.lockfile.write(str(self.rendering_viewHeight) + "\n")
 						self.lockfile.write(str(self.rendering_rows) + "\n")
 						self.lockfile.write(str(self.rendering_columns) + "\n")
 						self.lockfile.write(str(self.rendering_totalViews) + "\n")
-						self.lockfile.write(str(self.rendering_viewCone) + "\n")
 
 						# animation settings
 						self.lockfile.write(str(self.animation) + "\n")
@@ -677,6 +647,47 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# close file
 						self.lockfile.close()
+
+
+
+		# APPLY RENDER SETTINGS
+		# ++++++++++++++++++++++++
+
+		# apply the render resolution to Blender render settings
+		self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
+		self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
+		print("DEVICE TYPE: ", self.rendering_deviceType)
+		# TODO: At the moment this is hardcoded.
+		# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
+		# if for Looking Glass Portrait
+		if self.render_setting_scene.settings.render_device_type == 'portrait':
+
+			# set the correct view cone
+			self.rendering_viewCone = 58.0
+
+			# apply the correct aspect ratio
+			self.render_setting_scene.render.pixel_aspect_x = 1.0
+			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
+
+		# if for Looking Glass 8.9''
+		elif self.render_setting_scene.settings.render_device_type == 'standard':
+
+			# set the correct view cone
+			self.rendering_viewCone = 40.0
+
+			# apply the correct aspect ratio
+			self.render_setting_scene.render.pixel_aspect_x = 1.0
+			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
+
+		# if for Looking Glass 15.6'' or 8k
+		elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
+
+			# set the correct view cone
+			self.rendering_viewCone = 50.0
+
+			# apply the correct aspect ratio
+			self.render_setting_scene.render.pixel_aspect_x = 1.0
+			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
 
 
 
@@ -1252,7 +1263,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# if this was the last frame
 						else:
-							
+
 							# # cancel the operator
 							# # NOTE: - this includes recovering all original user settings
 							# self.cancel(context)
