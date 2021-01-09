@@ -347,7 +347,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# get the calibration data of the selected Looking Glass from the deviceList
 		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
 
-
 		# RENDER SETTINGS
 		################################################################
 
@@ -579,15 +578,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
 				self.rendering_columns = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["columns"]
 				self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["totalViews"]
-				self.rendering_viewCone = self.device['viewCone']
-
-				# apply the render resolution
-				self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
-				self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
-
-				# apply the correct aspect ratio
-				self.render_setting_scene.render.pixel_aspect_x = 1.0
-				self.render_setting_scene.render.pixel_aspect_y = (self.rendering_rows / self.rendering_columns) / self.device['aspectRatio']
 
 			# else, if the settings were specified separately
 			else:
@@ -675,7 +665,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
 		#		This would be more future proof and allow users to add presets manually.
 		# if for Looking Glass Portrait
-		if self.render_setting_scene.settings.render_device_type == 'portrait':
+		if self.rendering_deviceType == 'portrait':
 
 			# set the correct view cone
 			self.rendering_viewCone = 58.0
@@ -685,7 +675,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
 
 		# if for Looking Glass 8.9''
-		elif self.render_setting_scene.settings.render_device_type == 'standard':
+		elif self.rendering_deviceType == 'standard':
 
 			# set the correct view cone
 			self.rendering_viewCone = 40.0
@@ -695,7 +685,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
 
 		# if for Looking Glass 15.6'' or 8k
-		elif self.render_setting_scene.settings.render_device_type == 'large' or self.render_setting_scene.settings.render_device_type == '8k':
+		elif self.rendering_deviceType == 'large' or self.rendering_deviceType == '8k':
 
 			# set the correct view cone
 			self.rendering_viewCone = 50.0
@@ -1107,7 +1097,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.quiltImage.use_view_as_render = False
 
 					# save the quilt in a file
-					self.quiltImage.save_render(filepath=self.rendering_filepath, scene=self.render_setting_scene)
+					self.quiltImage.save()#filepath=self.rendering_filepath, scene=self.render_setting_scene)
+
+					# rename the file and reload the image
+					os.rename(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_filepath))
+					self.quiltImage.filepath_raw = self.quiltImage.filepath = os.path.abspath(self.rendering_filepath)
 
 					# if no filename was specified and no animation is to be rendered
 					if not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True):
@@ -1150,7 +1144,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 											area.spaces.active.image = self.quiltImage
 
 											# fit the zoom factor in this window to show the complete quilt
-											bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
+											# bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
 
 											# remove the render result image
 											#bpy.data.images.remove(bpy.data.images["Render Result"])
@@ -1306,14 +1300,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			elif self.operator_state == "CANCEL_RENDER":
 
 				# print("[INFO] Render job cancelled.")
-
-				# if already a file exists
-				# NOTE: - don't include this in the self.cancel() method,
-				# 		  because this method is also called on successful completion
-				if os.path.isfile(self.rendering_filepath) == True:
-
-					# remove that file
-					os.remove(self.rendering_filepath)
 
 				# cancel the operator
 				# NOTE: - this includes recovering all original user settings
