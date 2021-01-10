@@ -102,4 +102,6 @@ _NOTE: Option (2) can be used even if no Looking Glass is connected._
 
 The Blender add-on part of this project is licensed under the [GNU GPL v3 License](LICENSE).
 
+**The following statement may need revision and may not apply. See Issue #1**
+
 The HoloPlay Core SDK libraries are property of the Looking Glass Factory and are licensed under the [HOLOPLAY CORE LICENSE AGREEMENT](HOLOPLAY-LICENSE). The HoloPlay Core SDK provides the fundamental software basis for the communication between the Looking Glass display hardware and any app created for it. It is, therefore, considered a system library. As a consequence, the linked libraries of this API are distributed in a compiled (non open-source) form with this free software in agreement with the system library exception defined by the GNU GPL v3 License.
