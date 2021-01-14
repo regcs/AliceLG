@@ -98,6 +98,20 @@ The _Render Quilt_ option will render the different views separately. After the 
 
 _NOTE: Option (2) can be used even if no Looking Glass is connected._
 
+### Incomplete Render Jobs
+
+The add-on attempts to detect Blender crashes during quilt rendering as well as quilt animation rendering and prompts you with an option to continue or to discard an incomplete render job the next time you open the crashed file. The successful detection of an incomplete render job and its continuation requires that:
+
+- the filename of the .blend-file did not change
+- the file was saved before starting the render job **OR** no significant changes happended to the setup (e.g., camera position, render settings, etc.)
+- the (temporary) view files of the incomplete render job are still on disk and not corrupted
+
+While the add-on tries to check some basic settings, the user is highly recommended to check if the current render settings fit to the settings used for the incomplete render job before clicking the "Continue" button.
+
+If you decide to discard the incomplete render jobs, the add-on will try to delete the view files of the incomplete render job.
+
+_NOTE: This feature is considered to be 'experimental'. It might not detect crashes under all circumstances and might not succeed to continue the rendering always. If you encounter a situation were this feature failed, please submit a detailed bug report._
+
 ## License
 
 The Blender add-on part of this project is licensed under the [GNU GPL v3 License](LICENSE).
