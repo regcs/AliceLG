@@ -593,8 +593,10 @@ class LookingGlassAddonFunctions:
 				# resize the numpy array
 				LookingGlassAddon.quiltPixels.resize(len(context.scene.settings.quiltImage.pixels), refcheck=False)
 
-				# delete the texture
-				bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
+				# delete the texture, if it is existing
+				# NOTE: Unclear why glIsTexture expects integer and DeleteTexture a Buffer object
+				if LookingGlassAddon.quiltTextureID != None and bgl.glIsTexture(LookingGlassAddon.quiltTextureID[0]) == True:
+					bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
 
 			# create a new texture
 			LookingGlassAddon.quiltTextureID = bgl.Buffer(bgl.GL_INT, [1])
@@ -694,6 +696,7 @@ class LookingGlassAddonFunctions:
 				bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
 				bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
 				bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+
 			# else:
 			# 	print("# USING GL_RGBA")
 			# 	# use linear color space
