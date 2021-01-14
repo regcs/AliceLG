@@ -24,13 +24,14 @@ Please keep in mind that this beta version of the add-on may contain errors that
    - a holographic mouse cursor
    - most of the features of a native Blender viewport
 - render any camera view as single quilt image or animation
+- decide if you want to keep the separate view files or just the final quilt
 - support for multiple scenes and view layers
 - camera & quilt settings are saved with your Blender file
 - support for all available Looking Glass displays (including the new Looking Glass Portrait)
 
 ## System Requirements
-- Windows, macOS, or Linux
-- Blender 2.9x
+- Windows, Linux, or macOS
+- Blender 2.83 or later
 - Holoplay Service App
 
 ## Installation
@@ -38,7 +39,7 @@ Please keep in mind that this beta version of the add-on may contain errors that
 
 1. Install the Holoplay Service App on your PC or Mac (if not already done).
 
-2. Download the [zip file](https://github.com/regcs/AliceLG-beta/releases/download/v1.0-beta.4/AliceLG-beta4.zip) of this addon.
+2. Download the [zip file](https://github.com/regcs/AliceLG-beta/releases/download/v1.0-beta.5/AliceLG-beta5.zip) of this addon. *NOTE: Issue #1*
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
