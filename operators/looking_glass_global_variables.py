@@ -38,6 +38,11 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
+	# Was the operator for the lightfield window invoked?
+	LightfieldWindowInitialized = None
+	LightfieldWindowInvoker = None
+	LightfieldWindowIsFullscreen = False
+
 	# Was the modal operator for the frustum initialized?
 	FrustumInitialized = False
 	FrustumDrawHandler = None

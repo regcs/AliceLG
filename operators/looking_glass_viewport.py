@@ -101,6 +101,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	bl_label = "Looking Glass Lightfield Rendering"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
+	# ADDON SETTINGS
+	settings = None
+
 	# WINDOW RELATED VARIABLES
 	window_manager = None
 	WindowCheck = False
@@ -137,19 +140,22 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# # Inititalize the Looking Glass
-	# @classmethod
-	# def __init__(self):
-	#
-	# 	print("Initializing the lightfield rendering operator ...")
-	#
-	#
-	#
-	# # delete all objects
-	# @classmethod
-	# def __del__(self):
-	#
-	# 	print("Stopped lightfield Rendering operator ...")
+
+	# inititalize the lightfield window
+	@classmethod
+	def __init__(self):
+
+		# set global status variable
+		LookingGlassAddon.LightfieldWindowInitialized = True
+
+
+
+	# deinititalize the lightfield window
+	@classmethod
+	def __del__(self):
+
+		# set global status variable
+		LookingGlassAddon.LightfieldWindowInitialized = False
 
 
 
@@ -221,6 +227,28 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# set the button controls for the lightfield window to False
 		self.settings.toggleLightfieldWindowFullscreen = False
 		self.settings.ShowLightfieldWindow = False
+		self.settings.lightfieldWindowIndex = -1
+
+
+		# SCENE UPDATES
+		# ++++++++++++++++++++++++++
+		if context != None:
+
+			# make current scene the invoking scene
+			LookingGlassAddon.LightfieldWindowInvoker = context.scene
+
+			# iterate through all scenes
+			for scene in bpy.data.scenes:
+				if scene != None and scene.settings != None:
+
+					# update the status variables
+					scene.settings.ShowLightfieldWindow = False
+					scene.settings.toggleLightfieldWindowFullscreen = LookingGlassAddon.LightfieldWindowInvoker.settings.toggleLightfieldWindowFullscreen
+					scene.settings.lightfieldWindowIndex = -1
+
+			# reset global variable
+			LookingGlassAddon.LightfieldWindowInvoker = None
+			LookingGlassAddon.LightfieldWindowIsFullscreen = False
 
 
 		# return None since this is expected by the operator
@@ -483,6 +511,12 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			except:
 				pass
 
+
+		# we need to remember the scene this operator was invoked on
+		# NOTE: - we need this in case the user changes the scene later
+		#		- this MUST be called AFTER fullscreen was toggled in this invoke()
+		LookingGlassAddon.LightfieldWindowInvoker = context.scene
+
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
 
@@ -496,6 +530,18 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# update the variable for the current Looking Glass device
 		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+
+		# if this scene was created AFTER the lightfield viewport was
+		# invoked, it might not have the correct setting for the lightfield window
+		# button
+		if self.settings != None and LookingGlassAddon.LightfieldWindowInvoker != None:
+
+			if self.settings.ShowLightfieldWindow != LookingGlassAddon.LightfieldWindowInvoker.settings.ShowLightfieldWindow:
+
+				# adjust the setting
+				self.settings.ShowLightfieldWindow = LookingGlassAddon.LightfieldWindowInvoker.settings.ShowLightfieldWindow
+				self.settings.toggleLightfieldWindowFullscreen = LookingGlassAddon.LightfieldWindowInvoker.settings.toggleLightfieldWindowFullscreen
+				self.settings.lightfieldWindowIndex = LookingGlassAddon.LightfieldWindowInvoker.settings.lightfieldWindowIndex
 
 
 
@@ -673,8 +719,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# Application handler that continously checks for changes of the
-	# Multiview used for Looking Glass rendering
+	# Application handler that continously checks for changes of the depsgraph
 	def trackDepsgraphUpdates(self, scene, depsgraph):
 
 		# if no quilt rendering is currently Running
@@ -685,7 +730,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			if LookingGlassAddon.lightfieldWindow != None:
 				LookingGlassAddon.lightfieldWindow.scene = scene
 				LookingGlassAddon.lightfieldWindow.view_layer = depsgraph.view_layer
-
 
 			# if automatic live view is activated AND something in the scene has changed
 			if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
