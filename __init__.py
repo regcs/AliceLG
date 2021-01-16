@@ -74,6 +74,7 @@ else:
 import bpy
 import platform
 import ctypes
+from pprint import pprint
 from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
 from bpy.app.handlers import persistent
@@ -194,7 +195,7 @@ class LookingGlassAddonFunctions:
 													'viewCone': hpc.GetDevicePropertyFloat(dev_index, b"/calibration/viewCone/value")
 												}
 				)
-				print("   - device info:", LookingGlassAddon.deviceList[-1])
+				pprint(LookingGlassAddon.deviceList[-1])
 
 
 		# TODO: Remove this, it's only for debugging
