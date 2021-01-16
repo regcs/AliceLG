@@ -17,7 +17,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-# ------------ LOAD HOLOPLAY CORE WRAPPER ---------------
+# ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
 

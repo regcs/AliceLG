@@ -50,7 +50,7 @@ if "bpy" in locals():
 	importlib.reload(operators.looking_glass_global_variables)
 
 	# reload the Holoplay Core SDK Python Wrapper
-	importlib.reload(operators.libHoloPlayCore)
+	importlib.reload(operators.libHoloPlayCore.freeHoloPlayCoreAPI)
 
 else:
 
@@ -62,7 +62,8 @@ else:
 	from .operators.looking_glass_global_variables import *
 
 	# import the Holoplay Core SDK Python Wrapper
-	from .operators import libHoloPlayCore as hpc
+	from .operators import libHoloPlayCore
+	hpc = libHoloPlayCore.freeHoloPlayCoreAPI()
 
 
 
