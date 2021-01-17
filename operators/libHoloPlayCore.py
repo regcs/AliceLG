@@ -119,87 +119,82 @@ class freeHoloPlayCoreAPI:
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # Vertex shader
     LightfieldVertShaderGLSL = '''
-    // INPUT AND OUTPUT VARIABLES
-    in vec2 vertPos_data;
-    out vec2 textureCoords;
+        // INPUT AND OUTPUT VARIABLES
+        layout (location = 0)
+        in vec2 vertPos_data;
+        out vec2 texCoords;
 
-    // VERTEX SHADER
-    void main()
-    {
-    	gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
-    	textureCoords = (vertPos_data.xy + 1.0) / 2;
-    }
+        // VERTEX SHADER
+        void main()
+        {
+        	gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
+        	texCoords = (vertPos_data.xy + 1.0) * 0.5;
+        }
     '''
 
     # Fragment shader
     LightfieldFragShaderGLSL = '''
-    // INPUT AND OUTPUT VARIABLES
-    in vec2 texCoords;
-    out vec4 fragColor;
+        in vec2 texCoords;
+        out vec4 fragColor;
 
-    // DEBUG MODE
-    uniform int debug;
+        // Calibration values
+        uniform float pitch;
+        uniform float tilt;
+        uniform float center;
+        uniform int invView;
+        uniform float subp;
+        uniform float displayAspect;
+        uniform int ri;
+        uniform int bi;
 
-    // CALIBRATION DATA:
-    // WE USE THE SAME UNIFORM MECHANISM AND UNIFORM NAMES LIKE THE HOLOPLAY
-    // CORE SDK TO KEEP BOTH COMPATABILE TO EACH OTHER
-    // QUILT
-    uniform vec2 tiles;
-    uniform vec2 viewPortion;
-    uniform float quiltAspect;
-    uniform int quiltInvert;
-    uniform int overscan;
+        // Quilt settings
+        uniform vec3 tile;
+        uniform vec2 viewPortion;
+        uniform float quiltAspect;
+        uniform int overscan;
+        uniform int quiltInvert;
+        uniform int debug;
+        uniform sampler2D screenTex;
 
-    // DEVICE
-    uniform float pitch;
-    uniform float tilt;
-    uniform float center;
-    uniform int invView;
-    uniform float subp;
-    uniform float displayAspect;
-    uniform int ri;
-    uniform int bi;
+        // CALCULATE PARAMETERS USED IN THIS SHADER
+        float subp2 = subp * pitch;
 
-    // CALCULATE PARAMETERS USED IN THIS SHADER
-    const vec2 tiles = tile.xy
-    const float tilt = -1 * tilt;
-    const float pitch = pitch;
-    const float center = fract(tilt * pitch + center);
-    const float subp = subp * pitch;
-    const int ri = ri;
-    const int bi = bi;
+        // GET CORRECT VIEW
+        vec2 quilt_map(vec2 pos, float a) {
 
-    // GET CORRECT VIEW
-    vec2 quilt_map(vec2 pos, float a) {
-      // Y major positive direction, X minor negative direction
-      vec2 tile = vec2(tiles.x - 1,0), dir=vec2(-1,1);
-      a = fract(a) * tiles.y;
-      tile.y += dir.y * floor(a);
-      a = fract(a) * tiles.x;
-      tile.x += dir.x * floor(a);
-      return (tile + pos) / tiles;
-    }
+            // Tile ordering
+            vec2 tile2 = vec2(tile.x - 1, tile.y - 1), dir=vec2(-1, -1);
 
-    // SHIFT SUBPIXELS TO CALCULATE THE LIGHTFIELD IMAGE
-    void main() {
-      vec4 res;
-      float a;
+            a = fract(a) * tile.y;
+            tile2.y += dir.y * floor(a);
+            a = fract(a) * tile.x;
+            tile2.x += dir.x * floor(a);
+            return (tile2 + pos) / tile.xy;
 
-      if (debug == true)
-      {
-        res = texture(texCoords.xy);
-      }
-      else {
-        a = (texCoords.x + texCoords.y * tilt) * pitch - center;
-        res.r = texture(quilt_map(texCoords.xy, a+ri*subp)).r;
-        res.g = texture(quilt_map(texCoords.xy, a+subp)).g;
-        res.b = texture(quilt_map(texCoords.xy, a+bi*subp)).b;
-        res.a = 1.0;
-      }
+        }
 
-      return res;
+        void main()
+        {
+            float a;
+            vec4 res;
 
-    }
+            a = (-texCoords.x - texCoords.y * tilt) * pitch - center;
+            res.r = texture(screenTex, quilt_map(texCoords.xy, a-ri*subp2)).r;
+            res.g = texture(screenTex, quilt_map(texCoords.xy, a-   subp2)).g;
+            res.b = texture(screenTex, quilt_map(texCoords.xy, a-bi*subp2)).b;
+
+            if (debug == 1) {
+                // Mark center line only in central view
+                res.r = res.r * 0.001 + (texCoords.x>0.49 && texCoords.x<0.51 && fract(a)>0.48&&fract(a)<0.51 ?1.0:0.0);
+                res.g = res.g * 0.001 + texCoords.x;
+                res.b = res.b * 0.001 + texCoords.y;
+            }
+
+            res.a = 1.0;
+
+            fragColor = res;
+
+        }
     '''
 
 
@@ -284,8 +279,8 @@ class freeHoloPlayCoreAPI:
         for dev in hidapi.enumerate():
 
             # if this device belongs to the Looking Glass Factory
-            if dev['product_string'] == self.product_string or dev['manufacturer_string'] == self.manufacturer_string:
-                pprint(dev)
+            if dev['product_string'] == self.product_string and dev['manufacturer_string'] == self.manufacturer_string and dev['usage_page'] == 1:
+
                 # create a dictionary with an index for this device
                 cfg = dict(index = len(self.devices))
 
@@ -299,12 +294,11 @@ class freeHoloPlayCoreAPI:
                 cfg['tilt'] = cfg['screenH'] / (cfg['screenW'] * cfg['slope'])
                 cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(cfg['slope']))
                 cfg['subp'] = 1.0 / (3 * cfg['screenW'])
+                cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
 
 
                 # TODO: HoloPlay Core SDK delivers these values as calibration data
                 #       but they are not in the JSON
-                cfg['ri'] = 0
-                cfg['bi'] = 2
                 cfg['type'] = 'standard'
                 cfg['hdmi'] = 'LKG79PxDUMMY'
                 cfg['x'] = 0
@@ -321,74 +315,70 @@ class freeHoloPlayCoreAPI:
 
     # TODO: How do we obtain the HDMI name? Important for identification.
     # Return device's HDMI name
-    def GetDeviceHDMIname(self, index):
-        return next(item for item in self.devices if item["index"] == index)['hdmi']
+    def GetDeviceHDMIName(self, index, buffer, buffersize):
+        buffer.value = next(item for item in self.devices if item["index"] == index)['hdmi'].encode('ascii')
 
     # Return device's serial
-    def GetDeviceSerial(self, index):
-        return next(item for item in self.devices if item["index"] == index)['serial']
+    def GetDeviceSerial(self, index, buffer, buffersize):
+        buffer.value = next(item for item in self.devices if item["index"] == index)['serial'].encode('ascii')
 
     # TODO: How do we infer the actual type? HoloPlayCore SDK uses the following:
     #       standard, portrait (?), large, pro, 8k
     # Return device's type
-    def GetDeviceType(self, index):
-        return next(item for item in self.devices if item["index"] == index)['type']
+    def GetDeviceType(self, index, buffer, buffersize):
+        buffer.value = next(item for item in self.devices if item["index"] == index)['type'].encode('ascii')
 
     # Return device's window x position
     def GetDevicePropertyWinX(self, index):
-        return next(item for item in self.devices if item["index"] == index)['x']
+        return int(next(item for item in self.devices if item["index"] == index)['x'])
 
     # Return device's window y position
     def GetDevicePropertyWinY(self, index):
-        return next(item for item in self.devices if item["index"] == index)['y']
+        return int(next(item for item in self.devices if item["index"] == index)['y'])
 
     # Return device's screen width
     def GetDevicePropertyScreenW(self, index):
-        return next(item for item in self.devices if item["index"] == index)['screenW']
+        return int(next(item for item in self.devices if item["index"] == index)['screenW'])
 
     # Return device's screen height
     def GetDevicePropertyScreenH(self, index):
-        return next(item for item in self.devices if item["index"] == index)['screenH']
-
-    # Return device's screen width
-    def GetDevicePropertyScreenW(self, index):
-        return next(item for item in self.devices if item["index"] == index)['screenW']
+        return int(next(item for item in self.devices if item["index"] == index)['screenH'])
 
     # Return device's screen aspect ratio
     def GetDevicePropertyDisplayAspect(self, index):
-        return self.GetDevicePropertyScreenW(index) / self.GetDevicePropertyScreenH(index)
+        return float(self.GetDevicePropertyScreenW(index) / self.GetDevicePropertyScreenH(index))
 
     # Return device's pitch value
     def GetDevicePropertyPitch(self, index):
-        return next(item for item in self.devices if item["index"] == index)['pitch']
+        return float(next(item for item in self.devices if item["index"] == index)['pitch'])
 
     # Return device's tilt value
     def GetDevicePropertyTilt(self, index):
-        return next(item for item in self.devices if item["index"] == index)['tilt']
+        return float(next(item for item in self.devices if item["index"] == index)['tilt'])
 
     # Return device's center value
     def GetDevicePropertyCenter(self, index):
-        return next(item for item in self.devices if item["index"] == index)['center']
+        return float(next(item for item in self.devices if item["index"] == index)['center'])
 
     # Return device's subp value
     def GetDevicePropertySubp(self, index):
-        return next(item for item in self.devices if item["index"] == index)['subp']
+        return float(next(item for item in self.devices if item["index"] == index)['subp'])
 
     # Return device's fringe value
     def GetDevicePropertyFringe(self, index):
-        return next(item for item in self.devices if item["index"] == index)['fringe']
+        return float(next(item for item in self.devices if item["index"] == index)['fringe'])
 
     # Return device's Ri value
     def GetDevicePropertyRi(self, index):
-        return next(item for item in self.devices if item["index"] == index)['ri']
+        return int(next(item for item in self.devices if item["index"] == index)['ri'])
 
     # Return device's Bi value
     def GetDevicePropertyBi(self, index):
-        return next(item for item in self.devices if item["index"] == index)['bi']
+        return int(next(item for item in self.devices if item["index"] == index)['bi'])
 
     # Return device's invView value
     def GetDevicePropertyInvView(self, index):
-        return next(item for item in self.devices if item["index"] == index)['invView']
+        return int(next(item for item in self.devices if item["index"] == index)['invView'])
 
     # Return device's float property value
     # NOTE: implement it in this strange way, so we can keep the calls in the
