@@ -18,7 +18,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import sys, os, platform
-import json
+import json, struct, subprocess
 import ctypes
 from math import *
 from enum import Enum
@@ -26,20 +26,16 @@ from pprint import pprint
 
 # Note: Use libhidapi-hidraw, i.e. hidapi with hidraw support,
 # or the joystick device will be gone when execution finishes.
-from . import hid as hidapi
+import hid as hidapi
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
-from .looking_glass_global_variables import *
+#from .looking_glass_global_variables import *
 
 # -------------------- Load Library ----------------------
-# get path of this addon
-LookingGlassAddon.path = os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir))
-
 # Load the HoloPlay Core SDK Library
 print("Loading HoloPlay Core SDK library")
 print(" # Running on OS: ", platform.system())
 print(" # System architecture: ", platform.architecture())
-print(" # Find addon path: ", LookingGlassAddon.path)
 print(" # Searching for HoloPlay Core SDK")
 
 # ------------ FREE HOLOPLAY CORE REPLACEMENT ---------------
@@ -239,6 +235,40 @@ class freeHoloPlayCoreAPI:
         return r[4:4+size]
 
 
+    # TODO: How do we differentiate between multiple connected LKGs?
+    #       Might be rare case, but still should be implemented!
+    def hdmi_device_name(self, index):
+        # on macOS: system_profiler SPDisplaysDataType -json delivers Display Info
+        # on macOS: system_profiler SPUSBDataType -json delivers USB device info
+
+		# if on macOS
+        if platform.system() == "Darwin":
+
+            # use the 'system_profiler' terminal command to obtain basic display infos
+            info = subprocess.check_output(['system_profiler', 'SPDisplaysDataType', '-json'])
+            info = json.loads(info.decode('ascii'))
+
+            # go through all displays
+            for display in info['SPDisplaysDataType'][0]['spdisplays_ndrvs']:
+                # until we find a Looking Glass
+                if 'LKG' == display['_name'][:3]:
+                    break
+            else:
+                display['_name'] = 'LKG79PxDUMMY'
+
+            # return the name
+            return display['_name']
+
+        # if on Windows
+        elif platform.system() == "Windows":
+
+            return 'LKG79PxDUMMY'
+
+        elif platform.system() == "Linux":
+
+            return 'LKG79PxDUMMY'
+
+
 
 
     # FUNCTIONS RESEMBLING THE HOLO PLAY CORE SDK FUNCTIONALITY
@@ -280,30 +310,36 @@ class freeHoloPlayCoreAPI:
 
             # if this device belongs to the Looking Glass Factory
             if dev['product_string'] == self.product_string and dev['manufacturer_string'] == self.manufacturer_string and dev['usage_page'] == 1:
+                dev['path'] = b"id:4294971243"
+                #dev['path'] = b'IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/IGPU@2/AppleIntelFramebuffer@1/AppleMCCSControlModule'
 
                 # create a dictionary with an index for this device
                 cfg = dict(index = len(self.devices))
 
                 # prepend HID device data
-                cfg['hiddev'] = hidapi.Device(dev['vendor_id'], dev['product_id'])
+                cfg['hiddev'] = hidapi.Device(vid=dev['vendor_id'], pid=dev['product_id'], serial=dev['serial_number'], path=dev['path'])
 
                 # Parse odd value-object format from json
                 cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in self.loadconfig(cfg['hiddev']).items()})
 
-                # calculate any values derived from the cfg values
+                # calculate any values derived values from the cfg values
                 cfg['tilt'] = cfg['screenH'] / (cfg['screenW'] * cfg['slope'])
                 cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(cfg['slope']))
                 cfg['subp'] = 1.0 / (3 * cfg['screenW'])
                 cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
 
+                # find hdmi name
+                cfg['hdmi'] = self.hdmi_device_name(len(self.devices))
 
                 # TODO: HoloPlay Core SDK delivers these values as calibration data
                 #       but they are not in the JSON
                 cfg['type'] = 'standard'
-                cfg['hdmi'] = 'LKG79PxDUMMY'
                 cfg['x'] = 0
                 cfg['y'] = 0
                 cfg['fringe'] = 0.0
+
+                # close the device
+                cfg['hiddev'].close()
 
 
                 # append the device and its data to the internal device list
@@ -388,3 +424,66 @@ class freeHoloPlayCoreAPI:
             return next(item for item in self.devices if item["index"] == index)['viewCone']
         else:
             return 0.0
+
+
+
+
+
+
+# if __name__ == '__main__':
+#
+#     print("Initializing free HoloPlay Core replacement.")
+#
+#     # initialize free HoloPlayCore
+#     hpc = freeHoloPlayCoreAPI()
+#
+#     errco = hpc.InitializeApp('Test', hpc.license_type.LICENSE_NONCOMMERCIAL.value)
+#     if errco == 0:
+#
+# 		# allocate string buffer
+#         buffer = ctypes.create_string_buffer(1000)
+#
+#         # get HoloPlay Service Version
+#         hpc.GetHoloPlayServiceVersion(buffer, 1000)
+#         print(" # HoloPlay Service version: " + buffer.value.decode('ascii').strip())
+#
+# 		# get HoloPlay Core SDK version
+#         hpc.GetHoloPlayCoreVersion(buffer, 1000)
+#         print(" # HoloPlay Core SDK version: " + buffer.value.decode('ascii').strip())
+#
+#         # get number of devices
+#         print(" # Number of connected displays: " + str(hpc.GetNumDevices()))
+#
+#         for i in range(hpc.GetNumDevices()):
+#             print(" # Device %i" % i)
+#
+# 			# get device HDMI name
+#             hpc.GetDeviceHDMIName(i, buffer, 1000)
+#             dev_hdmi = buffer.value.decode('ascii').strip()
+#
+#             # get device serial
+#             hpc.GetDeviceSerial(i, buffer, 1000)
+#             dev_serial = buffer.value.decode('ascii').strip()
+#
+#             # get device type
+#             hpc.GetDeviceType(i, buffer, 1000)
+#             dev_type = buffer.value.decode('ascii').strip()
+#
+#             print("  - hdmi:", dev_hdmi)
+#             print("  - serial:", dev_serial)
+#             print("  - type:", dev_type)
+#             # Calibration information
+#             print("  - x:", hpc.GetDevicePropertyWinX(i))
+#             print("  - y:", hpc.GetDevicePropertyWinY(i))
+#             print("  - width:", hpc.GetDevicePropertyScreenW(i))
+#             print("  - height:", hpc.GetDevicePropertyScreenH(i))
+#             print("  - aspect:", hpc.GetDevicePropertyDisplayAspect(i))
+#             print("  - pitch:", hpc.GetDevicePropertyPitch(i))
+#             print("  - tilt:", hpc.GetDevicePropertyTilt(i))
+#             print("  - center:", hpc.GetDevicePropertyCenter(i))
+#             print("  - subp:", hpc.GetDevicePropertySubp(i))
+#             print("  - fringe:", hpc.GetDevicePropertyFringe(i))
+#             print("  - ri:", hpc.GetDevicePropertyRi(i))
+#             print("  - bi:", hpc.GetDevicePropertyBi(i))
+#             print("  - invView:", hpc.GetDevicePropertyInvView(i))
+#             print("  - viewCone:", hpc.GetDevicePropertyFloat(i, b"/calibration/viewCone/value"))
