@@ -237,7 +237,7 @@ class freeHoloPlayCoreAPI:
 
     # TODO: How do we differentiate between multiple connected LKGs?
     #       Might be rare case, but still should be implemented!
-    def hdmi_device_name(self, index):
+    def get_device_hdmi_name(self):
         # on macOS: system_profiler SPDisplaysDataType -json delivers Display Info
         # on macOS: system_profiler SPUSBDataType -json delivers USB device info
 
@@ -268,6 +268,27 @@ class freeHoloPlayCoreAPI:
 
             return 'LKG79PxDUMMY'
 
+    # TODO: Maybe using the resolution is not future proof, but don't know how
+    #       to infer it otherwise. May be improved later, if required.
+    def get_device_type(self, width, height):
+
+		# if 8.9'' Looking Glass
+        if width == 2560 and height == 1600:
+            return 'standard'
+
+        # TODO: How do we differentiate the PRO device?
+        #       And is that necessary? Probably not, because it is the same screen.
+		# if 15.6'' Looking Glass or 15.6'' Looking Glass Pro
+        elif width == 3840 and height == 2160:
+            return 'large'
+
+		# if Looking Glass 8k
+        elif width == 7680 and height == 4320:
+            return '8k'
+
+		# if 7.9'' Looking Glass Portrait
+        elif width == 1536 and height == 2048:
+            return 'portrait'
 
 
 
@@ -310,13 +331,24 @@ class freeHoloPlayCoreAPI:
 
             # if this device belongs to the Looking Glass Factory
             if dev['product_string'] == self.product_string and dev['manufacturer_string'] == self.manufacturer_string and dev['usage_page'] == 1:
-                dev['path'] = b"id:4294971243"
-                #dev['path'] = b'IOService:/AppleACPIPlatformExpert/PCI0@0/AppleACPIPCI/IGPU@2/AppleIntelFramebuffer@1/AppleMCCSControlModule'
+                pprint(dev)
+
+                # if the path could not be detected
+                if dev['path'] == '':
+
+                    # TODO: We need a work around!
+                    # NOTE: We might obtain that from ioreg's IOServiceLegacyMatchingRegistryID entry?
+
+                    # NOTE: Path is sometimes empty on macOS, because hidapi.enumerate is unable to provide the path
+                    #       on macOS. Might be related to too long paths (https://github.com/flirc/hidapi/commit/8d251c3854c3b1877509ab07a623dafc8e803db5)
+                    #       that occur for certain USB Hubs.
+                    dev['path'] = b"id:4294971243"
+
 
                 # create a dictionary with an index for this device
                 cfg = dict(index = len(self.devices))
 
-                # prepend HID device data
+                # add HID device data
                 cfg['hiddev'] = hidapi.Device(vid=dev['vendor_id'], pid=dev['product_id'], serial=dev['serial_number'], path=dev['path'])
 
                 # Parse odd value-object format from json
@@ -328,19 +360,18 @@ class freeHoloPlayCoreAPI:
                 cfg['subp'] = 1.0 / (3 * cfg['screenW'])
                 cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
 
-                # find hdmi name
-                cfg['hdmi'] = self.hdmi_device_name(len(self.devices))
+                # find hdmi name and device type
+                cfg['hdmi'] = self.get_device_hdmi_name()
+                cfg['type'] = self.get_device_type(cfg['screenW'], cfg['screenH'])
 
                 # TODO: HoloPlay Core SDK delivers these values as calibration data
                 #       but they are not in the JSON
-                cfg['type'] = 'standard'
                 cfg['x'] = 0
                 cfg['y'] = 0
                 cfg['fringe'] = 0.0
 
                 # close the device
                 cfg['hiddev'].close()
-
 
                 # append the device and its data to the internal device list
                 self.devices.append(cfg)
