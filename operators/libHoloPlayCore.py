@@ -183,6 +183,10 @@ class freeHoloPlayCoreAPI:
             res.b = texture(screenTex, quilt_map(texCoords.xy, a-bi*subp2)).b;
 
             if (debug == 1) {
+                // use quilt texture
+                res = texture(screenTex, texCoords.xy);
+            }
+            else if (debug == 2) {
                 // Mark center line only in central view
                 res.r = res.r * 0.001 + (texCoords.x>0.49 && texCoords.x<0.51 && fract(a)>0.48&&fract(a)<0.51 ?1.0:0.0);
                 res.g = res.g * 0.001 + texCoords.x;
@@ -518,7 +522,7 @@ class freeHoloPlayCoreAPI:
                     # NOTE: Path is sometimes empty on macOS, because hidapi.enumerate is unable to provide the path
                     #       on macOS. Might be related to too long paths (https://github.com/flirc/hidapi/commit/8d251c3854c3b1877509ab07a623dafc8e803db5)
                     #       that occur for certain USB Hubs.
-                    dev['path'] = b"id:4294982025"
+                    dev['path'] = b"id:4294971243"
 
 
                 # create a dictionary with an index for this device
@@ -532,7 +536,7 @@ class freeHoloPlayCoreAPI:
 
                 # calculate any values derived values from the cfg values
                 cfg['tilt'] = cfg['screenH'] / (cfg['screenW'] * cfg['slope'])
-                cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(cfg['slope']))
+                cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(abs(cfg['slope'])))
                 cfg['subp'] = 1.0 / (3 * cfg['screenW'])
                 cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
 

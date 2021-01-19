@@ -62,6 +62,7 @@ else:
 	from .operators.looking_glass_global_variables import *
 
 	# import the Holoplay Core SDK Python Wrapper
+	#from .operators import libHoloPlayCore as hpc
 	from .operators import libHoloPlayCore
 	hpc = libHoloPlayCore.freeHoloPlayCoreAPI()
 
