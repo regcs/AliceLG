@@ -46,7 +46,7 @@ Please keep in mind that this beta version of the add-on may contain errors that
    - Select the downloaded zip file and click "Install"
    - Enable the add-on by activating the check box on the left
    - Expand the preferences of the add-on by clicking on the small arrow next to the checkbox
-   - Click the "Install" button to install required Python modules
+   - Click the "Install" button to install required Python modules in the add-on directory
    - Restart Blender
 
 ## How to Use
