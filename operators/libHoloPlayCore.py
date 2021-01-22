@@ -656,7 +656,7 @@ class freeHoloPlayCoreAPI:
 
                 # if this device belongs to the Looking Glass Factory
                 if (dev['product_string'] == self.product_string and dev['manufacturer_string'] == self.manufacturer_string and dev['usage_page'] == 1):
-                    pprint(dev)
+
                     # if the path could not be detected
                     if len(dev['path']) == 0:
 
@@ -672,33 +672,39 @@ class freeHoloPlayCoreAPI:
                     # create a dictionary with an index for this device
                     cfg = dict(index = len(self.devices))
 
-                    # add HID device data
-                    cfg['hiddev'] = hidapi.Device(vid=dev['vendor_id'], pid=dev['product_id'], serial=dev['serial_number'], path=dev['path'])
+                    # try to connect and read the device information
+                    try:
 
-                    # Parse odd value-object format from json
-                    cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in self.loadconfig(cfg['hiddev']).items()})
+                        # add HID device data
+                        cfg['hiddev'] = hidapi.Device(vid=dev['vendor_id'], pid=dev['product_id'], serial=dev['serial_number'], path=dev['path'])
 
-                    # calculate the derived values (e.g., tilt, pich, etc.)
-                    self.calculate_derived(cfg)
+                        # Parse odd value-object format from json
+                        cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in self.loadconfig(cfg['hiddev']).items()})
 
-                    # find hdmi name, device type, and monitor position in
-                    # virtual screen coordinates
-                    cfg['hwid'] = self.get_device_hdmi_name(cfg)
-                    cfg['hardwareVersion'] = self.get_device_type(cfg['screenW'], cfg['screenH'])
-                    if 'windowCoords' not in cfg:
-                        cfg['windowCoords'] = self.get_device_screen_position(cfg['hwid'])
+                        # calculate the derived values (e.g., tilt, pich, etc.)
+                        self.calculate_derived(cfg)
 
-                    # TODO: HoloPlay Core SDK delivers the fringe value,
-                    #       but it is not in the JSON. LoneTechs assumed that it is
-                    #       a border crop setting, to hide lit up pixels outside of the big block
-                    # arbitrarily assign 0.0 to fringe
-                    cfg['fringe'] = 0.0
+                        # find hdmi name, device type, and monitor position in
+                        # virtual screen coordinates
+                        cfg['hwid'] = self.get_device_hdmi_name(cfg)
+                        cfg['hardwareVersion'] = self.get_device_type(cfg['screenW'], cfg['screenH'])
+                        if 'windowCoords' not in cfg:
+                            cfg['windowCoords'] = self.get_device_screen_position(cfg['hwid'])
 
-                    # close the device
-                    cfg['hiddev'].close()
+                        # TODO: HoloPlay Core SDK delivers the fringe value,
+                        #       but it is not in the JSON. LoneTechs assumed that it is
+                        #       a border crop setting, to hide lit up pixels outside of the big block
+                        # arbitrarily assign 0.0 to fringe
+                        cfg['fringe'] = 0.0
 
-                    # append the device and its data to the internal device list
-                    self.devices.append(cfg)
+                        # close the device
+                        cfg['hiddev'].close()
+
+                        # append the device and its data to the internal device list
+                        self.devices.append(cfg)
+
+                    except:
+                        pass
 
     # Return number of Looking Glass devices
     def GetNumDevices(self):
