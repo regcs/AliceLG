@@ -101,7 +101,7 @@ The _Render Quilt_ option will render the different views separately. After the 
 
 _NOTE: Option (2) can be used even if no Looking Glass is connected._
 
-### Incomplete Render Jobs
+### Incomplete Render Jobs (Experimental)
 
 The add-on attempts to detect Blender crashes during quilt rendering as well as quilt animation rendering and prompts you with an option to continue or to discard an incomplete render job the next time you open the crashed file. The successful detection of an incomplete render job and its continuation requires that:
 
