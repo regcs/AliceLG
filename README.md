@@ -32,20 +32,22 @@ Please keep in mind that this beta version of the add-on may contain errors that
 ## System Requirements
 - Windows, Linux, or macOS
 - Blender 2.83 or later
-- Holoplay Service App
+- _Optional but recommended:_ Holoplay Service App
 
 ## Installation
 
+1. _Optional:_ Install the Holoplay Service App on your PC or Mac (recommended for maximum compatability).
 
-1. Install the Holoplay Service App on your PC or Mac (if not already done).
-
-2. Download the [zip file](https://github.com/regcs/AliceLG-beta/releases/download/v1.0-beta.5/AliceLG-beta5.zip) of this addon. *NOTE: Issue #1*
+2. Download the [zip file](https://github.com/regcs/AliceLG/releases/download/v1.0-beta.4/AliceLG-beta4.zip) of this addon.
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
    - In the main menu, navigate to _Edit → Preferences → Add-ons → Install → Install Add-on_
    - Select the downloaded zip file and click "Install"
    - Enable the add-on by activating the check box on the left
+   - Expand the preferences of the add-on by clicking on the small arrow next to the checkbox
+   - Click the "Install" button to install required Python modules
+   - Restart Blender
 
 ## How to Use
 
@@ -113,10 +115,13 @@ If you decide to discard the incomplete render jobs, the add-on will try to dele
 
 _NOTE: This feature is considered to be 'experimental'. It might not detect crashes under all circumstances and might not succeed to continue the rendering always. If you encounter a situation were this feature failed, please submit a detailed bug report._
 
-## License
+## License & Dependencies
 
 The Blender add-on part of this project is licensed under the [GNU GPL v3 License](LICENSE).
 
-**The following statement may need revision and may not apply. See Issue #1**
-
-The HoloPlay Core SDK libraries are property of the Looking Glass Factory and are licensed under the [HOLOPLAY CORE LICENSE AGREEMENT](HOLOPLAY-LICENSE). The HoloPlay Core SDK provides the fundamental software basis for the communication between the Looking Glass display hardware and any app created for it. It is, therefore, considered a system library. As a consequence, the linked libraries of this API are distributed in a compiled (non open-source) form with this free software in agreement with the system library exception defined by the GNU GPL v3 License.
+This Blender add-on partially relies on the following GPL-compatible open-source libraries / modules and their dependencies:
+- [free HoloPlay Core API](https://github.com/regcs/freehpc) licensed under [MIT License](https://github.com/regcs/freehpc/blob/master/LICENSE)
+- [pyhidapi](https://github.com/apmorton/pyhidapi) licensed under [MIT License](https://github.com/apmorton/pyhidapi/blob/master/LICENSE)
+- [hidapi](https://github.com/flirc/hidapi) licensed under [GNU GPL v3](https://github.com/flirc/hidapi/blob/master/LICENSE-gpl3.txt)
+- [pynng](https://github.com/codypiersall/pynng) licensed under [MIT license](https://github.com/codypiersall/pynng/blob/master/LICENSE.txt)
+- [cbor](https://pypi.org/project/cbor/1.0.0/) licensed under [Apache Software License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
