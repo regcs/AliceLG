@@ -793,12 +793,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# Pass quilt settings to the lightfield shader
 		self.lightFieldShader.bind()
 
-		self.lightFieldShader.uniform_int("overscan", 0)
-		self.lightFieldShader.uniform_float("tile", (LookingGlassAddon.qs[preset]["columns"], LookingGlassAddon.qs[preset]["rows"], LookingGlassAddon.qs[preset]["totalViews"]))
+		try:
+			# set viewportion to the full view
+			# NOTE: This is always 1 for landscape, but might be different for portait LG?
+			self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
+			self.lightFieldShader.uniform_int("overscan", 0)
+		except ValueError:
+			pass  # These uniforms are not used by the free shader
 
-		# set viewportion to the full view
-		# NOTE: This is always 1 for landscape, but might be different for portait LG?
-		self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[preset]["viewWidth"] * LookingGlassAddon.qs[preset]["columns"] / LookingGlassAddon.qs[preset]["width"], LookingGlassAddon.qs[preset]["viewHeight"] * LookingGlassAddon.qs[preset]["rows"] / LookingGlassAddon.qs[preset]["height"]))
+		# number of columns and rows of views
+		self.lightFieldShader.uniform_float("tile", (LookingGlassAddon.qs[self.preset]["columns"], LookingGlassAddon.qs[self.preset]["rows"], LookingGlassAddon.qs[self.preset]["totalViews"]))
 
 
 
@@ -857,13 +861,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.lightFieldShader.uniform_float("pitch", self.device['pitch'])
 			self.lightFieldShader.uniform_float("tilt", self.device['tilt'])
 			self.lightFieldShader.uniform_float("center", self.device['center'])
-			self.lightFieldShader.uniform_int("invView", self.device['invView'])
-			self.lightFieldShader.uniform_int("quiltInvert", 0)
 			self.lightFieldShader.uniform_float("subp", self.device['subp'])
 			self.lightFieldShader.uniform_int("ri", self.device['ri'])
 			self.lightFieldShader.uniform_int("bi", self.device['bi'])
-			self.lightFieldShader.uniform_float("displayAspect", self.device['aspectRatio'])
-			self.lightFieldShader.uniform_float("quiltAspect", self.device['aspectRatio'])
+			try:
+				self.lightFieldShader.uniform_int("invView", self.device['invView'])
+				self.lightFieldShader.uniform_int("quiltInvert", 0)
+				self.lightFieldShader.uniform_float("displayAspect", self.device['aspectRatio'])
+				self.lightFieldShader.uniform_float("quiltAspect", self.device['aspectRatio'])
+			except ValueError:
+				pass  # These uniforms are not used by the free shader
 
 
 	# set up the camera for each view and the shader of the rendering object

@@ -1099,10 +1099,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# save the quilt in a file
 					self.quiltImage.save()#filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
-					# rename the file and reload the image
-					os.rename(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_filepath))
-					self.quiltImage.filepath_raw = self.quiltImage.filepath = os.path.abspath(self.rendering_filepath)
-
 					# if no filename was specified and no animation is to be rendered
 					if not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True):
 
@@ -1122,6 +1118,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						if os.path.isfile(self.rendering_filepath) == True: os.remove(self.rendering_filepath)
 
 					else:
+
+						# rename the file
+						os.rename(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_filepath))
+
+						# update path in the image data
+						self.quiltImage.filepath_raw = self.quiltImage.filepath = os.path.abspath(self.rendering_filepath)
 
 						# rename the Blender image to the file's name
 						bpy.data.images[os.path.basename(self.rendering_view_filepath)].name = os.path.basename(self.rendering_filepath)
