@@ -17,6 +17,8 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+import os
+
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
@@ -25,8 +27,13 @@ class LookingGlassAddon:
 	name = None
 
 	# path to the addon directory
-	path = None
-	tmp_path = None
+	path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+	tmp_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/tmp/"
+	libpath = os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/lib/"
+
+	# python dependencies of the add-on present?
+	python_dependecies = False
+	show_preferences = True
 
 	# Was the connection to the holoplay service successfully initialized?
 	HoloPlayService = False

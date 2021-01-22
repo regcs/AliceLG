@@ -21,7 +21,7 @@
 bl_info = {
 	"name": "Alice/LG",
 	"author": "Christian Stolze",
-	"version": (1, 0, 4),
+	"version": (1, 1, 0),
 	"blender": (2, 83, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks thorugh the Looking Glass (lightfield displays)",
@@ -49,7 +49,7 @@ if "bpy" in locals():
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(operators.looking_glass_global_variables)
 
-	# reload the Holoplay Core SDK Python Wrapper
+	# reload the free Holoplay Core SDK
 	importlib.reload(operators.libHoloPlayCore.freeHoloPlayCoreAPI)
 
 else:
@@ -74,7 +74,7 @@ else:
 # NOTE: This needs to be called after loading the internal modules,
 # 		because we need to check if "bpy" was already loaded for reload
 import bpy
-import platform
+import sys, platform
 import ctypes
 from pprint import pprint
 from bpy.types import AddonPreferences, PropertyGroup
@@ -86,24 +86,101 @@ if bpy.app.version < bl_info['blender']:
 	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
 
 
+# define name for registration
+LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
+
+print("Initializing add-on ", LookingGlassAddon.name)
+print(" # Add-on path is: " + LookingGlassAddon.path)
+
+# append the add-on's path to Blender's python PATH
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
+
+try:
+
+	import pynng
+	import cbor
+
+	# all python dependencies are fulfilled
+	LookingGlassAddon.python_dependecies = True
+	LookingGlassAddon.show_preferences = False
+
+except:
+
+	# not all python dependencies are fulfilled
+	LookingGlassAddon.python_dependecies = False
+	LookingGlassAddon.show_preferences = True
+
+	pass
 
 
 # ------------- DEFINE ADDON PREFERENCES ----------------
+# an operator that installs the python dependencies
+class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
+	bl_idname = "lookingglass.install_dependencies"
+	bl_label = "Install (This may take a few minutes)"
+	bl_description = "Install all Python dependencies required by this add-on to the add-on directory."
+	bl_options = {'REGISTER', 'INTERNAL'}
+
+	def execute(self, context):
+
+		# if dependencies are missing
+		if LookingGlassAddon.python_dependecies == False:
+
+			# NOTE: - pip should is preinstalled for Blender 2.81+
+			#		  therefore we don't check anymore
+			import pip, subprocess
+
+			# define pips path
+			pip_path = sys.exec_prefix + '/bin/pip'
+
+			# install the dependencies
+			subprocess.call([pip_path, 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.path + '/lib'])
+			subprocess.call([pip_path, 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.path + '/lib'])
+			subprocess.call([pip_path, 'install', 'pycparser==2.19', '--target', LookingGlassAddon.path + '/lib'])
+			subprocess.call([pip_path, 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.path + '/lib'])
+
+			#print(subprocess.check_output([pip_path, 'install', 'pynng==0.4.0', '--target', LookingGlassAddon.path + '/lib']))
+
+			try:
+
+				import pynng
+				import cbor
+
+				# all python dependencies are fulfilled
+				LookingGlassAddon.python_dependecies = True
+
+			except:
+
+				# not all python dependencies are fulfilled
+				LookingGlassAddon.python_dependecies = False
+				pass
+
+		return {'FINISHED'}
+
 # Preferences pane for this Addon in the Blender preferences
 class LookingGlassAddonPreferences(AddonPreferences):
 	bl_idname = __name__
 
-	# libpath: bpy.props.StringProperty(
-	# 								   name="HoloPlayCore SDK",
-	# 								   subtype='FILE_PATH',
-	# 								   default = ""
-	# 								   )
-	#
-	# def draw(self, context):
-	#
-	# 	# Lightfield
-	# 	layout = self.layout
-	# 	layout.prop(context.scene.settings, "viewport_cursor_color")
+	# draw function
+	def draw(self, context):
+
+		# Notify the user and provide an option to install
+		layout = self.layout
+		row = layout.row()
+
+		# draw an Button for Installation of python dependencies
+		if LookingGlassAddon.python_dependecies == False:
+
+			row.label(text="Some Python modules are missing for AliceLG to work. Install them to the add-on path?")
+			row = layout.row()
+			row.operator("lookingglass.install_dependencies", icon='PLUS')
+
+		else:
+
+			row.label(text="All required Python modules were installed.")
+			row = layout.row()
+			row.label(text="Please restart Blender to activate the changes!", icon='ERROR')
 
 
 
@@ -1866,24 +1943,12 @@ class LOOKINGGLASS_OT_wm_mouse_tracker(bpy.types.Operator):
 def register():
 
 	print("Initializing Holo Play Core:")
-	# define name for registration
-	LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
-
-	# get add-on path and set the add-ons tmp path
-	LookingGlassAddon.path = os.path.dirname(os.path.realpath(__file__))
-	LookingGlassAddon.tmp_path = os.path.dirname(os.path.realpath(__file__)) + "/tmp/"
-
-	print(" # Add-on path is: " + LookingGlassAddon.path)
-
-	# initialize HoloPlay Core SDK
-	errco = hpc.InitializeApp(LookingGlassAddon.name.encode(), hpc.license_type.LICENSE_NONCOMMERCIAL.value)
-
-	print(" # Registering at Holoplay Service as: " + LookingGlassAddon.name)
 
 	# register all classes of the addon
 	# Preferences & Settings
-	bpy.utils.register_class(LookingGlassAddonPreferences)
+	if LookingGlassAddon.show_preferences == True: bpy.utils.register_class(LookingGlassAddonPreferences)
 	bpy.utils.register_class(LookingGlassAddonSettings)
+	bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
 	bpy.utils.register_class(LOOKINGGLASS_OT_toggle_fullscreen)
 	bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
@@ -1909,6 +1974,13 @@ def register():
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield_cursor)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
+
+
+
+	# initialize HoloPlay Core SDK
+	errco = hpc.InitializeApp(LookingGlassAddon.name.encode(), hpc.license_type.LICENSE_NONCOMMERCIAL.value)
+
+	print(" # Registering at Holoplay Service as: " + LookingGlassAddon.name)
 
 	# load the panel variables
 	bpy.types.Scene.settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
@@ -2000,8 +2072,9 @@ def unregister():
 
 	# register all classes of the addon
 	# Preferences & Settings
-	bpy.utils.unregister_class(LookingGlassAddonPreferences)
+	if LookingGlassAddon.show_preferences == True: bpy.utils.unregister_class(LookingGlassAddonPreferences)
 	bpy.utils.unregister_class(LookingGlassAddonSettings)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_toggle_fullscreen)

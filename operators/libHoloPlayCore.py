@@ -1,21 +1,32 @@
-# ##### BEGIN GPL LICENSE BLOCK #####
+# ############################## LICENSE BLOCK ###############################
 #
-#  Copyright © 2020 Christian Stolze
+#                      freeHPC - Free HoloPlay Core API
+#                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# MIT License
 #
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
+# Copyright © 2021 Yann Vernier, Christian Stolze
+# All rights reserved.
 #
-#  You should have received a copy of the GNU General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-# ##### END GPL LICENSE BLOCK #####
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+#
+# ############################################################################
 
 import sys, os, platform
 import json, binascii, struct
@@ -24,6 +35,14 @@ import subprocess
 from math import *
 from enum import Enum
 
+# TODO: Is there a better way to share global variables between all addon files and operators?
+from .looking_glass_global_variables import *
+
+# append the add-on's lib path to Blender's python PATH, so that the modules
+# can be loaded
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
+
 # for debugging only
 from pprint import pprint
 
@@ -31,21 +50,37 @@ from pprint import pprint
 # or the joystick device will be gone when execution finishes.
 import hid as hidapi
 
-# TODO: Is there a better way to share global variables between all addon files and operators?
-#from .looking_glass_global_variables import *
+try:
 
-# -------------------- Load Library ----------------------
-# Load the HoloPlay Core SDK Library
-print("Loading HoloPlay Core SDK library")
-print(" # Running on OS: ", platform.system())
-print(" # System architecture: ", platform.architecture())
-print(" # Searching for HoloPlay Core SDK")
+    import pynng
+    import cbor
 
-# ------------ FREE HOLOPLAY CORE REPLACEMENT ---------------
+    # all python dependencies are fulfilled
+    python_dependecies = True
+
+except:
+
+    # not all python dependencies are fulfilled
+    python_dependecies = False
+    pass
+
+
+
+# FREE HOLOPLAY CORE API
+# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 class freeHoloPlayCoreAPI:
 
     # INTERNAL VARIABLES
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Version of free HoloPlay Core API
+    version = '1.0.0'
+
+    # HoloPlay Service communication & information
+    driver_address = "ipc:///tmp/holoplay-driver.ipc"
+    socket = None
+    holoplay_service_version = 'None'
+
     # list of all Looking Glass Devices
     devices = []
 
@@ -174,6 +209,7 @@ class freeHoloPlayCoreAPI:
 
         void main()
         {
+
             float a;
             vec4 res;
 
@@ -194,7 +230,6 @@ class freeHoloPlayCoreAPI:
             }
 
             res.a = 1.0;
-
             fragColor = res;
 
         }
@@ -204,11 +239,23 @@ class freeHoloPlayCoreAPI:
 
     # INTERNAL FUNCTIONS
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def __init__(self):
+    # send a NNG message to the HoloPlay Service
+    def nng_send_message(self, input_object):
 
-        # we use the RefreshState function to build
-        # the list of Looking Glass devices, since it is the same code
-        self.RefreshState()
+        # if a NNG socket is open
+        if self.socket != None and self.socket != 0:
+
+            # dump a CBOR message
+            dump = cbor.dumps(input_object)
+
+            # send it to the socket
+            self.socket.send(dump)
+
+            # receive the CBOR-formatted response
+            response = self.socket.recv()
+
+            # return the message length and its conent
+            return [len(response), cbor.loads(response)]
 
     # obtain calibration data from JSON data
     def loadconfig(self, hiddev):
@@ -322,8 +369,8 @@ class freeHoloPlayCoreAPI:
                     continue
                 if not (name.startswith(b'LKG') and int(width)==cfg['screenW'] and int(height)==cfg['screenH']):
                     continue	# Wrong name or resolution
-                cfg['x'] = int(x)
-                cfg['y'] = int(y)
+
+                cfg['windowCoords'] = [int(x), int(y)]
                 returnName = name
                 break
 
@@ -354,7 +401,6 @@ class freeHoloPlayCoreAPI:
             return 'portrait'
 
 
-
     # just a helper function for the screen positions on Windows
     def get_monitor_name(self, name):
 
@@ -377,13 +423,14 @@ class freeHoloPlayCoreAPI:
         user32.EnumDisplayDevicesA(name.encode(), 0, ctypes.pointer(device_name), 0)
         return device_name.DeviceString
 
+
     # TODO: Maybe using the resolution is not future proof, but don't know how
     #       to infer it otherwise. May be improved later, if required.
     def get_device_screen_position(self, name):
 
         # set default output
         global x, y
-        x, y = (None, None)
+        windowCoords = [0, 0]
 
 		# if on macOS
         if platform.system() == "Darwin":
@@ -401,8 +448,8 @@ class freeHoloPlayCoreAPI:
                 if display['_name'] == name:
 
                     # TODO: Are there keys that return the position?
-                    x = int(display['_spdisplays_pixels'].split(" x ")[0])
-                    y = int(display['_spdisplays_pixels'].split(" x ")[1])
+                    windowCoords = [0, 0]
+
                     break
 
 
@@ -435,9 +482,7 @@ class freeHoloPlayCoreAPI:
 
                 # if this is the monitor we are looking for
                 if self.get_monitor_name(lpmi.szDevice) == name:
-
-                    x = lprcMonitor.contents.left
-                    y = lprcMonitor.contents.top
+                    windowCoords = [lprcMonitor.contents.left, lprcMonitor.contents.top]
 
                     # stop enumeration here
                     return False
@@ -468,32 +513,84 @@ class freeHoloPlayCoreAPI:
 
 
         # return the obtained name
-        return (x, y)
+        return windowCoords
 
+    # calculate the values derived from the calibration data
+    def calculate_derived(self, cfg):
+
+        # calculate any values derived values from the cfg values
+        cfg['tilt'] = cfg['screenH'] / (cfg['screenW'] * cfg['slope'])
+        cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(abs(cfg['slope'])))
+        cfg['subp'] = 1.0 / (3 * cfg['screenW'])
+        cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
 
 
     # FUNCTIONS RESEMBLING THE HOLO PLAY CORE SDK FUNCTIONALITY
     # +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-    # --- DUMMY METHODS ---
-    # NOTE: The following methods do not provide the real functionality, which
-    #       is provided by the HoloPlay Core SDK of the Looking Glass Factory.
-    #       They are included to keep the Blender add-on (Alice/LG) fully
-    #       compatible to the official HoloPlay Core SDK.
+    # --- HOLOPLAY SERVICE METHODS ---
+    # The following functions are only used when communicating with HoloPlay
+    # Service
     def InitializeApp(self, app_name, hpc_license_type):
-        # we always return no error to fake communication with holo play service
-        return self.client_error.CLIERR_NOERROR.value
 
+        # set default error value:
+        # NOTE: - if communication with HoloPlay Service fails, we use the
+        #         direct HID approach to read calibration data
+        error = self.client_error.CLIERR_NOERROR.value
+
+        # if all python dependencies are fulfilled
+        if python_dependecies == True:
+
+            # open a Req0 socket
+            self.socket = pynng.Req0(recv_timeout = 5000)
+
+            # try to address the HoloPlay Service
+            try:
+
+                self.socket.dial(self.driver_address, block = True)
+
+                # TODO: Set proper error values
+                # set error value
+                error = self.client_error.CLIERR_NOERROR.value
+
+            except:
+
+                # Close socket and reset status variable
+                if self.socket != None:
+                    self.socket.close()
+                    self.socket = None
+
+                pass
+
+        # if everything is fine:
+        if error == self.client_error.CLIERR_NOERROR.value:
+
+            # we use the RefreshState function to build
+            # the list of Looking Glass devices, since it is the same code
+            self.RefreshState()
+
+        # return error value
+        return error
+
+    # Close the socket to the HoloPlay Service
+    def CloseApp(self):
+
+        # if all python dependencies are fulfilled
+        if self.socket != None and self.socket != 0:
+
+            # close the Req0 socket
+            self.socket.close()
+
+    # Version of the HoloPlay Service
     def GetHoloPlayServiceVersion(self, buffer=None, buffer_length=0):
         if buffer != None:
-            version_string = 'None'
-            buffer.value = version_string.encode('ascii')
+            # prepare output
+            buffer.value = self.holoplay_service_version.encode('ascii')
             return buffer
 
     def GetHoloPlayCoreVersion(self, buffer, buffer_length):
         if buffer != None:
-            version_string = '1.0.0'
-            buffer.value = version_string.encode('ascii')
+            buffer.value = self.version.encode('ascii')
             return buffer
 
 
@@ -506,58 +603,102 @@ class freeHoloPlayCoreAPI:
         # clear the list
         self.devices.clear()
 
-        # iterate through all HID devices
-        for dev in hidapi.enumerate():
+        # HOLOPLAY SERVICE COMMUNICATION
+        # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-            # if this device belongs to the Looking Glass Factory
-            if (dev['product_string'] == self.product_string and dev['manufacturer_string'] == self.manufacturer_string and dev['usage_page'] == 1):
-                pprint(dev)
+        # if all python dependencies are fulfilled AND a NNG socket is open
+        if python_dependecies == True and (self.socket != 0 and self.socket != None):
 
-                # if the path could not be detected
-                if len(dev['path']) == 0:
-
-                    # TODO: We need a work around!
-                    # NOTE: We might obtain that from ioreg's IOServiceLegacyMatchingRegistryID entry?
-
-                    # NOTE: Path is sometimes empty on macOS, because hidapi.enumerate is unable to provide the path
-                    #       on macOS. Might be related to too long paths (https://github.com/flirc/hidapi/commit/8d251c3854c3b1877509ab07a623dafc8e803db5)
-                    #       that occur for certain USB Hubs.
-                    dev['path'] = b"id:4294971243"
-
+            # request calibration data
+            response = self.nng_send_message({'cmd': {'info': {}}, 'bin': ''})
+            if response != None:
 
                 # create a dictionary with an index for this device
-                cfg = dict(index = len(self.devices))
+                self.devices = response[1]['devices']
 
-                # add HID device data
-                cfg['hiddev'] = hidapi.Device(vid=dev['vendor_id'], pid=dev['product_id'], serial=dev['serial_number'], path=dev['path'])
+                # TODO: Implement error checks
+                # HoloPlay Service related information
+                error = response[1]['error']
+                self.holoplay_service_version = response[1]['version']
 
-                # Parse odd value-object format from json
-                cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in self.loadconfig(cfg['hiddev']).items()})
+                # iterate through all devices
+                for i in range(0, len(self.devices)):
 
-                # calculate any values derived values from the cfg values
-                cfg['tilt'] = cfg['screenH'] / (cfg['screenW'] * cfg['slope'])
-                cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(abs(cfg['slope'])))
-                cfg['subp'] = 1.0 / (3 * cfg['screenW'])
-                cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
+                    # to flatten the dict, we extract the separate "calibration"
+                    # dict and delete it
+                    cfg = self.devices[i]['calibration']
+                    self.devices[i].pop('calibration', None)
 
-                # find hdmi name, device type, and monitor position in
-                # virtual screen coordinates
-                cfg['hdmi'] = self.get_device_hdmi_name(cfg)
-                cfg['type'] = self.get_device_type(cfg['screenW'], cfg['screenH'])
-                if 'x' not in cfg:
-                    cfg['x'], cfg['y'] = self.get_device_screen_position(cfg['hdmi'])
+                    # parse odd value-object format from calibration json
+                    cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in cfg.items()})
 
-                # TODO: HoloPlay Core SDK delivers the fringe value,
-                #       but it is not in the JSON. LoneTechs assumed that it is
-                #       a border crop setting, to hide lit up pixels outside of the big block
-                # arbitrarily assign 0.0 to fringe
-                cfg['fringe'] = 0.0
+                    # calculate the derived values (e.g., tilt, pich, etc.)
+                    self.calculate_derived(cfg)
 
-                # close the device
-                cfg['hiddev'].close()
+                    # TODO: HoloPlay Core SDK delivers the fringe value,
+                    #       but it is not in the JSON. LoneTechs assumed that it is
+                    #       a border crop setting, to hide lit up pixels outside of the big block
+                    # arbitrarily assign 0.0 to fringe
+                    cfg['fringe'] = 0.0
 
-                # append the device and its data to the internal device list
-                self.devices.append(cfg)
+                    # reimplement the calibration data, but at the higher level
+                    self.devices[i].update(cfg)
+
+
+
+        # DIRECT HID READING
+        # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # otherwise we use the fallback method and read calibration data over HID
+        else:
+
+            # iterate through all HID devices
+            for dev in hidapi.enumerate():
+
+                # if this device belongs to the Looking Glass Factory
+                if (dev['product_string'] == self.product_string and dev['manufacturer_string'] == self.manufacturer_string and dev['usage_page'] == 1):
+                    pprint(dev)
+                    # if the path could not be detected
+                    if len(dev['path']) == 0:
+
+                        # TODO: We need a work around!
+                        # NOTE: We might obtain that from ioreg's IOServiceLegacyMatchingRegistryID entry?
+
+                        # NOTE: Path is sometimes empty on macOS, because hidapi.enumerate is unable to provide the path
+                        #       on macOS. Might be related to too long paths (https://github.com/flirc/hidapi/commit/8d251c3854c3b1877509ab07a623dafc8e803db5)
+                        #       that occur for certain USB Hubs.
+                        dev['path'] = b"id:4295030796"
+
+
+                    # create a dictionary with an index for this device
+                    cfg = dict(index = len(self.devices))
+
+                    # add HID device data
+                    cfg['hiddev'] = hidapi.Device(vid=dev['vendor_id'], pid=dev['product_id'], serial=dev['serial_number'], path=dev['path'])
+
+                    # Parse odd value-object format from json
+                    cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in self.loadconfig(cfg['hiddev']).items()})
+
+                    # calculate the derived values (e.g., tilt, pich, etc.)
+                    self.calculate_derived(cfg)
+
+                    # find hdmi name, device type, and monitor position in
+                    # virtual screen coordinates
+                    cfg['hwid'] = self.get_device_hdmi_name(cfg)
+                    cfg['hardwareVersion'] = self.get_device_type(cfg['screenW'], cfg['screenH'])
+                    if 'windowCoords' not in cfg:
+                        cfg['windowCoords'] = self.get_device_screen_position(cfg['hwid'])
+
+                    # TODO: HoloPlay Core SDK delivers the fringe value,
+                    #       but it is not in the JSON. LoneTechs assumed that it is
+                    #       a border crop setting, to hide lit up pixels outside of the big block
+                    # arbitrarily assign 0.0 to fringe
+                    cfg['fringe'] = 0.0
+
+                    # close the device
+                    cfg['hiddev'].close()
+
+                    # append the device and its data to the internal device list
+                    self.devices.append(cfg)
 
     # Return number of Looking Glass devices
     def GetNumDevices(self):
@@ -566,7 +707,7 @@ class freeHoloPlayCoreAPI:
     # TODO: How do we obtain the HDMI name? Important for identification.
     # Return device's HDMI name
     def GetDeviceHDMIName(self, index, buffer, buffersize):
-        buffer.value = next(item for item in self.devices if item["index"] == index)['hdmi'].encode('ascii')
+        buffer.value = next(item for item in self.devices if item["index"] == index)['hwid'].encode('ascii')
 
     # Return device's serial
     def GetDeviceSerial(self, index, buffer, buffersize):
@@ -576,15 +717,15 @@ class freeHoloPlayCoreAPI:
     #       standard, portrait (?), large, pro, 8k
     # Return device's type
     def GetDeviceType(self, index, buffer, buffersize):
-        buffer.value = next(item for item in self.devices if item["index"] == index)['type'].encode('ascii')
+        buffer.value = next(item for item in self.devices if item["index"] == index)['hardwareVersion'].encode('ascii')
 
     # Return device's window x position
     def GetDevicePropertyWinX(self, index):
-        return int(next(item for item in self.devices if item["index"] == index)['x'])
+        return int(next(item for item in self.devices if item["index"] == index)['windowCoords'][0])
 
     # Return device's window y position
     def GetDevicePropertyWinY(self, index):
-        return int(next(item for item in self.devices if item["index"] == index)['y'])
+        return int(next(item for item in self.devices if item["index"] == index)['windowCoords'][1])
 
     # Return device's screen width
     def GetDevicePropertyScreenW(self, index):
@@ -638,66 +779,3 @@ class freeHoloPlayCoreAPI:
             return next(item for item in self.devices if item["index"] == index)['viewCone']
         else:
             return 0.0
-
-
-
-
-
-
-# if __name__ == '__main__':
-#
-#     print("Initializing free HoloPlay Core replacement.")
-#
-#     # initialize free HoloPlayCore
-#     hpc = freeHoloPlayCoreAPI()
-#
-#     errco = hpc.InitializeApp('Test', hpc.license_type.LICENSE_NONCOMMERCIAL.value)
-#     if errco == 0:
-#
-# 		# allocate string buffer
-#         buffer = ctypes.create_string_buffer(1000)
-#
-#         # get HoloPlay Service Version
-#         hpc.GetHoloPlayServiceVersion(buffer, 1000)
-#         print(" # HoloPlay Service version: " + buffer.value.decode('ascii').strip())
-#
-# 		# get HoloPlay Core SDK version
-#         hpc.GetHoloPlayCoreVersion(buffer, 1000)
-#         print(" # HoloPlay Core SDK version: " + buffer.value.decode('ascii').strip())
-#
-#         # get number of devices
-#         print(" # Number of connected displays: " + str(hpc.GetNumDevices()))
-#
-#         for i in range(hpc.GetNumDevices()):
-#             print(" # Device %i" % i)
-#
-# 			# get device HDMI name
-#             hpc.GetDeviceHDMIName(i, buffer, 1000)
-#             dev_hdmi = buffer.value.decode('ascii').strip()
-#
-#             # get device serial
-#             hpc.GetDeviceSerial(i, buffer, 1000)
-#             dev_serial = buffer.value.decode('ascii').strip()
-#
-#             # get device type
-#             hpc.GetDeviceType(i, buffer, 1000)
-#             dev_type = buffer.value.decode('ascii').strip()
-#
-#             print("  - hdmi:", dev_hdmi)
-#             print("  - serial:", dev_serial)
-#             print("  - type:", dev_type)
-#             # Calibration information
-#             print("  - x:", hpc.GetDevicePropertyWinX(i))
-#             print("  - y:", hpc.GetDevicePropertyWinY(i))
-#             print("  - width:", hpc.GetDevicePropertyScreenW(i))
-#             print("  - height:", hpc.GetDevicePropertyScreenH(i))
-#             print("  - aspect:", hpc.GetDevicePropertyDisplayAspect(i))
-#             print("  - pitch:", hpc.GetDevicePropertyPitch(i))
-#             print("  - tilt:", hpc.GetDevicePropertyTilt(i))
-#             print("  - center:", hpc.GetDevicePropertyCenter(i))
-#             print("  - subp:", hpc.GetDevicePropertySubp(i))
-#             print("  - fringe:", hpc.GetDevicePropertyFringe(i))
-#             print("  - ri:", hpc.GetDevicePropertyRi(i))
-#             print("  - bi:", hpc.GetDevicePropertyBi(i))
-#             print("  - invView:", hpc.GetDevicePropertyInvView(i))
-#             print("  - viewCone:", hpc.GetDevicePropertyFloat(i, b"/calibration/viewCone/value"))
