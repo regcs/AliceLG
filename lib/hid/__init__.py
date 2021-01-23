@@ -13,24 +13,41 @@ library_paths = (
     'libhidapi-libusb.so.0',
     'libhidapi-iohidmanager.so',
     'libhidapi-iohidmanager.so.0',
+    'libhidapi.0.dylib',
     'libhidapi.dylib',
     'hidapi.dll',
     'libhidapi-0.dll'
 )
 
-for lib in library_paths:
-    try:
-        libpath = ctypes.util.find_library(lib)
-        if libpath != None:
-            print(libpath)
+# first we look in all subdirectories of the add-on
+for path in [x[0] for x in os.walk(os.path.dirname(__file__))]:
+    for lib in library_names:
+        libpath = os.path.abspath(path + "/" + lib)
+        try:
+
             hidapi = ctypes.cdll.LoadLibrary(libpath)
             break
-    except OSError:
-        pass
+
+        except OSError:
+            pass
+
+    if hidapi != None:
+        break
 else:
-    error = "Unable to load any of the following libraries:{}"\
-        .format(' '.join(library_paths))
-    raise ImportError(error)
+
+    # then we look in PATH
+    for lib in library_names:
+        try:
+            libpath = ctypes.util.find_library(lib)
+            if libpath != None:
+                hidapi = ctypes.cdll.LoadLibrary(libpath)
+                break
+        except OSError:
+            pass
+    else:
+        error = "Unable to load any of the following libraries:{}"\
+            .format(' '.join(library_names))
+        raise ImportError(error)
 
 
 hidapi.hid_init()
