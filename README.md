@@ -12,7 +12,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 [![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
 
 ## About the Repository
-This repository is to provide a beta version of the add-on to a limited group of people for testing purposes only. I would like to find and fix the worst bugs before releasing it into the wild and would appreciate if you do not redistribute the provided version. The final source code will be published as a public repository on GitHub with the official release of this addon. 
+This repository is to provide a beta version of the add-on to anyone who would like to test it. 
 
 Please keep in mind that this beta version of the add-on may contain errors that cause Blender to crash. If you find a bug or have any idea for a missing feature, please open an issue in this repository with a detailed description. Thank you for your help and have fun blendering your holograms! :)
 
