@@ -18,7 +18,7 @@ Please keep in mind that this beta version of the add-on may contain errors that
 
 ## Main Features
 - integration into the common Blender workflow
-- an optional viewcone representing the Looking Glass volume in the scene
+- an optional view frustum representing the Looking Glass volume in the scene
 - lightfield viewport in the Looking Glass with:
    - automatic and manual refresh modes
    - a holographic mouse cursor
@@ -28,6 +28,7 @@ Please keep in mind that this beta version of the add-on may contain errors that
 - support for multiple scenes and view layers
 - camera & quilt settings are saved with your Blender file
 - support for all available Looking Glass displays (including the new Looking Glass Portrait)
+- _Experimental feature:_ Detect incomplete render jobs (see below for details)
 
 ## System Requirements
 - Windows, Linux, or macOS
