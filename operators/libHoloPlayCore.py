@@ -28,6 +28,8 @@
 #
 # ############################################################################
 
+# This is a slighty modified version of https://github.com/regcs/freehpc
+
 import sys, os, platform
 import json, binascii, struct
 import ctypes
