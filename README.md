@@ -42,7 +42,7 @@ If you like this add-on and want to do a private donation, thank you for your su
    - Select the downloaded zip file and click "Install"
    - Enable the add-on by activating the check box on the left
    - Expand the preferences of the add-on by clicking on the small arrow next to the checkbox
-   - Click the "Install" button to install required Python modules in the add-on directory
+   - Click the "Install" button to install additional Python modules in the add-on directory for an optimized add-on experience
    - Restart Blender
 
 ## How to Use
