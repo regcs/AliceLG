@@ -14,7 +14,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 ## About the Repository
 This repository is to provide a beta version of the add-on to anyone who would like to test it. 
 
-Please keep in mind that this beta version of the add-on may contain errors that cause Blender to crash. If you find a bug or have any idea for a missing feature, please open an issue in this repository with a detailed description. Thank you for your help and have fun blendering your holograms! :)
+Please keep in mind that this beta version of the add-on might contain errors that cause Blender to crash. If you find a bug or have any idea for a missing feature, please open an issue in this repository with a detailed description. Thank you for your help and have fun blendering your holograms! :)
 
 ## Main Features
 - integration into the common Blender workflow
