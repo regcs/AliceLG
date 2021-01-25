@@ -128,19 +128,19 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 		if LookingGlassAddon.python_dependecies == False:
 
 			# NOTE: - pip should is preinstalled for Blender 2.81+
-			#		  therefore we don't check anymore
-			import pip, subprocess
+			#		  therefore we don't check for it anymore
+			import subprocess
 
-			# define pips path
-			pip_path = sys.exec_prefix + '/bin/pip'
+			# path to python (NOTE: bpy.app.binary_path_python was deprecated since 2.91)
+			if bpy.app.version < (2, 91, 0): python_path = bpy.app.binary_path_python
+			if bpy.app.version >= (2, 91, 0): python_path = sys.executable
 
-			# install the dependencies
-			subprocess.call([pip_path, 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.path + '/lib'])
-			subprocess.call([pip_path, 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.path + '/lib'])
-			subprocess.call([pip_path, 'install', 'pycparser==2.19', '--target', LookingGlassAddon.path + '/lib'])
-			subprocess.call([pip_path, 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.path + '/lib'])
-
-			#print(subprocess.check_output([pip_path, 'install', 'pynng==0.4.0', '--target', LookingGlassAddon.path + '/lib']))
+			# install the dependencies to the add-on's library path
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.libpath])
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.libpath])
+			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser==2.19', '--target', LookingGlassAddon.libpath])
+			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.libpath])
+			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath])
 
 			try:
 

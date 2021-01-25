@@ -6,7 +6,7 @@ __all__ = ['HIDException', 'DeviceInfo', 'Device', 'enumerate']
 
 
 hidapi = None
-library_paths = (
+library_names = (
     'libhidapi-hidraw.so',
     'libhidapi-hidraw.so.0',
     'libhidapi-libusb.so',
