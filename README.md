@@ -13,7 +13,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 ## Main Features
 - integration into the common Blender workflow
-- an optional viewcone representing the Looking Glass volume in the scene
+- an optional view frustum representing the Looking Glass volume in the scene
 - lightfield viewport in the Looking Glass with:
    - automatic and manual refresh modes
    - a holographic mouse cursor
@@ -23,6 +23,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 - support for multiple scenes and view layers
 - camera & quilt settings are saved with your Blender file
 - support for all available Looking Glass displays (including the new Looking Glass Portrait)
+- _Experimental feature:_ Detect incomplete render jobs (see below for details)
 
 ## System Requirements
 - Windows, Linux, or macOS
@@ -33,7 +34,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 1. _Optional:_ Install the Holoplay Service App on your PC or Mac (recommended for maximum compatability).
 
-2. Download the [zip file](https://github.com/regcs/AliceLG/releases/download/v1.0-beta.4/AliceLG-beta4.zip) of this addon.
+2. Download the [zip file](https://github.com/regcs/AliceLG/releases/download/v1.1-beta/AliceLG-beta6.zip) of this addon.
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
@@ -41,7 +42,7 @@ If you like this add-on and want to do a private donation, thank you for your su
    - Select the downloaded zip file and click "Install"
    - Enable the add-on by activating the check box on the left
    - Expand the preferences of the add-on by clicking on the small arrow next to the checkbox
-   - Click the "Install" button to install required Python modules
+   - Click the "Install" button to install required Python modules in the add-on directory
    - Restart Blender
 
 ## How to Use
@@ -96,7 +97,7 @@ The _Render Quilt_ option will render the different views separately. After the 
 
 _NOTE: Option (2) can be used even if no Looking Glass is connected._
 
-### Incomplete Render Jobs
+### Incomplete Render Jobs (Experimental)
 
 The add-on attempts to detect Blender crashes during quilt rendering as well as quilt animation rendering and prompts you with an option to continue or to discard an incomplete render job the next time you open the crashed file. The successful detection of an incomplete render job and its continuation requires that:
 
