@@ -605,9 +605,11 @@ class freeHoloPlayCoreAPI:
         # clear the list
         self.devices.clear()
 
+        # list of unsuitable devices
+        delete_list = []
+
         # HOLOPLAY SERVICE COMMUNICATION
         # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
         # if all python dependencies are fulfilled AND a NNG socket is open
         if python_dependecies == True and (self.socket != 0 and self.socket != None):
 
@@ -615,37 +617,54 @@ class freeHoloPlayCoreAPI:
             response = self.nng_send_message({'cmd': {'info': {}}, 'bin': ''})
             if response != None:
 
+                # TODO: Implement error checks
+                error = response[1]['error']
+
+                # HoloPlay Service related information
+                self.holoplay_service_version = response[1]['version']
+
                 # create a dictionary with an index for this device
                 self.devices = response[1]['devices']
-
-                # TODO: Implement error checks
-                # HoloPlay Service related information
-                error = response[1]['error']
-                self.holoplay_service_version = response[1]['version']
 
                 # iterate through all devices
                 for i in range(0, len(self.devices)):
 
-                    # to flatten the dict, we extract the separate "calibration"
-                    # dict and delete it
-                    cfg = self.devices[i]['calibration']
-                    self.devices[i].pop('calibration', None)
+                    # if a calibration can be obtained
+                    if self.devices[i]['state'] == "ok":
 
-                    # parse odd value-object format from calibration json
-                    cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in cfg.items()})
+                        # to flatten the dict, we extract the separate "calibration"
+                        # dict and delete it
+                        cfg = self.devices[i]['calibration']
+                        self.devices[i].pop('calibration', None)
 
-                    # calculate the derived values (e.g., tilt, pich, etc.)
-                    self.calculate_derived(cfg)
+                        # parse odd value-object format from calibration json
+                        cfg.update({key: value['value'] if isinstance(value, dict) else value for (key,value) in cfg.items()})
 
-                    # TODO: HoloPlay Core SDK delivers the fringe value,
-                    #       but it is not in the JSON. LoneTechs assumed that it is
-                    #       a border crop setting, to hide lit up pixels outside of the big block
-                    # arbitrarily assign 0.0 to fringe
-                    cfg['fringe'] = 0.0
+                        # calculate the derived values (e.g., tilt, pich, etc.)
+                        self.calculate_derived(cfg)
 
-                    # reimplement the calibration data, but at the higher level
-                    self.devices[i].update(cfg)
+                        # TODO: HoloPlay Core SDK delivers the fringe value,
+                        #       but it is not in the JSON. LoneTechs assumed that it is
+                        #       a border crop setting, to hide lit up pixels outside of the big block
+                        # arbitrarily assign 0.0 to fringe
+                        cfg['fringe'] = 0.0
 
+                        # reimplement the calibration data, but at the higher level
+                        self.devices[i].update(cfg)
+
+                    # in case device state was not 'ok'
+                    else:
+
+                        # append this device to the list of devices
+                        # which need to be deleted afterwards
+                        delete_list.append(self.devices[i])
+
+
+                # delete all devices, with bad state
+                for dev in delete_list: self.devices.remove(dev)
+
+                # update the index of each device
+                for i in range(0, len(self.devices)): self.devices[i]['index'] = i
 
 
         # DIRECT HID READING
