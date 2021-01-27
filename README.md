@@ -12,7 +12,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 [![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
 
 ## About the Repository
-This repository is to provide a beta version of the add-on to anyone who would like to test it. 
+This repository is to provide a beta version of the add-on to anyone who would like to test it. The source code will be uploaded as repository files soon to enable cloning and editing on GitHub. However, it is already included in [the zip file for download](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip), which is used for installation of the add-on in Blender.
 
 Please keep in mind that this beta version of the add-on might contain errors that cause Blender to crash. If you find a bug or have any idea for a missing feature, please open an issue in this repository with a detailed description. Thank you for your help and have fun blendering your holograms! :)
 
