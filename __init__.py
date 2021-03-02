@@ -32,7 +32,7 @@ bl_info = {
 }
 
 # this is only for debugging purposes
-debugging_use_dummy_device = True
+debugging_use_dummy_device = False
 
 
 
@@ -1293,10 +1293,13 @@ class LOOKINGGLASS_OT_toggle_fullscreen(bpy.types.Operator):
 	bl_description = "Press this button, if the lightfield window was moved to the Looking Glass to make it fullscreen."
 	bl_options = {'REGISTER', 'INTERNAL'}
 
+	# OPERATOR ARGUMENTS
+	button_pressed: bpy.props.BoolProperty(default = False)
+
 	# Update the Boolean property that creates the hologram rendering window
 	def execute(self, context):
 
-		# if a lightfield window still exists
+		# if a lightfield window exists AND the window shall be toggled
 		if context != None and LookingGlassAddon.lightfieldWindow != None and LookingGlassAddon.LightfieldWindowIsFullscreen != context.scene.settings.toggleLightfieldWindowFullscreen:
 
 			# toggle fullscreen mode off
@@ -1304,6 +1307,15 @@ class LOOKINGGLASS_OT_toggle_fullscreen(bpy.types.Operator):
 
 			# update global variable
 			LookingGlassAddon.LightfieldWindowIsFullscreen = context.scene.settings.toggleLightfieldWindowFullscreen
+
+		# if a lightfield window exists AND the button was pressed
+		elif context != None and LookingGlassAddon.lightfieldWindow != None and self.button_pressed == True:
+
+			# toggle fullscreen mode off
+			bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
+
+			# update global variable
+			LookingGlassAddon.LightfieldWindowIsFullscreen = (not LookingGlassAddon.LightfieldWindowIsFullscreen)
 
 		return {'FINISHED'}
 
@@ -1333,7 +1345,9 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# Lightfield window & debug button
 		column_2 = row_1.column(align=True)
 		row_1b = column_2.row(align = True)
-		if LookingGlassAddon.lightfieldWindow != None: row_1b.operator("lookingglass.toggle_fullscreen", text="", icon='FULLSCREEN_ENTER', depress=context.scene.settings.ShowLightfieldWindow)
+		if LookingGlassAddon.lightfieldWindow != None:
+			toggle_fullscreen = row_1b.operator("lookingglass.toggle_fullscreen", text="", icon='FULLSCREEN_ENTER', depress=LookingGlassAddon.LightfieldWindowIsFullscreen)
+			toggle_fullscreen.button_pressed = True
 		row_1b.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.settings.ShowLightfieldWindow)
 
 		# Resolution selection of the quilt views
