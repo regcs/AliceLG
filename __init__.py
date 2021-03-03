@@ -127,20 +127,31 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 		# if dependencies are missing
 		if LookingGlassAddon.python_dependecies == False:
 
-			# NOTE: - pip should is preinstalled for Blender 2.81+
+			# NOTE: - pip should be preinstalled for Blender 2.81+
 			#		  therefore we don't check for it anymore
 			import subprocess
+			import datetime
 
 			# path to python (NOTE: bpy.app.binary_path_python was deprecated since 2.91)
-			if bpy.app.version < (2, 91, 0): python_path = bpy.app.binary_path_python
-			if bpy.app.version >= (2, 91, 0): python_path = sys.executable
+			if bpy.app.version < (2, 91, 0): python_path = os.path.abspath(bpy.app.binary_path_python)
+			if bpy.app.version >= (2, 91, 0): python_path = os.path.abspath(sys.executable)
+
+			# generate logfile
+			logfile = open(os.path.abspath(LookingGlassAddon.libpath + "/install.log"), 'a')
 
 			# install the dependencies to the add-on's library path
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.libpath])
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.libpath])
-			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser==2.19', '--target', LookingGlassAddon.libpath])
-			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.libpath])
-			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath])
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser==2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
+
+			logfile.write("###################################" + '\n')
+			logfile.write("Installed: " + str(datetime.datetime.now()) + '\n')
+			logfile.write("###################################" + '\n')
+
+			# close logfile
+			logfile.close()
 
 			try:
 
