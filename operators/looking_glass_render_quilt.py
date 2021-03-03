@@ -365,7 +365,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 		# set the lockfile path
-		self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock")
+		self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock")
 
 		# if the lockfile shall be used
 		if self.use_lockfile == True:
@@ -616,7 +616,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if os.path.exists(LookingGlassAddon.tmp_path) == True:
 
 					# set the lockfile path
-					self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock")
+					self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock")
 
 					# create the lockfile there
 					self.lockfile = open(self.lockfile_path, 'a')

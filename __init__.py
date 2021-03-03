@@ -285,6 +285,11 @@ class LookingGlassAddonFunctions:
 													'viewCone': hpc.GetDevicePropertyFloat(dev_index, b"/calibration/viewCone/value")
 												}
 				)
+
+				# write detected LG to logfile
+				with open(os.path.abspath(LookingGlassAddon.libpath + "/detected_lg.log"), "a") as logfile:
+					pprint(LookingGlassAddon.deviceList[-1], logfile)
+
 				pprint(LookingGlassAddon.deviceList[-1])
 
 
@@ -1224,7 +1229,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 
 	# check if lockfile exists and set status variable
-	LookingGlassAddon.has_lockfile = os.path.exists(os.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
+	LookingGlassAddon.has_lockfile = os.path.exists(os.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock"))
 
 
 
