@@ -58,7 +58,7 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
 - **Looking Glass.** Contains the Looking Glass display selection, a view resolution selection, and a button to turn on/off the lightfield window. Furthermore, it has two subpanels:
 
-   - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering. Once
+   - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering. 
 
    - **Quilt Setup & Rendering.** Controls for starting a quilt render.
 
