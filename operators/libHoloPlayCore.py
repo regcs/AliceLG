@@ -173,7 +173,7 @@ class freeHoloPlayCoreAPI:
         in vec2 texCoords;
         out vec4 fragColor;
 
-        // Calibration values
+        // CALIBRATION VALUES
         uniform float pitch;
         uniform float tilt;
         uniform float center;
@@ -183,17 +183,13 @@ class freeHoloPlayCoreAPI:
         uniform int ri;
         uniform int bi;
 
-        // Quilt settings
+        // QUILT SETTINGS
         uniform vec3 tile;
         uniform vec2 viewPortion;
-        uniform float quiltAspect;
-        uniform int overscan;
-        uniform int quiltInvert;
         uniform int debug;
-        uniform sampler2D screenTex;
 
-        // CALCULATE PARAMETERS USED IN THIS SHADER
-        float subp2 = subp * pitch;
+        // QUILT TEXTURE
+        uniform sampler2D screenTex;
 
         // GET CORRECT VIEW
         vec2 quilt_map(vec2 pos, float a) {
@@ -209,6 +205,7 @@ class freeHoloPlayCoreAPI:
 
         }
 
+        // SHADER
         void main()
         {
 
@@ -216,9 +213,9 @@ class freeHoloPlayCoreAPI:
             vec4 res;
 
             a = (-texCoords.x - texCoords.y * tilt) * pitch - center;
-            res.r = texture(screenTex, quilt_map(texCoords.xy, a-ri*subp2)).r;
-            res.g = texture(screenTex, quilt_map(texCoords.xy, a-   subp2)).g;
-            res.b = texture(screenTex, quilt_map(texCoords.xy, a-bi*subp2)).b;
+            res.r = texture(screenTex, quilt_map(texCoords.xy, a-ri*subp)).r;
+            res.g = texture(screenTex, quilt_map(texCoords.xy, a-   subp)).g;
+            res.b = texture(screenTex, quilt_map(texCoords.xy, a-bi*subp)).b;
 
             if (debug == 1) {
                 // use quilt texture
@@ -523,7 +520,7 @@ class freeHoloPlayCoreAPI:
         # calculate any values derived values from the cfg values
         cfg['tilt'] = cfg['screenH'] / (cfg['screenW'] * cfg['slope'])
         cfg['pitch'] = - cfg['screenW'] / cfg['DPI']  * cfg['pitch']  * sin(atan(abs(cfg['slope'])))
-        cfg['subp'] = 1.0 / (3 * cfg['screenW'])
+        cfg['subp'] = cfg['pitch'] / (3 * cfg['screenW'])
         cfg['ri'], cfg['bi'] = (2,0) if cfg['flipSubp'] else (0,2)
 
 
