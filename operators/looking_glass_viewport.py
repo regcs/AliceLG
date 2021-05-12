@@ -18,6 +18,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import platform
+import functools
 import bpy, bgl
 import gpu
 import time
@@ -443,7 +444,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		context.window_manager.modal_handler_add(self)
 
 
-
 		# MOVE THE WINDOW TO THE CORRECT SCREEN & TOGGLE FULLSCREEN
 		################################################################
 
@@ -494,7 +494,24 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			except:
 				pass
 
-		elif platform.system() == "Linux":
+			# we need to remember the scene this operator was invoked on
+			# NOTE: - we need this in case the user changes the scene later
+			#		- this MUST be called AFTER fullscreen was toggled in this invoke()
+			LookingGlassAddon.LightfieldWindowInvoker = context.scene
+
+		# make fullscreen in 0.25 seconds
+		bpy.app.timers.register(functools.partial(self.toggleFullscreen, context), first_interval=0.25)
+
+		# keep the modal operator running
+		return {'RUNNING_MODAL'}
+
+
+	# make window fullscreen
+	def toggleFullscreen(self, context):
+
+		# TODO: Ugly hack. Should be improved later!
+		# on Linux we open the window here, because of timing issues
+		if platform.system() == "Linux":
 
 			# TODO: Add a class function that handles this task for the different
 			# operating systems automatically
@@ -511,15 +528,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			except:
 				pass
 
-
 		# we need to remember the scene this operator was invoked on
 		# NOTE: - we need this in case the user changes the scene later
 		#		- this MUST be called AFTER fullscreen was toggled in this invoke()
 		LookingGlassAddon.LightfieldWindowInvoker = context.scene
-
-		# keep the modal operator running
-		return {'RUNNING_MODAL'}
-
 
 
 	# modal operator for controlled redrawing of the lightfield
