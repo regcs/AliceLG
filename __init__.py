@@ -24,7 +24,7 @@ bl_info = {
 	"version": (1, 1, 0),
 	"blender": (2, 83, 0),
 	"location": "3D View > Looking Glass Tab",
-	"description": "Alice/LG takes your artworks thorugh the Looking Glass (lightfield displays)",
+	"description": "Alice/LG takes your artworks through the Looking Glass (lightfield displays)",
 	"category": "View",
 	"warning": "",
 	"doc_url": "",
@@ -1263,6 +1263,7 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 	bl_label = "Lightfield Window"
 	bl_description = "Creates a window for the lightfield rendering. You need to move the window manually to the Looking Glass screen and toogle it fullscreen"
 	bl_options = {'REGISTER', 'INTERNAL'}
+
 
 	# Update the Boolean property that creates the hologram rendering window
 	def execute(self, context):
