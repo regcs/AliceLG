@@ -1277,6 +1277,11 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 			# assign the current viewport for the shading & overlay settings
 			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
 
+			# if on linux, get the currently open windows
+			if platform.system() == "Linux":
+				LookingGlassAddon.LinuxWindowList = list(map(int, str(subprocess.run(['xdotool', 'search', '--name', 'Blender'], check=True, capture_output=True).stdout).replace('b\'','').split('\\n')[:-1]))
+				print("Following Blender windows are open: ", LookingGlassAddon.LinuxWindowList)
+
 			# Create a new main window
 			bpy.ops.wm.window_new_main('INVOKE_DEFAULT')
 

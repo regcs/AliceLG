@@ -45,6 +45,9 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
+	# List of windows on Linux
+	LinuxWindowList = []
+
 	# Was the operator for the lightfield window invoked?
 	LightfieldWindowInitialized = None
 	LightfieldWindowInvoker = None
