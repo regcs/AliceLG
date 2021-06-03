@@ -421,8 +421,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++
 		# TODO: this needs to be adjusted to enable switching between resolutions with different numbers of views
 		# draw handler for rendering the views
-		# NOTE: - we use 45 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
-		for view in range(0, 45, 1):#LookingGlassAddon.qs[self.preset]["totalViews"]):
+		# NOTE: - we use 108 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
+		for view in range(0, 108, 1):#LookingGlassAddon.qs[self.preset]["totalViews"]):
 
 			self._handle_viewDrawing.append(bpy.types.SpaceView3D.draw_handler_add(self.copyViewToQuilt, (context, view), 'WINDOW', 'POST_PIXEL'))
 
