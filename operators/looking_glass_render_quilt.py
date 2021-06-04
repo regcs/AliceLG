@@ -671,8 +671,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.rendering_viewCone = 58.0
 
 			# apply the correct aspect ratio
-			self.render_setting_scene.render.pixel_aspect_x = 1.0
-			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 0.75
+			self.render_setting_scene.render.pixel_aspect_x = (0.75 * self.render_setting_scene.render.resolution_y) / self.render_setting_scene.render.resolution_x
+			self.render_setting_scene.render.pixel_aspect_y = 1.0
 
 		# if for Looking Glass 8.9''
 		elif self.rendering_deviceType == 'standard':
@@ -682,7 +682,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 			# apply the correct aspect ratio
 			self.render_setting_scene.render.pixel_aspect_x = 1.0
-			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.6
+			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_scene.render.resolution_x / (1.6 * self.render_setting_scene.render.resolution_y)
 
 		# if for Looking Glass 15.6'' or 8k
 		elif self.rendering_deviceType == 'large' or self.rendering_deviceType == '8k':
@@ -692,7 +692,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 			# apply the correct aspect ratio
 			self.render_setting_scene.render.pixel_aspect_x = 1.0
-			self.render_setting_scene.render.pixel_aspect_y = (self.render_setting_scene.render.resolution_x / self.render_setting_scene.render.resolution_y) / 1.777777777
+			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_scene.render.resolution_x / (1.777777777 * self.render_setting_scene.render.resolution_y)
 
 
 

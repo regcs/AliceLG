@@ -444,9 +444,19 @@ class LookingGlassAddonFunctions:
 				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewWidth"]
 				context.scene.render.resolution_y = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewHeight"]
 
-				# apply the correct aspect ratio
-				context.scene.render.pixel_aspect_x = 1.0
-				context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / device['aspectRatio']
+				# for landscape formatted devices
+				if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device['aspectRatio'] > 1:
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = 1.0
+					context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * device['aspectRatio'])
+
+				# for portrait formatted devices
+				else:
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device['aspectRatio']) / context.scene.render.resolution_x
+					context.scene.render.pixel_aspect_y = 1.0
 
 			else:
 
@@ -460,8 +470,8 @@ class LookingGlassAddonFunctions:
 				if context.scene.settings.render_device_type == 'portrait':
 
 					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = 1.0
-					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 0.75
+					context.scene.render.pixel_aspect_x = (0.75 *  context.scene.render.resolution_y) / context.scene.render.resolution_x
+					context.scene.render.pixel_aspect_y = 1.0
 
 				# if for Looking Glass 8.9''
 				elif context.scene.settings.render_device_type == 'standard':
