@@ -754,6 +754,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++
 			if self.operator_state == "INVOKE_RENDER":
 
+				# make sure the interface is not locked
+				# otherwise the renderjob won't be excecuted properly.
+				# Unclear why, but maybe because the camera settings will not
+				# be applied properly then. Solved issue:
+				# https://github.com/regcs/AliceLG-beta/issues/9
+				self.render_setting_scene.render.use_lock_interface = False
+
 				# print("[INFO] Invoking new render job.")
 
 				# FRAME AND VIEW
@@ -837,9 +844,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# modify the projection matrix, relative to the camera size
 				self.camera_active.data.shift_x = self.camera_original_shift_x + 0.5 * offset / cameraSize
-
-
-
 
 				# start rendering
 				# NOTE: Not using write_still because we save the images manually
