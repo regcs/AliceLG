@@ -93,6 +93,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	camera_original_location = None
 	camera_original_shift_x = None
 	camera_original_sensor_fit = None
+	camera_original_constrations = {}
 	view_matrix = None
 	view_matrix_inv = None
 
@@ -298,6 +299,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				self.camera_active.location = self.camera_original_location.copy()
 				self.camera_active.data.shift_x = self.camera_original_shift_x
 				self.camera_active.data.sensor_fit = self.camera_original_sensor_fit
+
+				# restore cameras constraint settings
+				for c in self.camera_active.constraints:
+					c.mute = self.camera_original_constrations[c.name]
 
 			# restore the origingal active camera
 			self.render_setting_scene.camera = self.camera_original
@@ -818,6 +823,16 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# calculate the inverted view matrix because this is what the draw_view_3D function requires
 					self.view_matrix_inv = self.view_matrix.inverted_safe()
 
+					# CAMERA SETTINGS: MUTE ALL CONTRAINTS
+					# +++++++++++++++++++++++++++++++++++++++++++++++
+					self.camera_original_constrations = {}
+					for c in self.camera_active.constraints:
+
+						# create a dictionary to store the constraint settings
+						self.camera_original_constrations[c.name] = c.mute
+
+						# mute this contraints
+						c.mute = True
 
 
 				# CAMERA SETTINGS: APPLY POSITION AND SHIFT
@@ -1256,6 +1271,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# but if this was not the last frame
 						if self.rendering_frame < self.render_setting_scene.frame_end:
+
+							# restore contraints settings
+							for c in self.camera_active.constraints:
+
+								# reset the settings from the stored values
+								c.mute = self.camera_original_constrations[c.name]
 
 							# restore original camera settings of this frame
 							self.camera_active.location = self.camera_original_location.copy()
