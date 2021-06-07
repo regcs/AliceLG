@@ -98,8 +98,8 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
-	import pynng
-	import cbor
+	from .lib import pynng
+	from .lib import cbor
 
 	# all python dependencies are fulfilled
 	LookingGlassAddon.python_dependecies = True
@@ -140,10 +140,10 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			logfile = open(os.path.abspath(LookingGlassAddon.libpath + "/install.log"), 'a')
 
 			# install the dependencies to the add-on's library path
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser==2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
 			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
@@ -155,8 +155,8 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 
 			try:
 
-				import pynng
-				import cbor
+				from .lib import pynng
+				from .lib import cbor
 
 				# all python dependencies are fulfilled
 				LookingGlassAddon.python_dependecies = True

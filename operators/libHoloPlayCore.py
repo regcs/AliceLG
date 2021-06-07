@@ -54,8 +54,8 @@ import hid as hidapi
 
 try:
 
-    import pynng
-    import cbor
+    from .lib import pynng
+    from .lib import cbor
 
     # all python dependencies are fulfilled
     python_dependecies = True
