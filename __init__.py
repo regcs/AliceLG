@@ -19,7 +19,7 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-	"name": "Alice/LG",
+	"name": "Alice/LG-beta",
 	"author": "Christian Stolze",
 	"version": (1, 1, 3),
 	"blender": (2, 83, 0),
@@ -869,7 +869,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										type=bpy.types.Object,
 										description = "Select a camera, which defines the view for your Looking Glass or quilt image",
 										poll = LookingGlassAddonFunctions.camera_selection_poll,
-										update = LookingGlassAddonFunctions.update_camera_selection
+										update = LookingGlassAddonFunctions.update_camera_selection,
+										#options = {'ANIMATABLE'}
 										)
 
 	showFocalPlane: bpy.props.BoolProperty(
