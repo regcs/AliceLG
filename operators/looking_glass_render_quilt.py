@@ -19,7 +19,7 @@
 
 import bpy
 import time
-import os, platform
+import os, platform, shutil
 import numpy as np
 from math import *
 from mathutils import *
@@ -269,7 +269,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# reset the operator state to PRE_RENDER
 		if self.operator_state != "CANCEL_RENDER": self.operator_state = "POST_RENDER"
 
-		print("[INFO] Saving file in ", self.rendering_filepath)
+		print("[INFO] Saving view in ", self.rendering_view_filepath)
 
 		# STORE THE PIXEL DATA OF THE RENDERED IMAGE
 		# ++++++++++++++++++++++++++++++++++++++++++++
@@ -345,6 +345,64 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		return True
 
 
+	# delete the views
+	def delete_views(self, frame=None):
+
+		# if it was an animation
+		if self.animation == True and frame != None:
+
+			# for all views of the given frame
+			for view in range(0, self.rendering_totalViews):
+
+				# get the file or directory path
+				filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+
+				# if this path is a valid directory path AND not a filename
+				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+
+					# include the frame number in the temporary filename
+					filepath = os.path.abspath(filepath + "/Quilt Render Result")
+
+				# if no extension is in the filename use Blender's
+				if extension == "":
+					extension = self.render_setting_scene.render.file_extension
+
+				# append the frame number
+				filepath = filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
+
+				# append the view number
+				filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
+
+				# delete this file, if it exists
+				if os.path.isfile(filepath) == True: os.remove(filepath)
+
+
+		# if it was a still image
+		elif self.animation == False:
+
+			# for all views
+			for view in range(0, self.rendering_totalViews):
+
+				# get the file or directory path
+				filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+
+				# if this path is a valid directory path AND not a filename
+				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+
+					# use a temporary filename
+					filepath = os.path.abspath(filepath + "/Quilt Render Result")
+
+				# if no extension is in the filename use Blender's
+				if extension == "":
+					extension = self.render_setting_scene.render.file_extension
+
+				# adjust the file name for current view and frame:
+				# used format: FILENAME_fXXX_vXXX.EXTENSION
+				filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
+
+				# delete this file, if it exists
+				if os.path.isfile(filepath) == True: os.remove(filepath)
+
 
 	# cancel modal operator
 	def cancel(self, context):
@@ -384,58 +442,17 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if it was an animation
 			if self.animation == True:
 
-				# for all frames and views
+				# for all frames of the animation
 				for frame in range(self.render_setting_scene.frame_start, self.render_setting_scene.frame_end + 1):
 
-					for view in range(0, self.rendering_totalViews):
-
-						# get the file or directory path
-						filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
-
-						# if this path is a valid directory path AND not a filename
-						if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
-
-							# include the frame number in the temporary filename
-							filepath = os.path.abspath(filepath + "/Quilt Render Result")
-
-						# if no extension is in the filename use Blender's
-						if extension == "":
-							extension = self.render_setting_scene.render.file_extension
-
-						# append the frame number
-						filepath = filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
-
-						# append the view number
-						filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
-
-						# delete this file, if it exists
-						if os.path.isfile(filepath) == True: os.remove(filepath)
+					# delete views
+					self.delete_views(frame)
 
 			# if it was a still image
 			elif self.animation == False:
 
-				# for all views
-				for view in range(0, self.rendering_totalViews):
-
-					# get the file or directory path
-					filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
-
-					# if this path is a valid directory path AND not a filename
-					if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
-
-						# use a temporary filename
-						filepath = os.path.abspath(filepath + "/Quilt Render Result")
-
-					# if no extension is in the filename use Blender's
-					if extension == "":
-						extension = self.render_setting_scene.render.file_extension
-
-					# adjust the file name for current view and frame:
-					# used format: FILENAME_fXXX_vXXX.EXTENSION
-					filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
-
-					# delete this file, if it exists
-					if os.path.isfile(filepath) == True: os.remove(filepath)
+				#  delete its views
+				self.delete_views()
 
 
 
@@ -1052,10 +1069,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					else:
 						self.quiltImage.use_view_as_render = False
 
+					# copy the viewfile
+					shutil.copy(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_view_filepath + '_bkp'))
+
 					# save the quilt in a file
 					self.quiltImage.save()#filepath=self.rendering_filepath, scene=self.render_setting_scene)
 
-					# if no filename was specified and no animation is to be rendered
+					# (if no filename was specified AND no animation is to be rendered) OR an animation is rendered
 					if not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True):
 
 						# if a single frame shall be rendered
@@ -1075,8 +1095,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					else:
 
-						# rename the file
+						# rename the quilt file
 						os.rename(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_filepath))
+
+						# rename the backup view file
+						os.rename(os.path.abspath(self.rendering_view_filepath + '_bkp'), os.path.abspath(self.rendering_view_filepath))
 
 						# update path in the image data
 						self.quiltImage.filepath_raw = self.quiltImage.filepath = os.path.abspath(self.rendering_filepath)
@@ -1169,15 +1192,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# if this was the last view
 					else:
 
-						# # cancel the operator
-						# # NOTE: - this includes recovering all original user settings
-						# # reset the operator state to IDLE
-						# self.cancel(context)
-						#
-						# # notify user
-						# self.report({"INFO"},"Complete quilt rendered.")
-						# return {"CANCELLED"}
-
 						# cancel the operator
 						self.operator_state = "CANCEL_RENDER"
 
@@ -1202,6 +1216,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# but if this was not the last frame
 						if self.rendering_frame < self.render_setting_scene.frame_end:
+
+							# if the view files shall not be kept
+							if ((self.settings.render_output == '1') and self.force_keep == False):
+
+								# delete views of the rendered frame
+								self.delete_views(self.rendering_frame)
 
 							# delete the temporarily created camera
 							bpy.data.objects.remove(bpy.data.objects[self.camera_temp_name], do_unlink=True, do_id_user=True, do_ui_user=True)
