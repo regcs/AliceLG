@@ -45,6 +45,9 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
+	# List of windows on Linux
+	LinuxWindowList = []
+
 	# Was the operator for the lightfield window invoked?
 	LightfieldWindowInitialized = None
 	LightfieldWindowInvoker = None
@@ -87,7 +90,62 @@ class LookingGlassAddon:
 	# set up quilt settings
 	def setupQuiltPresets():
 
-		# there are 3 presets to choose from:
+		# there are 5 presets to choose from:
+		# - portrait standard settings
+		LookingGlassAddon.qs.append({
+				"width": 3360,
+				"height": 3360,
+				"columns": 8,
+				"rows": 6,
+				"totalViews": 48,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - portrait settings with many views
+		LookingGlassAddon.qs.append({
+				"width": 4026,
+				"height": 4096,
+				"columns": 11,
+				"rows": 8,
+				"totalViews": 88,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - portrait settings with many views
+		LookingGlassAddon.qs.append({
+				"width": 4225,
+				"height": 4095,
+				"columns": 13,
+				"rows": 7,
+				"totalViews": 91,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - portrait settings with many views
+		LookingGlassAddon.qs.append({
+				"width": 4224,
+				"height": 4096,
+				"columns": 12,
+				"rows": 8,
+				"totalViews": 96,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
+		# - portrait settings with many views
+		LookingGlassAddon.qs.append({
+				"width": 4224,
+				"height": 4230,
+				"columns": 12,
+				"rows": 9,
+				"totalViews": 108,
+				"quiltOffscreen": None,
+				"viewOffscreens": []
+				})
+
 		# - standard settings
 		LookingGlassAddon.qs.append({
 				"width": 2048,

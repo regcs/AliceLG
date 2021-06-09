@@ -421,8 +421,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++
 		# TODO: this needs to be adjusted to enable switching between resolutions with different numbers of views
 		# draw handler for rendering the views
-		# NOTE: - we use 45 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
-		for view in range(0, 45, 1):#LookingGlassAddon.qs[self.preset]["totalViews"]):
+		# NOTE: - we use 108 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
+		for view in range(0, 108, 1):#LookingGlassAddon.qs[self.preset]["totalViews"]):
 
 			self._handle_viewDrawing.append(bpy.types.SpaceView3D.draw_handler_add(self.copyViewToQuilt, (context, view), 'WINDOW', 'POST_PIXEL'))
 
@@ -499,8 +499,20 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			#		- this MUST be called AFTER fullscreen was toggled in this invoke()
 			LookingGlassAddon.LightfieldWindowInvoker = context.scene
 
-		# make fullscreen in 0.25 seconds
-		bpy.app.timers.register(functools.partial(self.toggleFullscreen, context), first_interval=0.25)
+
+		# if on linux
+		elif platform.system() == "Linux":
+
+			# TODO: Add a class function that handles this task for the different
+			# operating systems automatically
+			try:
+
+				# TODO: Ugly hack. Should be improved later!
+				# check for new window
+				bpy.app.timers.register(functools.partial(self.toggleFullscreen, context))
+
+			except:
+				pass
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
@@ -509,30 +521,33 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	# make window fullscreen
 	def toggleFullscreen(self, context):
 
-		# TODO: Ugly hack. Should be improved later!
-		# on Linux we open the window here, because of timing issues
+		# if on linux, get the currently open windows
 		if platform.system() == "Linux":
-
-			# TODO: Add a class function that handles this task for the different
-			# operating systems automatically
-			try:
+			LinuxWindowList = list(map(int, str(subprocess.run(['xdotool', 'search', '--name', 'Blender'], check=True, capture_output=True).stdout).replace('b\'','').split('\\n')[:-1]))
+			lightfieldWindowID = list(set(LinuxWindowList) - set(LookingGlassAddon.LinuxWindowList))
+			if len(lightfieldWindowID) == 1:
+				lightfieldWindowID = lightfieldWindowID[0]
+				print("New window: ", lightfieldWindowID)
 
 				# Thanks to LoneTech for contributing!
-				subprocess.run(['xdotool', 'getactivewindow', 'windowmove', '--sync', str(self.device['x']), str(self.device['y']), ]) #, check=True)
+				subprocess.run(['xdotool', 'windowmove', str(lightfieldWindowID), str(self.device['x']), str(self.device['y']), '--sync', ]) #, check=True)
 
 				# set the "toogle fullscreen button" to True
 				# NOTE: - via the update function of the boolean property,
 				# 		  this already executes the window_fullscreen_toggle button
 				self.settings.toggleLightfieldWindowFullscreen = True
 
-			except:
-				pass
+				# we need to remember the scene this operator was invoked on
+				# NOTE: - we need this in case the user changes the scene later
+				#		- this MUST be called AFTER fullscreen was toggled in this invoke()
+				LookingGlassAddon.LightfieldWindowInvoker = context.scene
 
-		# we need to remember the scene this operator was invoked on
-		# NOTE: - we need this in case the user changes the scene later
-		#		- this MUST be called AFTER fullscreen was toggled in this invoke()
-		LookingGlassAddon.LightfieldWindowInvoker = context.scene
+				return None
 
+			else:
+
+				print("Waiting for new window ...")
+				return 0.1
 
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):

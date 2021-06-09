@@ -19,9 +19,9 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-	"name": "Alice/LG",
+	"name": "Alice/LG-beta",
 	"author": "Christian Stolze",
-	"version": (1, 1, 1),
+	"version": (1, 1, 3),
 	"blender": (2, 83, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks through the Looking Glass (lightfield displays)",
@@ -98,8 +98,8 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
-	import pynng
-	import cbor
+	from .lib import pynng
+	from .lib import cbor
 
 	# all python dependencies are fulfilled
 	LookingGlassAddon.python_dependecies = True
@@ -140,10 +140,10 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			logfile = open(os.path.abspath(LookingGlassAddon.libpath + "/install.log"), 'a')
 
 			# install the dependencies to the add-on's library path
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor==1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi==1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser==2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio==1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
 			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
@@ -155,8 +155,8 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 
 			try:
 
-				import pynng
-				import cbor
+				from .lib import pynng
+				from .lib import cbor
 
 				# all python dependencies are fulfilled
 				LookingGlassAddon.python_dependecies = True
@@ -444,9 +444,19 @@ class LookingGlassAddonFunctions:
 				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewWidth"]
 				context.scene.render.resolution_y = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewHeight"]
 
-				# apply the correct aspect ratio
-				context.scene.render.pixel_aspect_x = 1.0
-				context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / device['aspectRatio']
+				# for landscape formatted devices
+				if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device['aspectRatio'] > 1:
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = 1.0
+					context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * device['aspectRatio'])
+
+				# for portrait formatted devices
+				else:
+
+					# apply the correct aspect ratio
+					context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device['aspectRatio']) / context.scene.render.resolution_x
+					context.scene.render.pixel_aspect_y = 1.0
 
 			else:
 
@@ -460,8 +470,8 @@ class LookingGlassAddonFunctions:
 				if context.scene.settings.render_device_type == 'portrait':
 
 					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = 1.0
-					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 0.75
+					context.scene.render.pixel_aspect_x = (0.75 *  context.scene.render.resolution_y) / context.scene.render.resolution_x
+					context.scene.render.pixel_aspect_y = 1.0
 
 				# if for Looking Glass 8.9''
 				elif context.scene.settings.render_device_type == 'standard':
@@ -833,10 +843,15 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	quiltPreset: bpy.props.EnumProperty(
 										items = [
-												('0', 'Resolution: 2k Quilt, 32 Views', 'Display a 2k quilt with 32 views in the connected Looking Glass.'),
-												('1', 'Resolution: 4k Quilt, 45 Views', 'Display a 4k quilt with 45 views in the connected Looking Glass.'),
-												('2', 'Resolution: 8k Quilt, 45 Views', 'Display an 8k quilt with 45 views in the connected Looking Glass.')],
-										default='1',
+												('0', 'Resolution: Portrait Quilt, 48 Views', 'Display an 3360x3360 quilt with 48 views in the connected Looking Glass Portrait.'),
+												('1', 'Resolution: Portrait Quilt, 88 Views', 'Display an 4026x4096 quilt with 88 views in the connected Looking Glass Portrait.'),
+												('2', 'Resolution: Portrait Quilt, 91 Views', 'Display an 4225x4095 quilt with 91 views in the connected Looking Glass Portrait.'),
+												('3', 'Resolution: Portrait Quilt, 96 Views', 'Display an 4224x4096 quilt with 96 views in the connected Looking Glass Portrait.'),
+												('4', 'Resolution: Portrait Quilt, 108 Views', 'Display an 4224x4230 quilt with 108 views in the connected Looking Glass Portrait.'),
+												('5', 'Resolution: 2k Quilt, 32 Views', 'Display a 2k quilt with 32 views in the connected Looking Glass.'),
+												('6', 'Resolution: 4k Quilt, 45 Views', 'Display a 4k quilt with 45 views in the connected Looking Glass.'),
+												('7', 'Resolution: 8k Quilt, 45 Views', 'Display an 8k quilt with 45 views in the connected Looking Glass.')],
+										default='0',
 										name="View Resolution"
 										)
 
@@ -854,7 +869,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										type=bpy.types.Object,
 										description = "Select a camera, which defines the view for your Looking Glass or quilt image",
 										poll = LookingGlassAddonFunctions.camera_selection_poll,
-										update = LookingGlassAddonFunctions.update_camera_selection
+										update = LookingGlassAddonFunctions.update_camera_selection,
+										#options = {'ANIMATABLE'}
 										)
 
 	showFocalPlane: bpy.props.BoolProperty(
@@ -923,10 +939,15 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	# Quilt presets
 	render_quilt_preset: bpy.props.EnumProperty(
-									items = [('0', '2k Quilt, 32 view', 'Render a 2k quilt with 32 views.'),
-											 ('1', '4k Quilt, 45 view', 'Render a 4k quilt with 45 views.'),
-		 									 ('2', '8k Quilt, 45 view', 'Render a 8k quilt with 45 views.'),],
-									default='1',
+									items = [('0', 'Portrait, 48 view', 'Render a 3360x3360 quilt with 48 views.'),
+											 ('1', 'Portrait, 88 view', 'Render a 4026x4096 quilt with 88 views.'),
+		 									 ('2', 'Portrait, 91 view', 'Render a 4225x4095 quilt with 91 views.'),
+ 											 ('3', 'Portrait, 96 view', 'Render a 4224x4096 quilt with 96 views.'),
+ 		 									 ('4', 'Portrait, 108 view', 'Render a 4224x4230 quilt with 108 views.'),
+											 ('5', '2k Quilt, 32 view', 'Render a 2k quilt with 32 views.'),
+		 									 ('6', '4k Quilt, 45 view', 'Render a 4k quilt with 45 views.'),
+		 									 ('7', '8k Quilt, 45 view', 'Render a 8k quilt with 45 views.'),],
+									default='0',
 									name="Quilt Preset",
 									update = LookingGlassAddonFunctions.update_render_setting,
 									)
@@ -1276,6 +1297,11 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 
 			# assign the current viewport for the shading & overlay settings
 			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
+
+			# if on linux, get the currently open windows
+			if platform.system() == "Linux":
+				LookingGlassAddon.LinuxWindowList = list(map(int, str(subprocess.run(['xdotool', 'search', '--name', 'Blender'], check=True, capture_output=True).stdout).replace('b\'','').split('\\n')[:-1]))
+				print("Following Blender windows are open: ", LookingGlassAddon.LinuxWindowList)
 
 			# Create a new main window
 			bpy.ops.wm.window_new_main('INVOKE_DEFAULT')
