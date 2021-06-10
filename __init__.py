@@ -133,11 +133,11 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			import datetime
 
 			# path to python (NOTE: bpy.app.binary_path_python was deprecated since 2.91)
-			if bpy.app.version < (2, 91, 0): python_path = os.path.abspath(bpy.app.binary_path_python)
-			if bpy.app.version >= (2, 91, 0): python_path = os.path.abspath(sys.executable)
+			if bpy.app.version < (2, 91, 0): python_path = bpy.path.abspath(bpy.app.binary_path_python)
+			if bpy.app.version >= (2, 91, 0): python_path = bpy.path.abspath(sys.executable)
 
 			# generate logfile
-			logfile = open(os.path.abspath(LookingGlassAddon.libpath + "/install.log"), 'a')
+			logfile = open(bpy.path.abspath(LookingGlassAddon.libpath + "/install.log"), 'a')
 
 			# install the dependencies to the add-on's library path
 			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
@@ -287,7 +287,7 @@ class LookingGlassAddonFunctions:
 				)
 
 				# write detected LG to logfile
-				with open(os.path.abspath(LookingGlassAddon.libpath + "/detected_lg.log"), "a") as logfile:
+				with open(bpy.path.abspath(LookingGlassAddon.libpath + "/detected_lg.log"), "a") as logfile:
 					pprint(LookingGlassAddon.deviceList[-1], logfile)
 
 				pprint(LookingGlassAddon.deviceList[-1])
@@ -1250,7 +1250,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 
 	# check if lockfile exists and set status variable
-	LookingGlassAddon.has_lockfile = os.path.exists(os.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock"))
+	LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock"))
 
 
 

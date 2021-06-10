@@ -123,7 +123,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		print("[INFO] Rendering job initialized.")
 
 		# get the file or directory path
-		filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+		filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
 
 		# if an animation shall be rendered
 		if self.animation == True:
@@ -132,7 +132,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 				# include the frame number in the temporary filename
-				self.rendering_filepath = os.path.abspath(filepath + "/Quilt Render Result" + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + self.render_setting_scene.render.file_extension)
+				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + self.render_setting_scene.render.file_extension)
 
 			# if this path + extension is a filename
 			elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
@@ -151,7 +151,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 				# use a temporary filename
-				self.rendering_filepath = os.path.abspath(filepath + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
+				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
 
 			# if this path + extension is a filename
 			elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
@@ -355,13 +355,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			for view in range(0, self.rendering_totalViews):
 
 				# get the file or directory path
-				filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+				filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
 
 				# if this path is a valid directory path AND not a filename
 				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 					# include the frame number in the temporary filename
-					filepath = os.path.abspath(filepath + "/Quilt Render Result")
+					filepath = bpy.path.abspath(filepath + "/Quilt Render Result")
 
 				# if no extension is in the filename use Blender's
 				if extension == "":
@@ -384,13 +384,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			for view in range(0, self.rendering_totalViews):
 
 				# get the file or directory path
-				filepath, extension = os.path.splitext(os.path.abspath(self.render_setting_filepath))
+				filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
 
 				# if this path is a valid directory path AND not a filename
 				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 					# use a temporary filename
-					filepath = os.path.abspath(filepath + "/Quilt Render Result")
+					filepath = bpy.path.abspath(filepath + "/Quilt Render Result")
 
 				# if no extension is in the filename use Blender's
 				if extension == "":
@@ -531,7 +531,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 		# set the lockfile path
-		self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock")
+		self.lockfile_path = bpy.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock")
 
 		# if the lockfile shall be used
 		if self.use_lockfile == True:
@@ -593,7 +593,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# set scene and path settings from current user settings
 			self.render_setting_scene = context.scene
 			self.render_setting_filepath = context.scene.render.filepath
-			self.rendering_filepath = os.path.abspath(context.scene.render.filepath)
+			self.rendering_filepath = bpy.path.abspath(context.scene.render.filepath)
 
 
 
@@ -677,13 +677,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		try:
 
 			# set the file path to the current render path
-			test_path = os.path.abspath(self.render_setting_filepath)
+			test_path = bpy.path.abspath(self.render_setting_filepath)
 
 			# if this path is a directory and not a file
 			if os.path.isdir(test_path) == True or os.path.basename(test_path + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 				# use a temporary filename
-				test_path = os.path.abspath(test_path + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
+				test_path = bpy.path.abspath(test_path + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
 
 			# if this path + extension is a file
 			elif os.path.basename(self.rendering_filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
@@ -782,7 +782,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if os.path.exists(LookingGlassAddon.tmp_path) == True:
 
 					# set the lockfile path
-					self.lockfile_path = os.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock")
+					self.lockfile_path = bpy.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock")
 
 					# create the lockfile there
 					self.lockfile = open(self.lockfile_path, 'a')
@@ -1070,7 +1070,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.quiltImage.use_view_as_render = False
 
 					# copy the viewfile
-					shutil.copy(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_view_filepath + '_bkp'))
+					shutil.copy(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_view_filepath + '_bkp'))
 
 					# save the quilt in a file
 					self.quiltImage.save()#filepath=self.rendering_filepath, scene=self.render_setting_scene)
@@ -1080,6 +1080,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# if a single frame shall be rendered
 						if self.animation == False:
+
+							# rename the backup view file
+							os.rename(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
 
 							# rename the Blender image to "Quilt Render Result"
 							bpy.data.images[os.path.basename(self.rendering_view_filepath)].name = "Quilt Render Result"
@@ -1096,13 +1099,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					else:
 
 						# rename the quilt file
-						os.rename(os.path.abspath(self.rendering_view_filepath), os.path.abspath(self.rendering_filepath))
+						os.rename(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_filepath))
 
 						# rename the backup view file
-						os.rename(os.path.abspath(self.rendering_view_filepath + '_bkp'), os.path.abspath(self.rendering_view_filepath))
+						os.rename(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
 
 						# update path in the image data
-						self.quiltImage.filepath_raw = self.quiltImage.filepath = os.path.abspath(self.rendering_filepath)
+						self.quiltImage.filepath_raw = self.quiltImage.filepath = bpy.path.abspath(self.rendering_filepath)
 
 						# rename the Blender image to the file's name
 						bpy.data.images[os.path.basename(self.rendering_view_filepath)].name = os.path.basename(self.rendering_filepath)

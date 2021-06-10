@@ -17,6 +17,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+import bpy
 import os
 
 # ------------ GLOBAL VARIABLES ---------------
@@ -27,9 +28,9 @@ class LookingGlassAddon:
 	name = None
 
 	# path to the addon directory
-	path = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-	tmp_path = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/tmp/")
-	libpath = os.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/lib/")
+	path = bpy.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+	tmp_path = bpy.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/tmp/")
+	libpath = bpy.path.abspath(os.path.dirname(os.path.dirname(os.path.realpath(__file__))) + "/lib/")
 
 	# python dependencies of the add-on present?
 	python_dependecies = False
