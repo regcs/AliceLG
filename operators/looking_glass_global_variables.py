@@ -68,10 +68,6 @@ class LookingGlassAddon:
 	BlenderWindow = None
 	BlenderViewport = None
 
-	# The mouse position relative to active window
-	mouse_x = 0
-	mouse_y = 0
-
 	# Rendering status
 	RenderInvoked = False
 	RenderAnimation = None

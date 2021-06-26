@@ -1963,62 +1963,6 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 
 
-# ---------- MOUSE POSITION OPERATOR -------------
-class LOOKINGGLASS_OT_wm_mouse_position(bpy.types.Operator):
-	bl_idname = "wm.mouse_position"
-	bl_label = "Invoke Mouse Operator"
-	bl_options = {'REGISTER', 'INTERNAL'}
-
-	x: bpy.props.IntProperty()
-	y: bpy.props.IntProperty()
-
-	def execute(self, context):
-		# save mouse position in global variable
-		LookingGlassAddon.mouse_x = self.x
-		LookingGlassAddon.mouse_y = self.y
-
-		#print("Tracker: ", (LookingGlassAddon.mouse_x, LookingGlassAddon.mouse_y))
-
-		return {'FINISHED'}
-
-	def invoke(self, context, event):
-		self.x = event.mouse_x
-		self.y = event.mouse_y
-
-		return self.execute(context)
-
-
-class LOOKINGGLASS_OT_wm_mouse_tracker(bpy.types.Operator):
-	bl_idname = "wm.mouse_tracker"
-	bl_label = "Mouse Position Tracker"
-	bl_options = {'REGISTER', 'INTERNAL'}
-
-	def modal(self, context, event):
-
-		if event.type == 'MOUSEMOVE':
-
-			if LookingGlassAddon.lightfieldWindow != None:
-
-				LookingGlassAddon.mouse_x = event.mouse_x
-				LookingGlassAddon.mouse_y = event.mouse_y
-				# invoke the mouse position tracking operator
-				#bpy.ops.wm.mouse_position('INVOKE_DEFAULT')
-				#print((event.mouse_x, event.mouse_region_x))
-				print((LookingGlassAddon.mouse_x, LookingGlassAddon.mouse_y))
-				#print("")
-
-		return {'PASS_THROUGH'}
-
-	def invoke(self, context, event):
-
-		# Create timer event that runs every 10 ms to check the mouse position
-		#self.timerEvent = context.window_manager.event_timer_add(0.010, window=context.window)
-
-		context.window_manager.modal_handler_add(self)
-		return {'RUNNING_MODAL'}
-
-
-
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
 
@@ -2042,10 +1986,6 @@ def register():
 	# Looking Glass viewport & camera frustum
 	bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
-
-	# Mouse position tracker
-	bpy.utils.register_class(LOOKINGGLASS_OT_wm_mouse_position)
-	bpy.utils.register_class(LOOKINGGLASS_OT_wm_mouse_tracker)
 
 	# UI elements
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
@@ -2169,9 +2109,6 @@ def unregister():
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 
-	# Mouse position tracker
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_wm_mouse_tracker)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_wm_mouse_position)
 
 	# UI elements
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
