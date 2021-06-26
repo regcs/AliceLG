@@ -36,7 +36,10 @@ debugging_use_dummy_device = False
 
 
 
-# ------------- LOAD ALL INTERNAL MODULES ----------------
+
+
+
+# ------------- LOAD INTERNAL MODULES ----------------
 # required for proper reloading of the addon by using F8
 if "bpy" in locals():
 
@@ -70,7 +73,68 @@ else:
 
 
 
-# ------------- LOAD ALL REQUIRED PYTHON MODULES ----------------
+
+# --------------------- LOGGER -----------------------
+import logging, logging.handlers
+
+# logger for pyLightIO
+# +++++++++++++++++++++++++++++++++++++++++++++
+# NOTE: This is just to get the logger messages invoked by pyLightIO.
+#		To log messages for Alice/LG use the logger defined below.
+# create logger
+logger = logging.getLogger('pyLightIO')
+logger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)
+
+# create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
+logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
+logfile_handler.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+
+# add formatter to ch
+console_handler.setFormatter(formatter)
+logfile_handler.setFormatter(formatter)
+
+# add console handler to logger
+logger.addHandler(console_handler)
+logger.addHandler(logfile_handler)
+
+# logger for Alice/LG
+# +++++++++++++++++++++++++++++++++++++++++++++
+# NOTE: This is the addon's own logger. Use it to log messages on different levels.
+# create logger
+LookingGlassAddonLogger = logging.getLogger('Alice/LG')
+LookingGlassAddonLogger.setLevel(logging.DEBUG)
+
+# create console handler and set level to debug
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.WARNING)
+
+# create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
+logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
+logfile_handler.setLevel(logging.DEBUG)
+
+# create formatter
+formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+
+# add formatter to ch
+console_handler.setFormatter(formatter)
+logfile_handler.setFormatter(formatter)
+
+# add console handler to logger
+LookingGlassAddonLogger.addHandler(console_handler)
+LookingGlassAddonLogger.addHandler(logfile_handler)
+
+
+
+
+
+# ------------- LOAD EXTERNAL MODULES ----------------
 # NOTE: This needs to be called after loading the internal modules,
 # 		because we need to check if "bpy" was already loaded for reload
 import bpy
@@ -85,12 +149,13 @@ from bpy.app.handlers import persistent
 if bpy.app.version < bl_info['blender']:
 	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
 
-
 # define name for registration
 LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
 
-print("Initializing add-on ", LookingGlassAddon.name)
-print(" # Add-on path is: " + LookingGlassAddon.path)
+# log a info message
+LookingGlassAddonLogger.info("----------------------------------------------")
+LookingGlassAddonLogger.info("Initializing '%s'" % LookingGlassAddon.name)
+LookingGlassAddonLogger.info(" # Add-on path: %s" % LookingGlassAddon.path)
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(LookingGlassAddon.path)
@@ -98,15 +163,15 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
-	print("Importing side-packages:")
+	LookingGlassAddonLogger.info("Importing side-packages:")
 	from .lib import pynng
-	print(" # Imported pynng v.%s" % pynng.__version__)
+	LookingGlassAddonLogger.info(" # Imported pynng v.%s" % pynng.__version__)
 	from .lib import cbor
-	print(" # Imported cbor v.%s" % cbor.__version__)
+	LookingGlassAddonLogger.info(" # Imported cbor v.%s" % cbor.__version__)
 	from .lib import PIL
-	print(" # Imported pillow v.%s" % PIL.__version__)
+	LookingGlassAddonLogger.info(" # Imported pillow v.%s" % PIL.__version__)
 	from .lib import pylightio as pylio
-	print(" # Imported pyLightIO v.%s" % pylio.__version__)
+	LookingGlassAddonLogger.info(" # Imported pyLightIO v.%s" % pylio.__version__)
 
 	# all python dependencies are fulfilled
 	LookingGlassAddon.python_dependecies = True
@@ -143,7 +208,7 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			if bpy.app.version >= (2, 91, 0): python_path = bpy.path.abspath(sys.executable)
 
 			# generate logfile
-			logfile = open(bpy.path.abspath(LookingGlassAddon.libpath + "/install.log"), 'a')
+			logfile = open(bpy.path.abspath(LookingGlassAddon.libpath + "/logs/side-packages-install.log"), 'a')
 
 			# install the dependencies to the add-on's library path
 			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
