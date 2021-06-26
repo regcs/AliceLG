@@ -1,8 +1,8 @@
-# Alice/LG - A Blender Add-on for Looking Glass Displays
+# Alice/LG (beta) - A Blender Add-on for Looking Glass Displays
 
 **Author:** Christian Stolze
 
-### Let Alice/LG take your Blender artworks through the Looking Glass! This short guide is to get you started.
+### Let [Alice/LG](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## About the Add-on
 This add-on was created for the use of Blender with the Looking Glass holographic displays. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
@@ -10,6 +10,11 @@ This add-on was created for the use of Blender with the Looking Glass holographi
 If you like this add-on and want to do a private donation, thank you for your support! I will most-likely invest it into new hardware, since rendering with an Quad-Core Intel Core i7 increases my coffee consumption way too much ...
 
 [![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
+
+## About the Repository
+This repository is to provide a beta version of the add-on to anyone who would like to test it. The source code will be uploaded as repository files soon to enable cloning and editing on GitHub. However, it is already included in [the zip file for download](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip), which is used for installation of the add-on in Blender.
+
+Please keep in mind that this beta version of the add-on might contain errors that cause Blender to crash. If you find a bug or have any idea for a missing feature, please open an issue in this repository with a detailed description. Thank you for your help and have fun blendering your holograms! :)
 
 ## Main Features
 - integration into the common Blender workflow
@@ -34,7 +39,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 1. _Optional:_ Install the Holoplay Service App on your PC or Mac (recommended for maximum compatability).
 
-2. Download the [zip file](https://github.com/regcs/AliceLG/releases/download/v1.1-beta/AliceLG-beta6.zip) of this addon.
+2. Download the [zip file](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip) of this addon.
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
@@ -53,7 +58,7 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
 - **Looking Glass.** Contains the Looking Glass display selection, a view resolution selection, and a button to turn on/off the lightfield window. Furthermore, it has two subpanels:
 
-   - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering. Once
+   - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering. 
 
    - **Quilt Setup & Rendering.** Controls for starting a quilt render.
 
@@ -84,9 +89,8 @@ You can render still scenes and animation frames as complete quilt images. You c
 - click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
 
 **(2) Rendering for other Looking Glasses** 
-- select your connected Looking Glass (if not aleady selected) and a quilt resolution under _Looking Glass → Resolution_
 - select an existing camera in _Looking Glass → Camera Setup → Camera_ or create a new camera by clicking "+" in the same panel
-- uncheck the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox
+- uncheck the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox, if it is checked
 - choose the Looking Glass you want to render for from the list _Looking Glass → Quilt Setup & Rendering → Device_
 - choose the quilt preset/resolution you want to render for from the list _Looking Glass → Quilt Setup & Rendering → Quilt
 - locate the camera to the specific view you would like to render
