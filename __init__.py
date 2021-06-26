@@ -19,9 +19,9 @@
 
 # -------------------- DEFINE ADDON ----------------------
 bl_info = {
-	"name": "Alice/LG-beta",
+	"name": "Alice/LG",
 	"author": "Christian Stolze",
-	"version": (1, 1, 6),
+	"version": (2, 0, 0),
 	"blender": (2, 83, 0),
 	"location": "3D View > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks through the Looking Glass (lightfield displays)",
@@ -98,8 +98,15 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
+	print("Importing side-packages:")
 	from .lib import pynng
+	print(" # Imported pynng v.%s" % pynng.__version__)
 	from .lib import cbor
+	print(" # Imported cbor v.%s" % cbor.__version__)
+	from .lib import PIL
+	print(" # Imported pillow v.%s" % PIL.__version__)
+	from .lib import pylightio as pylio
+	print(" # Imported pyLightIO v.%s" % pylio.__version__)
 
 	# all python dependencies are fulfilled
 	LookingGlassAddon.python_dependecies = True
@@ -112,7 +119,6 @@ except:
 	LookingGlassAddon.show_preferences = True
 
 	pass
-
 
 # ------------- DEFINE ADDON PREFERENCES ----------------
 # an operator that installs the python dependencies
@@ -144,7 +150,8 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
 			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
 			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', 'pillow', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
 			logfile.write("Installed: " + str(datetime.datetime.now()) + '\n')
