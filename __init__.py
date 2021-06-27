@@ -244,7 +244,7 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
-	# TODO: Let pylightio handle dependencies to PIL
+	# TODO: Let pylightio handle dependencies to PIL, pynng, cbor, sniffio, etc.
 	from .lib import PIL
 	LookingGlassAddonLogger.info(" # Imported pillow v.%s" % PIL.__version__)
 
