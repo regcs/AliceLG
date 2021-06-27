@@ -5,7 +5,7 @@
 ### Let [Alice/LG](https://github.com/regcs/AliceLG/releases/download/v1.1.5-beta/AliceLG-beta7.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## About the Add-on
-This add-on was created for the use of Blender with the Looking Glass holographic displays. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
+This add-on was created for the use of Blender with the Looking Glass holographic displays. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/).
 
 If you like this add-on and want to do a private donation, thank you for your support! I will most-likely invest it into new hardware, since rendering with an Quad-Core Intel Core i7 increases my coffee consumption way too much ...
 
@@ -58,7 +58,7 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
 - **Looking Glass.** Contains the Looking Glass display selection, a view resolution selection, and a button to turn on/off the lightfield window. Furthermore, it has two subpanels:
 
-   - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering. 
+   - **Camera Setup.** Select one of the cameras in the scene to setup a view for the Looking Glass and the quilt rendering.
 
    - **Quilt Setup & Rendering.** Controls for starting a quilt render.
 
@@ -80,7 +80,7 @@ The lightfield window is the place where the hologram is rendered. It can be ope
 
 You can render still scenes and animation frames as complete quilt images. You can render for your currently connected device or for any other Looking Glass:
 
-**(1) Rendering for your currently connected device** 
+**(1) Rendering for your currently connected device**
 - select your connected Looking Glass (if not aleady selected) and a quilt resolution under _Looking Glass → Resolution_
 - select an existing camera in _Looking Glass → Camera Setup → Camera_ or create a new camera by clicking "+" in the same panel
 - check the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox
@@ -88,7 +88,7 @@ You can render still scenes and animation frames as complete quilt images. You c
 - adjust the render and post-processing settings in the usual Blender panels (_NOTE: Image dimensions are overwritten by the add-on based on your connected Looking Glass or your manual settings under _Looking Glass → Quilt Setup & Rendering__)
 - click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
 
-**(2) Rendering for other Looking Glasses** 
+**(2) Rendering for other Looking Glasses**
 - select an existing camera in _Looking Glass → Camera Setup → Camera_ or create a new camera by clicking "+" in the same panel
 - uncheck the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox, if it is checked
 - choose the Looking Glass you want to render for from the list _Looking Glass → Quilt Setup & Rendering → Device_
@@ -97,7 +97,7 @@ You can render still scenes and animation frames as complete quilt images. You c
 - adjust the render and post-processing settings in the usual Blender panels (_NOTE: Image dimensions are overwritten by the add-on based on your connected Looking Glass or your manual settings under _Looking Glass → Quilt Setup & Rendering__)
 - click on _Looking Glass → Quilt Setup & Rendering → Render Quilt_ or (if you want to render animation frames) _Looking Glass → Quilt Setup & Rendering → Render Animation Quilt_ in the add-on controls.
 
-The _Render Quilt_ option will render the different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image or animation frames have to be handled in the same way as normal renders. You can still render normal (non-holographic) images in Blender as you usually do. 
+The _Render Quilt_ option will render the different views separately. After the last view has been rendered, a quilt will be automatically assembled. For the _Render Animation Quilt_ option, the same will happen for each frame of the animation, which will result in one quilt per frame. After rendering, the created quilt image or animation frames have to be handled in the same way as normal renders. You can still render normal (non-holographic) images in Blender as you usually do.
 
 _NOTE: Option (2) can be used even if no Looking Glass is connected._
 
@@ -120,8 +120,4 @@ _NOTE: This feature is considered to be 'experimental'. It might not detect cras
 The Blender add-on part of this project is licensed under the [GNU GPL v3 License](LICENSE).
 
 This Blender add-on partially relies on the following GPL-compatible open-source libraries / modules and their dependencies:
-- [free HoloPlay Core API](https://github.com/regcs/freehpc) licensed under [MIT License](https://github.com/regcs/freehpc/blob/master/LICENSE)
-- [pyhidapi](https://github.com/apmorton/pyhidapi) licensed under [MIT License](https://github.com/apmorton/pyhidapi/blob/master/LICENSE)
-- [hidapi](https://github.com/flirc/hidapi) licensed under [GNU GPL v3](https://github.com/flirc/hidapi/blob/master/LICENSE-gpl3.txt)
-- [pynng](https://github.com/codypiersall/pynng) licensed under [MIT license](https://github.com/codypiersall/pynng/blob/master/LICENSE.txt)
-- [cbor](https://pypi.org/project/cbor/1.0.0/) licensed under [Apache Software License 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- [pyLightIO](https://github.com/regcs/pyLightIO) licensed under [Apache Software License 2.0](https://github.com/regcs/pyLightIO/blob/master/LICENSE)
