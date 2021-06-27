@@ -38,6 +38,7 @@ class LookingGlassAddon:
 
 	# Was the connection to the holoplay service successfully initialized?
 	HoloPlayService = False
+	service = None
 
 	# List of dictionaries with one dictionary for each connected Looking Glass
 	# Each Dictionary contains all available data on the Looking Glass (including calibrations data)

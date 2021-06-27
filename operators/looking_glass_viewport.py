@@ -892,7 +892,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			self.lightFieldShader.uniform_int("ri", self.device['ri'])
 			self.lightFieldShader.uniform_int("bi", self.device['bi'])
 			try:
-				self.lightFieldShader.uniform_int("invView", self.device['invView'])
+				self.lightFieldShader.uniform_int("invView", int(self.device['invView']))
 				self.lightFieldShader.uniform_int("quiltInvert", 0)
 				self.lightFieldShader.uniform_float("displayAspect", self.device['aspectRatio'])
 				self.lightFieldShader.uniform_float("quiltAspect", self.device['aspectRatio'])

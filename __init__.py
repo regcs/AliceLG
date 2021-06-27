@@ -168,9 +168,14 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
+	# TODO: Let pylightio handle dependencies to PIL
 	from .lib import PIL
 	LookingGlassAddonLogger.info(" # Imported pillow v.%s" % PIL.__version__)
-	from .lib import pylightio as pylio
+
+	# TODO: Would be better, if from .lib import pylightio could be called,
+	#		but for some reason that does not import all modules and throws
+	#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+	import pylightio as pylio
 	LookingGlassAddonLogger.info(" # Imported pyLightIO v.%s" % pylio.__version__)
 
 	# all python dependencies are fulfilled
@@ -204,79 +209,47 @@ class LookingGlassAddonFunctions:
 		# if the HoloPlayService was detected
 		if LookingGlassAddon.HoloPlayService == True:
 
-			# allocate a memory buffer for string information send by the Holoplay Service
-			buffer = ctypes.create_string_buffer(1000)
+			# refresh the list of connected devices using the active service
+			pylio.DeviceManager.refresh()
 
-			# Query the Holoplay Service to update the device information
-			hpc.RefreshState()
-
-			# for each connected device
-			for dev_index in range(hpc.GetNumDevices()):
+			# loop through the connected devices
+			for idx, device in enumerate(pylio.DeviceManager.to_list()):
 
 				#
-				print(" ### Display ", dev_index, ":")
+				print(" ### Display ", idx, ":")
 
-				# get device HDMI name
-				hpc.GetDeviceHDMIName(dev_index, buffer, 1000)
-				dev_hdmi = buffer.value.decode('ascii').strip()
-
-				# get device serial
-				hpc.GetDeviceSerial(dev_index, buffer, 1000)
-				dev_serial = buffer.value.decode('ascii').strip()
-
-				# get device type
-				hpc.GetDeviceType(dev_index, buffer, 1000)
-				dev_type = buffer.value.decode('ascii').strip()
-				if dev_type == "standard":
-
-					dev_name = "8.9'' Looking Glass"
-
-				elif dev_type == "portrait":
-
-					dev_name = "7.9'' Looking Glass Portrait"
-
-				elif dev_type == "large":
-
-					dev_name = "15.6'' Looking Glass"
-
-				elif dev_type == "pro":
-
-					dev_name = "15.6'' Pro Looking Glass"
-
-				elif dev_type == "8k":
-
-					dev_name = "8k Looking Glass"
-
+				#
+				dev_config = device.configuration
 
 				# make an entry in the deviceList
 				LookingGlassAddon.deviceList.append(
 												{
 													# device information
-													'index': dev_index,
-													'hdmi': dev_hdmi,
-													'name': dev_name,
-													'serial': dev_serial,
-													'type': dev_type,
+													'index': dev_config['index'],
+													'hdmi': dev_config['hwid'],
+													'name': device.name,
+													'serial': device.serial,
+													'type': dev_config['hardwareVersion'],
 
 													# window & screen properties
-													'x': hpc.GetDevicePropertyWinX(dev_index),
-													'y': hpc.GetDevicePropertyWinY(dev_index),
-													'width': hpc.GetDevicePropertyScreenW(dev_index),
-													'height': hpc.GetDevicePropertyScreenH(dev_index),
-													'aspectRatio': hpc.GetDevicePropertyDisplayAspect(dev_index),
+													'x': dev_config['windowCoords'][0],
+													'y': dev_config['windowCoords'][1],
+													'width': dev_config['calibration']['screenW'],
+													'height': dev_config['calibration']['screenH'],
+													'aspectRatio': dev_config['calibration']['aspect'],
 
 													# calibration data
-													'pitch': hpc.GetDevicePropertyPitch(dev_index),
-													'tilt': hpc.GetDevicePropertyTilt(dev_index),
-													'center': hpc.GetDevicePropertyCenter(dev_index),
-													'subp': hpc.GetDevicePropertySubp(dev_index),
-													'fringe': hpc.GetDevicePropertyFringe(dev_index),
-													'ri': hpc.GetDevicePropertyRi(dev_index),
-													'bi': hpc.GetDevicePropertyBi(dev_index),
-													'invView': hpc.GetDevicePropertyInvView(dev_index),
+													'pitch': dev_config['calibration']['pitch'],
+													'tilt': dev_config['calibration']['tilt'],
+													'center': dev_config['calibration']['center'],
+													'subp': dev_config['calibration']['subp'],
+													'fringe': dev_config['calibration']['fringe'],
+													'ri': dev_config['calibration']['ri'],
+													'bi': dev_config['calibration']['bi'],
+													'invView': dev_config['calibration']['invView'],
 
 													# viewcone
-													'viewCone': hpc.GetDevicePropertyFloat(dev_index, b"/calibration/viewCone/value")
+													'viewCone': dev_config['calibration']['viewCone']
 												}
 				)
 
@@ -1953,8 +1926,6 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
 
-	print("Initializing Holo Play Core:")
-
 	# register all classes of the addon
 	# Preferences & Settings
 	if LookingGlassAddon.show_preferences == True: bpy.utils.register_class(LookingGlassAddonPreferences)
@@ -1984,10 +1955,6 @@ def register():
 
 
 
-	# initialize HoloPlay Core SDK
-	errco = hpc.InitializeApp(LookingGlassAddon.name.encode(), hpc.license_type.LICENSE_NONCOMMERCIAL.value)
-
-	print(" # Registering at Holoplay Service as: " + LookingGlassAddon.name)
 
 	# load the panel variables
 	bpy.types.Scene.settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
@@ -2002,25 +1969,28 @@ def register():
 
 
 
+
+
+	# create a service using "HoloPlay Service" backend
+	LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService)
+
 	# if no errors were detected
-	if errco == 0 or debugging_use_dummy_device == True:
+	if LookingGlassAddon.service or debugging_use_dummy_device == True:
 
 		# set status variable
 		LookingGlassAddon.HoloPlayService = True
 
-		# allocate string buffer
-		buffer = ctypes.create_string_buffer(1000)
-
 		# get HoloPlay Service Version
-		hpc.GetHoloPlayServiceVersion(buffer, 1000)
-		print(" # HoloPlay Service version: " + buffer.value.decode('ascii').strip())
+		print(" # HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
 
-		# get HoloPlay Core SDK version
-		hpc.GetHoloPlayCoreVersion(buffer, 1000)
-		print(" # HoloPlay Core SDK version: " + buffer.value.decode('ascii').strip())
+		# make the device manager use the created service instance
+		pylio.DeviceManager.set_service(LookingGlassAddon.service)
+
+		# refresh the list of connected devices using the active service
+		pylio.DeviceManager.refresh()
 
 		# get number of devices
-		print(" # Number of connected displays: " + str(hpc.GetNumDevices()))
+		print(" # Number of connected displays: %i" % pylio.DeviceManager.count())
 
 		# obtain the device list
 		LookingGlassAddonFunctions.LookingGlassDeviceList()
@@ -2037,27 +2007,27 @@ def register():
 
 	else:
 
-		# prepare the error string from the error code
-		if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
-			errstr = "HoloPlay Service not running"
-
-		elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
-			errstr = "Client message could not be serialized"
-
-		elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
-			errstr = "Incompatible version of HoloPlay Service";
-
-		elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
-			errstr = "Interprocess pipe broken"
-
-		elif (errco == hpc.client_error.CLIERR_SENDTIMEOUT.value):
-			errstr = "Interprocess pipe send timeout"
-
-		elif (errco == hpc.client_error.CLIERR_RECVTIMEOUT.value):
-			errstr = "Interprocess pipe receive timeout"
-
-		else:
-			errstr = "Unknown error";
+		# # prepare the error string from the error code
+		# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
+		# 	errstr = "HoloPlay Service not running"
+		#
+		# elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
+		# 	errstr = "Client message could not be serialized"
+		#
+		# elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
+		# 	errstr = "Incompatible version of HoloPlay Service";
+		#
+		# elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
+		# 	errstr = "Interprocess pipe broken"
+		#
+		# elif (errco == hpc.client_error.CLIERR_SENDTIMEOUT.value):
+		# 	errstr = "Interprocess pipe send timeout"
+		#
+		# elif (errco == hpc.client_error.CLIERR_RECVTIMEOUT.value):
+		# 	errstr = "Interprocess pipe receive timeout"
+		#
+		# else:
+		# 	errstr = "Unknown error";
 
 		# print the error
 		print(" # Client access error (code = ", errco, "):", errstr)
@@ -2072,7 +2042,7 @@ def unregister():
 	if LookingGlassAddon.HoloPlayService == True:
 
 		# Unregister at the Holoplay Service
-		hpc.CloseApp()
+		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
 	# remove initialization helper app handler
 	bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
