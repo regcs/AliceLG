@@ -244,9 +244,14 @@ sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
+	# TODO: Let pylightio handle dependencies to PIL
 	from .lib import PIL
 	LookingGlassAddonLogger.info(" # Imported pillow v.%s" % PIL.__version__)
-	from .lib import pylightio as pylio
+
+	# TODO: Would be better, if from .lib import pylightio could be called,
+	#		but for some reason that does not import all modules and throws
+	#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+	import pylightio as pylio
 	LookingGlassAddonLogger.info(" # Imported pyLightIO v.%s" % pylio.__version__)
 
 	# all python dependencies are fulfilled
