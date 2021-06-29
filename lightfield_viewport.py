@@ -453,108 +453,12 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 		# MOVE THE WINDOW TO THE CORRECT SCREEN & TOGGLE FULLSCREEN
 		################################################################
-
-		# if on macOS
-		if platform.system() == "Darwin":
-
-			# TODO: Add a class function that handles this task for the different
-			# operating systems automatically
-			try:
-
-				# find the NSScreen representing the Looking Glass
-				for screen in NSScreen.screens():
-
-					if screen.localizedName() == pylio.DeviceManager.get_active()['hwid']:
-
-						# move the window to the Looking Glass Screen and resize it
-						NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
-
-						break
-
-
-				# set the "toogle fullscreen button" to True
-				# NOTE: - via the update function of the boolean property,
-				# 		  this already executes the window_fullscreen_toggle button
-				self.settings.toggleLightfieldWindowFullscreen = True
-
-			except:
-				pass
-
-		# if on Windows
-		elif platform.system() == "Windows":
-
-			# TODO: Add a class function that handles this task for the different
-			# operating systems automatically
-			try:
-
-				# get the handle of the created window
-				lightfielfWindow_hWnd = user32.GetActiveWindow()
-
-				# move window to the left
-				user32.MoveWindow(lightfielfWindow_hWnd, self.device['x'], self.device['y'], self.device['width'], self.device['height'], True)
-
-				# set the "toogle fullscreen button" to True
-				# NOTE: - via the update function of the boolean property,
-				# 		  this already executes the window_fullscreen_toggle button
-				self.settings.toggleLightfieldWindowFullscreen = True
-
-			except:
-				pass
-
-			# we need to remember the scene this operator was invoked on
-			# NOTE: - we need this in case the user changes the scene later
-			#		- this MUST be called AFTER fullscreen was toggled in this invoke()
-			LookingGlassAddon.LightfieldWindowInvoker = context.scene
-
-
-		# if on linux
-		elif platform.system() == "Linux":
-
-			# TODO: Add a class function that handles this task for the different
-			# operating systems automatically
-			try:
-
-				# TODO: Ugly hack. Should be improved later!
-				# check for new window
-				bpy.app.timers.register(functools.partial(self.toggleFullscreen, context))
-
-			except:
-				pass
+		# THIS HAS BEEN REMOVED
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
 
 
-	# make window fullscreen
-	def toggleFullscreen(self, context):
-
-		# if on linux, get the currently open windows
-		if platform.system() == "Linux":
-			LinuxWindowList = list(map(int, str(subprocess.run(['xdotool', 'search', '--name', 'Blender'], check=True, capture_output=True).stdout).replace('b\'','').split('\\n')[:-1]))
-			lightfieldWindowID = list(set(LinuxWindowList) - set(LookingGlassAddon.LinuxWindowList))
-			if len(lightfieldWindowID) == 1:
-				lightfieldWindowID = lightfieldWindowID[0]
-				print("New window: ", lightfieldWindowID)
-
-				# Thanks to LoneTech for contributing!
-				subprocess.run(['xdotool', 'windowmove', str(lightfieldWindowID), str(self.device['x']), str(self.device['y']), '--sync', ]) #, check=True)
-
-				# set the "toogle fullscreen button" to True
-				# NOTE: - via the update function of the boolean property,
-				# 		  this already executes the window_fullscreen_toggle button
-				self.settings.toggleLightfieldWindowFullscreen = True
-
-				# we need to remember the scene this operator was invoked on
-				# NOTE: - we need this in case the user changes the scene later
-				#		- this MUST be called AFTER fullscreen was toggled in this invoke()
-				LookingGlassAddon.LightfieldWindowInvoker = context.scene
-
-				return None
-
-			else:
-
-				print("Waiting for new window ...")
-				return 0.1
 
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
@@ -601,7 +505,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		################################################################
 
 		# if the mouse cursor is inside the fullscreen lightfield window
-		if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (event.mouse_x < LookingGlassAddon.lightfieldWindow.width and event.mouse_y < LookingGlassAddon.lightfieldWindow.height):
+		if (LookingGlassAddon.lightfieldWindow.width == self.device.width and LookingGlassAddon.lightfieldWindow.height == self.device.height) and (event.mouse_x < LookingGlassAddon.lightfieldWindow.width and event.mouse_y < LookingGlassAddon.lightfieldWindow.height):
 
 			# make mouse cursor invisible
 			LookingGlassAddon.lightfieldWindow.cursor_modal_set('NONE')
@@ -892,17 +796,17 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# obtain information from the connected Looking Glass and
 			# load its calibration into the lightfield shader
 			self.lightFieldShader.bind()
-			self.lightFieldShader.uniform_float("pitch", self.device['pitch'])
-			self.lightFieldShader.uniform_float("tilt", self.device['tilt'])
-			self.lightFieldShader.uniform_float("center", self.device['center'])
-			self.lightFieldShader.uniform_float("subp", self.device['subp'])
-			self.lightFieldShader.uniform_int("ri", self.device['ri'])
-			self.lightFieldShader.uniform_int("bi", self.device['bi'])
+			self.lightFieldShader.uniform_float("pitch", self.device.calibration['pitch'])
+			self.lightFieldShader.uniform_float("tilt", self.device.calibration['tilt'])
+			self.lightFieldShader.uniform_float("center", self.device.calibration['center'])
+			self.lightFieldShader.uniform_float("subp", self.device.calibration['subp'])
+			self.lightFieldShader.uniform_int("ri", self.device.calibration['ri'])
+			self.lightFieldShader.uniform_int("bi", self.device.calibration['bi'])
 			try:
-				self.lightFieldShader.uniform_int("invView", int(self.device['invView']))
+				self.lightFieldShader.uniform_int("invView", int(self.device.calibration['invView']))
 				self.lightFieldShader.uniform_int("quiltInvert", 0)
-				self.lightFieldShader.uniform_float("displayAspect", self.device['aspectRatio'])
-				self.lightFieldShader.uniform_float("quiltAspect", self.device['aspectRatio'])
+				self.lightFieldShader.uniform_float("displayAspect", self.device.calibration['aspectRatio'])
+				self.lightFieldShader.uniform_float("quiltAspect", self.device.calibration['aspectRatio'])
 			except ValueError:
 				pass  # These uniforms are not used by the free shader
 
@@ -924,7 +828,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			cameraSize = cameraDistance * tan(fov / 2)
 
 			# start at viewCone * 0.5 and go up to -viewCone * 0.5
-			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device['viewCone'])
+			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device.viewCone)
 
 			# calculate the offset that the camera should move
 			offset = cameraDistance * tan(offsetAngle)
@@ -933,7 +837,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			viewMatrix = Matrix.Translation((offset, 0, 0)) @ viewMatrix
 
 			# modify the projection matrix, relative to the camera size and aspect ratio
-			projectionMatrix[0][2] += offset / (cameraSize * self.device['aspectRatio'])
+			projectionMatrix[0][2] += offset / (cameraSize * self.device.aspect)
 
 		# TODO: THE FOLLOWING WORKS IN PRINCIPLE, BUT IS DISTORTED. WHY?
 		# otherwise we take the active viewport camera
@@ -950,7 +854,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			cameraSize = cameraDistance * tan(fov / 2)
 
 			# start at viewCone * 0.5 and go up to -viewCone * 0.5
-			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device['viewCone'])
+			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device.viewCone)
 
 			# calculate the offset that the camera should move
 			offset = cameraDistance * tan(offsetAngle)
@@ -959,7 +863,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			viewMatrix = Matrix.Translation((offset, 0, cameraDistance)) @ viewMatrix
 
 			# modify the projection matrix, relative to the camera size and aspect ratio
-			projectionMatrix[0][2] += offset / (cameraSize * self.device['aspectRatio'])
+			projectionMatrix[0][2] += offset / (cameraSize * self.device.aspect)
 
 		# return the projection matrix
 		return viewMatrix, projectionMatrix
@@ -1126,7 +1030,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
 						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
 						scale_x = 1.0,
-						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device.aspect,
 					)
 
 			# otherwise we take the (lightfield) viewport matrices
@@ -1225,7 +1129,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 									# TODO: Maybe there is a better way to check this?
 									# but only, if the mouse cursor is inside the fullscreen lightfield window
-									if (LookingGlassAddon.lightfieldWindow.width == self.device['width'] and LookingGlassAddon.lightfieldWindow.height == self.device['height']) and (self.mouse_x < LookingGlassAddon.lightfieldWindow.width and self.mouse_y < LookingGlassAddon.lightfieldWindow.height):
+									if (LookingGlassAddon.lightfieldWindow.width == self.device.width and LookingGlassAddon.lightfieldWindow.height == self.device.height) and (self.mouse_x < LookingGlassAddon.lightfieldWindow.width and self.mouse_y < LookingGlassAddon.lightfieldWindow.height):
 
 										self.drawCursor3D(context, view, x, y, self.settings.viewport_cursor_size, 8)
 
@@ -1339,7 +1243,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
 						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
 						scale_x = 1.0,
-						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device['aspectRatio'],
+						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device.aspect,
 					)
 
 			# otherwise we take the (lightfield) viewport matrices

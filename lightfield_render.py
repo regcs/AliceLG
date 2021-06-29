@@ -766,7 +766,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if the settings are to be taken from device selection
 			if self.settings.render_use_device == True:
 
-				self.rendering_deviceType = self.device['type']
+				self.rendering_deviceType = self.device.type
 				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewWidth"]
 				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewHeight"]
 				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]

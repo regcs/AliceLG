@@ -1940,6 +1940,10 @@ def register():
 		# refresh the list of connected devices using the active pylio service
 		pylio.DeviceManager.refresh()
 
+		# if device are connected, make the first one the active one
+		if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+		print("ACTIVE: ", pylio.DeviceManager.get_active().name)
+
 
 
 		# get shader source codes
