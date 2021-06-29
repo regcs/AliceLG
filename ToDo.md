@@ -19,6 +19,8 @@
 
 - decide: how to handle the case if no LookingGlassCamera is activated? Use viewport matrix?
 
+- unsure: move all panel / ui related things to an extra file 'ui.py' (?)
+
 
 ## BUGS / ENHANCEMENTS
 

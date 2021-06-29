@@ -102,7 +102,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.WARNING)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
-logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
+logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
 logfile_handler.setLevel(logging.DEBUG)
 logfile_handler.namer = logfile_namer
 
@@ -129,7 +129,7 @@ console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.WARNING)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
-logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
+logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
 logfile_handler.setLevel(logging.DEBUG)
 logfile_handler.namer = logfile_namer
 
