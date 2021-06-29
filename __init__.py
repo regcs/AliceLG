@@ -326,7 +326,7 @@ class LookingGlassAddonFunctions:
 	def update_render_setting(self, context):
 
 		# if a device is selected by the user
-		if self.activeDisplay != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
+		if int(self.activeDisplay) != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
 		else: 						 pylio.DeviceManager.reset_active()
 
 		# if a camera is selected
