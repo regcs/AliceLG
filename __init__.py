@@ -52,9 +52,6 @@ if "bpy" in locals():
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(looking_glass_global_variables)
 
-	# reload the free Holoplay Core SDK
-	importlib.reload(libHoloPlayCore.freeHoloPlayCoreAPI)
-
 	# reload all preferences related code
 	importlib.reload(preferences)
 
@@ -66,11 +63,6 @@ else:
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
 	from .looking_glass_global_variables import *
-
-	# import the Holoplay Core SDK Python Wrapper
-	#from .operators import libHoloPlayCore as hpc
-	import libHoloPlayCore
-	hpc = libHoloPlayCore.freeHoloPlayCoreAPI()
 
 	# import all preferences related code
 	from .preferences import *
@@ -1956,8 +1948,83 @@ def register():
 
 		# get shader source codes
 		# TODO: THIS IS JUST HERE UNTIL LIVE VIEW IS REALIZED VIA HOPS
-		LookingGlassAddon.lightfieldVertexShaderSource = hpc.LightfieldVertShaderGLSL
-		LookingGlassAddon.lightfieldFragmentShaderSource = hpc.LightfieldFragShaderGLSL
+		LookingGlassAddon.lightfieldVertexShaderSource = '''
+	        // INPUT AND OUTPUT VARIABLES
+	        layout (location = 0)
+	        in vec2 vertPos_data;
+	        out vec2 texCoords;
+
+	        // VERTEX SHADER
+	        void main()
+	        {
+	        	gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
+	        	texCoords = (vertPos_data.xy + 1.0) * 0.5;
+	        }
+	    '''
+		LookingGlassAddon.lightfieldFragmentShaderSource = '''
+	        in vec2 texCoords;
+	        out vec4 fragColor;
+
+	        // CALIBRATION VALUES
+	        uniform float pitch;
+	        uniform float tilt;
+	        uniform float center;
+	        uniform int invView;
+	        uniform float subp;
+	        uniform float displayAspect;
+	        uniform int ri;
+	        uniform int bi;
+
+	        // QUILT SETTINGS
+	        uniform vec3 tile;
+	        uniform vec2 viewPortion;
+	        uniform int debug;
+
+	        // QUILT TEXTURE
+	        uniform sampler2D screenTex;
+
+	        // GET CORRECT VIEW
+	        vec2 quilt_map(vec2 pos, float a) {
+
+	            // Tile ordering
+	            vec2 tile2 = vec2(tile.x - 1, tile.y - 1), dir=vec2(-1, -1);
+
+	            a = fract(a) * tile.y;
+	            tile2.y += dir.y * floor(a);
+	            a = fract(a) * tile.x;
+	            tile2.x += dir.x * floor(a);
+	            return (tile2 + pos) / tile.xy;
+
+	        }
+
+	        // SHADER
+	        void main()
+	        {
+
+	            float a;
+	            vec4 res;
+
+	            a = (-texCoords.x - texCoords.y * tilt) * pitch - center;
+	            res.r = texture(screenTex, quilt_map(texCoords.xy, a-ri*subp)).r;
+	            res.g = texture(screenTex, quilt_map(texCoords.xy, a-   subp)).g;
+	            res.b = texture(screenTex, quilt_map(texCoords.xy, a-bi*subp)).b;
+
+	            if (debug == 1) {
+	                // use quilt texture
+	                res = texture(screenTex, texCoords.xy);
+	            }
+	            else if (debug == 2) {
+	                // Mark center line only in central view
+	                res.r = res.r * 0.001 + (texCoords.x>0.49 && texCoords.x<0.51 && fract(a)>0.48&&fract(a)<0.51 ?1.0:0.0);
+	                res.g = res.g * 0.001 + texCoords.x;
+	                res.b = res.b * 0.001 + texCoords.y;
+	            }
+
+	            res.a = 1.0;
+	            fragColor = res;
+
+	        }
+	    '''
 
 	else:
 
