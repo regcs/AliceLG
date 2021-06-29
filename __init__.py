@@ -60,9 +60,6 @@ if "bpy" in locals():
 	# reload all preferences related code
 	importlib.reload(preferences)
 
-	# reload all preferences related code
-	importlib.reload(preferences)
-
 else:
 
 	# import the modal operators for the viewport & quilt rendering
@@ -85,82 +82,6 @@ sys.path.append(LookingGlassAddon.libpath)
 
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
-
-# this function is by @ranrande from stackoverflow:
-# https://stackoverflow.com/a/67213458
-def logfile_namer(default_name):
-	base_filename, ext, date = default_name.split(".")
-	return f"{base_filename}.{date}.{ext}"
-
-# logger for pyLightIO
-# +++++++++++++++++++++++++++++++++++++++++++++
-# NOTE: This is just to get the logger messages invoked by pyLightIO.
-#		To log messages for Alice/LG use the logger defined below.
-# create logger
-logger = logging.getLogger('pyLightIO')
-logger.setLevel(logging.DEBUG)
-
-# create console handler and set level to WARNING
-console_handler = logging.StreamHandler()
-
-if debugging_print_pylio_logger_all == True: console_handler.setLevel(logging.DEBUG)
-elif debugging_print_pylio_logger_all == False: console_handler.setLevel(logging.WARNING)
-
-# create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
-logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
-logfile_handler.setLevel(logging.DEBUG)
-logfile_handler.namer = logfile_namer
-
-# create formatter
-formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
-
-# add formatter to ch
-console_handler.setFormatter(formatter)
-logfile_handler.setFormatter(formatter)
-
-# add console handler to logger
-logger.addHandler(console_handler)
-logger.addHandler(logfile_handler)
-
-# logger for Alice/LG
-# +++++++++++++++++++++++++++++++++++++++++++++
-# NOTE: This is the addon's own logger. Use it to log messages on different levels.
-# create logger
-LookingGlassAddonLogger = logging.getLogger('Alice/LG')
-LookingGlassAddonLogger.setLevel(logging.DEBUG)
-
-# create console handler and set level to WARNING
-console_handler = logging.StreamHandler()
-
-if debugging_print_internal_logger_all == True: console_handler.setLevel(logging.DEBUG)
-if debugging_print_internal_logger_all == False: console_handler.setLevel(logging.WARNING)
-
-# create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
-logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
-logfile_handler.setLevel(logging.INFO)
-logfile_handler.namer = logfile_namer
-
-# create formatter
-formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
-
-# add formatter to ch
-console_handler.setFormatter(formatter)
-logfile_handler.setFormatter(formatter)
-
-# add console handler to logger
-LookingGlassAddonLogger.addHandler(console_handler)
-LookingGlassAddonLogger.addHandler(logfile_handler)
-
-
-
-
-
-# --------------------- LOGGER -----------------------
-import logging, logging.handlers
-
-default_name=LookingGlassAddon.path + "/logs/test.log"
-base_filename, ext  = default_name.split(".")
-print(f"{base_filename}.{ext}")
 
 # this function is by @ranrande from stackoverflow:
 # https://stackoverflow.com/a/67213458
