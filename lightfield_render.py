@@ -25,7 +25,7 @@ from math import *
 from mathutils import *
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
-from .looking_glass_global_variables import *
+from .globals import *
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(LookingGlassAddon.path)

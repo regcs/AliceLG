@@ -46,11 +46,11 @@ if "bpy" in locals():
 	import importlib
 
 	# reload the modal operators for the viewport & quilt rendering
-	importlib.reload(looking_glass_viewport)
-	importlib.reload(looking_glass_render_quilt)
+	importlib.reload(lightfield_viewport)
+	importlib.reload(lightfield_render)
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
-	importlib.reload(looking_glass_global_variables)
+	importlib.reload(globals)
 
 	# reload all preferences related code
 	importlib.reload(preferences)
@@ -58,11 +58,11 @@ if "bpy" in locals():
 else:
 
 	# import the modal operators for the viewport & quilt rendering
-	from .looking_glass_viewport import *
-	from .looking_glass_render_quilt import *
+	from .lightfield_viewport import *
+	from .lightfield_render import *
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
-	from .looking_glass_global_variables import *
+	from .globals import *
 
 	# import all preferences related code
 	from .preferences import *
@@ -77,10 +77,6 @@ sys.path.append(LookingGlassAddon.libpath)
 
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
-
-default_name=LookingGlassAddon.path + "/logs/test.log"
-base_filename, ext  = default_name.split(".")
-print(f"{base_filename}.{ext}")
 
 # this function is by @ranrande from stackoverflow:
 # https://stackoverflow.com/a/67213458
