@@ -18,7 +18,6 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import sys, platform
-import functools
 import bpy, bgl
 import gpu
 import time
@@ -39,63 +38,6 @@ sys.path.append(LookingGlassAddon.libpath)
 #		but for some reason that does not import all modules and throws
 #		"AliceLG.lib.pylio has no attribute 'lookingglass'"
 import pylightio as pylio
-
-# --------- TRY TO LOAD SYSTEM API FOR WINDOW CONTROL -----------
-
-# if on macOS
-if platform.system() == "Darwin":
-
-	# NOTE: This requires that PyObjC is installed in Blenders Python
-	#		- add a button to Preferences wich handles the installation?
-	try:
-
-		# The following lines are necessary to use PyObjC to load AppKit
-		# from: https://github.com/ronaldoussoren/pyobjc/issues/309
-		# User: MaxBelanger
-		#	   This means pyobjc always dlopens (via NSBundle) based on the canonical and absolute path of the framework, which works with the cache.
-		import objc, objc._dyld
-
-		def __path_for_framework_safe(path: str) -> str:
-			return path
-
-		objc._dyld.pathForFramework = __path_for_framework_safe
-		objc.pathForFramework = __path_for_framework_safe
-
-		# import AppKit
-		import Cocoa
-		from AppKit import NSScreen, NSWorkspace, NSWindow, NSApp, NSApplication, NSWindowStyleMaskBorderless, NSApplicationPresentationHideDock, NSApplicationPresentationHideMenuBar
-		from Quartz import kCGWindowListOptionOnScreenOnly, kCGNullWindowID, CGWindowListCopyWindowInfo, CGWindowListCreate, kCGWindowNumber
-
-	except:
-		#self.report({"WARNING"}, "Could not load PyObjC. Need to position lightfield window manually.")
-		pass
-
-# if on 32-bit Windows
-elif platform.system() == "Windows":
-
-	# NOTE: Try to use the user32 dll
-	try:
-
-		# import ctypes module
-		import ctypes
-		from ctypes import wintypes
-
-		# load the user32.dll system dll
-		user32 = ctypes.windll.user32
-
-	except:
-		#self.report({"WARNING"}, "Could not load User32.dll. Need to position lightfield window manually.")
-		pass
-
-# if on 32-bit Windows
-elif platform.system() == "Linux":
-
-	import subprocess
-
-else:
-	#self.report({"ERROR"}, "Unsupported operating system.")
-	raise OSError("Unsupported operating system.")
-
 
 
 

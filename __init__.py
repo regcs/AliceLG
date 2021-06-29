@@ -211,7 +211,7 @@ class LookingGlassAddonFunctions:
 			for idx, device in enumerate(pylio.DeviceManager.to_list()):
 
 				# add an entry in the item list
-				items.append((str(device.configuration['index']), 'Display ' + str(device.configuration['index']) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
+				items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
 
 		else:
 
@@ -324,6 +324,10 @@ class LookingGlassAddonFunctions:
 
 	# update function for property updates concerning render settings
 	def update_render_setting(self, context):
+
+		# if a device is selected by the user
+		if self.activeDisplay != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
+		else: 						 pylio.DeviceManager.reset_active()
 
 		# if a camera is selected
 		if context.scene.settings.lookingglassCamera != None:
@@ -1942,7 +1946,6 @@ def register():
 
 		# if device are connected, make the first one the active one
 		if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
-		print("ACTIVE: ", pylio.DeviceManager.get_active().name)
 
 
 
