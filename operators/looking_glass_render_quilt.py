@@ -27,7 +27,6 @@ from mathutils import *
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *
 
-
 # ------------ QUILT RENDERING -------------
 # Modal operator for handling rendering of a quilt out of Blender
 class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
@@ -531,7 +530,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# get the calibration data of the selected Looking Glass from the deviceList
-		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 		# RENDER SETTINGS
 		################################################################

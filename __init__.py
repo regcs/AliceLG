@@ -82,6 +82,15 @@ else:
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
 
+# this function is by @ranrande from stackoverflow:
+# https://stackoverflow.com/a/67213458
+def logfile_namer(default_name):
+    # This will be called when doing the log rotation
+    # default_name is the default filename that would be assigned, e.g. Rotate_Test.txt.YYYY-MM-DD
+    # Do any manipulations to that name here, for example this changes the name to Rotate_Test.YYYY-MM-DD.txt
+    base_filename, ext, date = default_name.split(".")
+    return f"{base_filename}.{date}.{ext}"
+
 # logger for pyLightIO
 # +++++++++++++++++++++++++++++++++++++++++++++
 # NOTE: This is just to get the logger messages invoked by pyLightIO.
@@ -97,6 +106,7 @@ console_handler.setLevel(logging.WARNING)
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
 logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.namer = logfile_namer
 
 # create formatter
 formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
@@ -123,6 +133,7 @@ console_handler.setLevel(logging.WARNING)
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
 logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.namer = logfile_namer
 
 # create formatter
 formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
@@ -159,8 +170,8 @@ LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_in
 
 # log a info message
 LookingGlassAddonLogger.info("----------------------------------------------")
-LookingGlassAddonLogger.info("Initializing '%s'" % LookingGlassAddon.name)
-LookingGlassAddonLogger.info(" # Add-on path: %s" % LookingGlassAddon.path)
+LookingGlassAddonLogger.info("Initializing '%s' ..." % LookingGlassAddon.name)
+LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(LookingGlassAddon.path)
@@ -170,13 +181,13 @@ try:
 
 	# TODO: Let pylightio handle dependencies to PIL, pynng, cbor, sniffio, etc.
 	from .lib import PIL
-	LookingGlassAddonLogger.info(" # Imported pillow v.%s" % PIL.__version__)
+	LookingGlassAddonLogger.info(" [#] Imported pillow v.%s" % PIL.__version__)
 
 	# TODO: Would be better, if from .lib import pylightio could be called,
 	#		but for some reason that does not import all modules and throws
 	#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
 	import pylightio as pylio
-	LookingGlassAddonLogger.info(" # Imported pyLightIO v.%s" % pylio.__version__)
+	LookingGlassAddonLogger.info(" [#] Imported pyLightIO v.%s" % pylio.__version__)
 
 	# all python dependencies are fulfilled
 	LookingGlassAddon.python_dependecies = True
@@ -198,77 +209,6 @@ except:
 # Preferences pane for this Addon in the Blender preferences
 class LookingGlassAddonFunctions:
 
-	# obtain list of connected Looking Glasses
-	def LookingGlassDeviceList():
-
-		# CREATE A LIST OF DICTIONARIES OF ALL CONNECTED DEVICES
-		########################################################
-		# empty the existing list
-		LookingGlassAddon.deviceList.clear()
-
-		# if the HoloPlayService was detected
-		if LookingGlassAddon.HoloPlayService == True:
-
-			# refresh the list of connected devices using the active service
-			pylio.DeviceManager.refresh()
-
-			# loop through the connected devices
-			for idx, device in enumerate(pylio.DeviceManager.to_list()):
-
-				#
-				print(" ### Display ", idx, ":")
-
-				#
-				dev_config = device.configuration
-
-				# make an entry in the deviceList
-				LookingGlassAddon.deviceList.append(
-												{
-													# device information
-													'index': dev_config['index'],
-													'hdmi': dev_config['hwid'],
-													'name': device.name,
-													'serial': device.serial,
-													'type': dev_config['hardwareVersion'],
-
-													# window & screen properties
-													'x': dev_config['windowCoords'][0],
-													'y': dev_config['windowCoords'][1],
-													'width': dev_config['calibration']['screenW'],
-													'height': dev_config['calibration']['screenH'],
-													'aspectRatio': dev_config['calibration']['aspect'],
-
-													# calibration data
-													'pitch': dev_config['calibration']['pitch'],
-													'tilt': dev_config['calibration']['tilt'],
-													'center': dev_config['calibration']['center'],
-													'subp': dev_config['calibration']['subp'],
-													'fringe': dev_config['calibration']['fringe'],
-													'ri': dev_config['calibration']['ri'],
-													'bi': dev_config['calibration']['bi'],
-													'invView': dev_config['calibration']['invView'],
-
-													# viewcone
-													'viewCone': dev_config['calibration']['viewCone']
-												}
-				)
-
-				# write detected LG to logfile
-				with open(bpy.path.abspath(LookingGlassAddon.libpath + "/detected_lg.log"), "a") as logfile:
-					pprint(LookingGlassAddon.deviceList[-1], logfile)
-
-				pprint(LookingGlassAddon.deviceList[-1])
-
-
-		# TODO: Remove this, it's only for debugging
-		if debugging_use_dummy_device == True:
-
-			# we add a dummy element
-			LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'hdmi': 'LKG79PxDUMMY', 'name': "7.9'' Looking Glass", 'serial': 'LKG-2K-XXXXX', 'type': "portrait", 'x': -1536, 'y': 0, 'width': 1536, 'height': 2048, 'aspectRatio': 0.75, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 58.0})
-			#LookingGlassAddon.deviceList.append({'index': len(LookingGlassAddon.deviceList), 'hdmi': 'LKG89LxDUMMY', 'name': "8.9'' Looking Glass", 'serial': 'LKG-2K-XXXXX', 'type': "standard", 'x': -2560, 'y': 0, 'width': 2560, 'height': 1600, 'aspectRatio': 1.600000023841858, 'pitch': 354.70953369140625, 'tilt': -0.11324916034936905, 'center': -0.11902174353599548, 'subp': 0.0001302083401242271, 'fringe': 0.0, 'ri': 0, 'bi': 2, 'invView': 1, 'viewCone': 40.0})
-			print("   - device info:", LookingGlassAddon.deviceList[len(LookingGlassAddon.deviceList) - 1])
-
-
 	# This callback is required to be able to update the list of connected Looking Glass devices
 	def looking_glass_list_callback(self, context):
 
@@ -276,13 +216,13 @@ class LookingGlassAddonFunctions:
 		items = []
 
 		# if at least one Looking Glass is connected
-		if len(LookingGlassAddon.deviceList) > 0:
+		if len(pylio.DeviceManager.to_list()) > 0:
 
 			# then for each display in the device list
-			for device in LookingGlassAddon.deviceList:
+			for idx, device in enumerate(pylio.DeviceManager.to_list()):
 
 				# add an entry in the item list
-				items.append((str(device['index']), 'Display ' + str(device['index']) + ': ' + device['name'], 'Use this Looking Glass for lightfield rendering.'))
+				items.append((str(device.configuration['index']), 'Display ' + str(device.configuration['index']) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
 
 		else:
 
@@ -405,7 +345,7 @@ class LookingGlassAddonFunctions:
 			if context.scene.settings.render_use_device == True:
 
 				# currently selected device
-				device = LookingGlassAddon.deviceList[int(context.scene.settings.activeDisplay)]
+				device = pylio.DeviceManager.get_active()
 
 				# apply render settings for the scene to get the correct rendering frustum
 				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewWidth"]
@@ -462,7 +402,7 @@ class LookingGlassAddonFunctions:
 	def update_camera_selection(self, context):
 
 		# if no Looking Glass was detected
-		if len(LookingGlassAddon.deviceList) == 0:
+		if not pylio.DeviceManager.count():
 
 			# set the checkbox to False (because there is no device we
 			# could take the settings from)
@@ -1188,7 +1128,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
 
 			# if the device list is not empty, create a new lightfield window
-			if len(LookingGlassAddon.deviceList) > 0:
+			if pylio.DeviceManager.count() > 0:
 
 				# Create a new main window
 				bpy.ops.wm.window_new_main(dict(window=bpy.context.window_manager.windows[0]))
@@ -1217,7 +1157,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 
 	# if no Looking Glass was detected
-	if len(LookingGlassAddon.deviceList) == 0:
+	if not pylio.DeviceManager.count():
 
 		# set the "use device" checkbox in quilt setup to False
 		# (because there is no device we could take the settings from)
@@ -1240,11 +1180,26 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 
 	def execute(self, context):
 
-		# update the global list of all connected devices
-		LookingGlassAddonFunctions.LookingGlassDeviceList()
+		# log info
+		LookingGlassAddonLogger.info("Refreshing device information ...")
+
+		# if the a service for display communication is active
+		if LookingGlassAddon.service:
+
+			# refresh the list of connected devices using the active service
+			pylio.DeviceManager.refresh()
+
+			# log info
+			LookingGlassAddonLogger.info(" [#] Number of connected displays: %i" % pylio.DeviceManager.count())
+
+			# loop through the connected devices
+			for idx, device in enumerate(pylio.DeviceManager.to_list()):
+
+				# log info
+				LookingGlassAddonLogger.info(" [#] Display %i: %s" % (idx, device.name,))
 
 		# if no Looking Glass was detected
-		if len(LookingGlassAddon.deviceList) == 0:
+		if not pylio.DeviceManager.count():
 
 			# set the checkbox to False (because there is no device we
 			# could take the settings from)
@@ -1375,14 +1330,14 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		#column.separator()
 
 		# if no Looking Glass was detected
-		if len(LookingGlassAddon.deviceList) == 0:
+		if not pylio.DeviceManager.count():
 
 			# deactivate quilt preset and debug buttons
 			row_preset.enabled = False
 
 
 		# if the HoloPlay Service is NOT available
-		if LookingGlassAddon.HoloPlayService == False and debugging_use_dummy_device == False:
+		if (not LookingGlassAddon.service and debugging_use_dummy_device == False):
 
 			# deactivate the looking glass selection
 			row_orientationa.enabled = False
@@ -1617,7 +1572,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_preset.enabled = False
 
 		# if no Looking Glass was detected
-		if len(LookingGlassAddon.deviceList) == 0:
+		if not pylio.DeviceManager.count():
 
 			# deactivate the checkbox
 			row_use_device.enabled = False
@@ -1953,6 +1908,8 @@ def register():
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield_cursor)
 	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
+	# log info
+	LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
 
 
 
@@ -1967,45 +1924,44 @@ def register():
 	#		or when a new file is loaded
 	bpy.app.handlers.load_post.append(LookingGlassAddonInitHandler)
 
+	# log info
+	LookingGlassAddonLogger.info(" [#] Done.")
 
-
-
+	# log info
+	LookingGlassAddonLogger.info("Connecting to HoloPlay Service ...")
 
 	# create a service using "HoloPlay Service" backend
 	LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService)
 
+	# TODO: ERROR HANDLING
 	# if no errors were detected
 	if LookingGlassAddon.service or debugging_use_dummy_device == True:
 
-		# set status variable
-		LookingGlassAddon.HoloPlayService = True
-
-		# get HoloPlay Service Version
-		print(" # HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+		# log info
+		LookingGlassAddonLogger.info(" [#] HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
 
 		# make the device manager use the created service instance
 		pylio.DeviceManager.set_service(LookingGlassAddon.service)
 
-		# refresh the list of connected devices using the active service
+		# create a set of emulated devices
+		# NOTE: This automatically creates an emulated device for each device
+		#		that is defined in pyLightIO
+		pylio.DeviceManager.add_emulated()
+
+		# refresh the list of connected devices using the active pylio service
 		pylio.DeviceManager.refresh()
 
-		# get number of devices
-		print(" # Number of connected displays: %i" % pylio.DeviceManager.count())
 
-		# obtain the device list
-		LookingGlassAddonFunctions.LookingGlassDeviceList()
 
 		# get shader source codes
-		# TODO: Maybe it would make sense to load the shader directly here
-		#		and pass it on to the rendering operators as global variable
+		# TODO: THIS IS JUST HERE UNTIL LIVE VIEW IS REALIZED VIA HOPS
 		LookingGlassAddon.lightfieldVertexShaderSource = hpc.LightfieldVertShaderGLSL
 		LookingGlassAddon.lightfieldFragmentShaderSource = hpc.LightfieldFragShaderGLSL
 
-
-		print("########################################################################")
-		print("Initialized the Looking Glass Addon.")
-
 	else:
+
+		# log info
+		LookingGlassAddonLogger.info(" [#] Connection failed.")
 
 		# # prepare the error string from the error code
 		# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
@@ -2029,17 +1985,14 @@ def register():
 		# else:
 		# 	errstr = "Unknown error";
 
-		# print the error
-		print(" # Client access error (code = ", errco, "):", errstr)
-
 		print("########################################################################")
 		print("Looking Glass Connection failed. No lightfield viewport available.")
 
 
 def unregister():
 
-	# if the addon was previously successfully initialized
-	if LookingGlassAddon.HoloPlayService == True:
+	# if the a service for display communication is active
+	if LookingGlassAddon.service:
 
 		# Unregister at the Holoplay Service
 		pylio.ServiceManager.remove(LookingGlassAddon.service)

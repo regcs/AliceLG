@@ -31,8 +31,6 @@ from bpy_extras.view3d_utils import location_3d_to_region_2d, region_2d_to_origi
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *
 
-
-
 # --------- TRY TO LOAD SYSTEM API FOR WINDOW CONTROL -----------
 
 # if on macOS
@@ -266,7 +264,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# update the variable for the current Looking Glass device
-		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 
 
@@ -457,7 +455,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# find the NSScreen representing the Looking Glass
 				for screen in NSScreen.screens():
 
-					if screen.localizedName() == LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]['hdmi']:
+					if screen.localizedName() == pylio.DeviceManager.get_active()['hwid']:
 
 						# move the window to the Looking Glass Screen and resize it
 						NSApp._.windows[-1].setFrame_display_(screen.visibleFrame(), True)
@@ -556,7 +554,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		self.settings = context.scene.settings
 
 		# update the variable for the current Looking Glass device
-		if int(self.settings.activeDisplay) != -1: self.device = LookingGlassAddon.deviceList[int(self.settings.activeDisplay)]
+		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 		# if this scene was created AFTER the lightfield viewport was
 		# invoked, it might not have the correct setting for the lightfield window
