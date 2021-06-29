@@ -17,7 +17,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-import platform
+import sys, platform
 import functools
 import bpy, bgl
 import gpu
@@ -30,6 +30,15 @@ from bpy_extras.view3d_utils import location_3d_to_region_2d, region_2d_to_origi
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *
+
+# append the add-on's path to Blender's python PATH
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
+
+# TODO: Would be better, if from .lib import pylightio could be called,
+#		but for some reason that does not import all modules and throws
+#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+import pylightio as pylio
 
 # --------- TRY TO LOAD SYSTEM API FOR WINDOW CONTROL -----------
 

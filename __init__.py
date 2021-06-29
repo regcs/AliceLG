@@ -46,14 +46,14 @@ if "bpy" in locals():
 	import importlib
 
 	# reload the modal operators for the viewport & quilt rendering
-	importlib.reload(operators.looking_glass_viewport)
-	importlib.reload(operators.looking_glass_render_quilt)
+	importlib.reload(looking_glass_viewport)
+	importlib.reload(looking_glass_render_quilt)
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
-	importlib.reload(operators.looking_glass_global_variables)
+	importlib.reload(looking_glass_global_variables)
 
 	# reload the free Holoplay Core SDK
-	importlib.reload(operators.libHoloPlayCore.freeHoloPlayCoreAPI)
+	importlib.reload(libHoloPlayCore.freeHoloPlayCoreAPI)
 
 	# reload all preferences related code
 	importlib.reload(preferences)
@@ -61,19 +61,23 @@ if "bpy" in locals():
 else:
 
 	# import the modal operators for the viewport & quilt rendering
-	from .operators.looking_glass_viewport import *
-	from .operators.looking_glass_render_quilt import *
+	from .looking_glass_viewport import *
+	from .looking_glass_render_quilt import *
 
 	# TODO: Is there a better way to share global variables between all addon files and operators?
-	from .operators.looking_glass_global_variables import *
+	from .looking_glass_global_variables import *
 
 	# import the Holoplay Core SDK Python Wrapper
 	#from .operators import libHoloPlayCore as hpc
-	from .operators import libHoloPlayCore
+	import libHoloPlayCore
 	hpc = libHoloPlayCore.freeHoloPlayCoreAPI()
 
 	# import all preferences related code
 	from .preferences import *
+
+# append the add-on's path to Blender's python PATH
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
 
 
 
@@ -82,14 +86,15 @@ else:
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
 
+default_name=LookingGlassAddon.path + "/logs/test.log"
+base_filename, ext  = default_name.split(".")
+print(f"{base_filename}.{ext}")
+
 # this function is by @ranrande from stackoverflow:
 # https://stackoverflow.com/a/67213458
 def logfile_namer(default_name):
-    # This will be called when doing the log rotation
-    # default_name is the default filename that would be assigned, e.g. Rotate_Test.txt.YYYY-MM-DD
-    # Do any manipulations to that name here, for example this changes the name to Rotate_Test.YYYY-MM-DD.txt
-    base_filename, ext, date = default_name.split(".")
-    return f"{base_filename}.{date}.{ext}"
+	base_filename, ext, date = default_name.split(".")
+	return f"{base_filename}.{date}.{ext}"
 
 # logger for pyLightIO
 # +++++++++++++++++++++++++++++++++++++++++++++
@@ -172,10 +177,6 @@ LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_in
 LookingGlassAddonLogger.info("----------------------------------------------")
 LookingGlassAddonLogger.info("Initializing '%s' ..." % LookingGlassAddon.name)
 LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
-
-# append the add-on's path to Blender's python PATH
-sys.path.append(LookingGlassAddon.path)
-sys.path.append(LookingGlassAddon.libpath)
 
 try:
 

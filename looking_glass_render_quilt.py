@@ -19,13 +19,22 @@
 
 import bpy
 import time
-import os, platform, shutil
+import sys, os, platform, shutil
 import numpy as np
 from math import *
 from mathutils import *
 
 # TODO: Is there a better way to share global variables between all addon files and operators?
 from .looking_glass_global_variables import *
+
+# append the add-on's path to Blender's python PATH
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
+
+# TODO: Would be better, if from .lib import pylightio could be called,
+#		but for some reason that does not import all modules and throws
+#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+import pylightio as pylio
 
 # ------------ QUILT RENDERING -------------
 # Modal operator for handling rendering of a quilt out of Blender
