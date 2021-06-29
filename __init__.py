@@ -158,14 +158,15 @@ LookingGlassAddonLogger.addHandler(logfile_handler)
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
 
+default_name=LookingGlassAddon.path + "/logs/test.log"
+base_filename, ext  = default_name.split(".")
+print(f"{base_filename}.{ext}")
+
 # this function is by @ranrande from stackoverflow:
 # https://stackoverflow.com/a/67213458
 def logfile_namer(default_name):
-    # This will be called when doing the log rotation
-    # default_name is the default filename that would be assigned, e.g. Rotate_Test.txt.YYYY-MM-DD
-    # Do any manipulations to that name here, for example this changes the name to Rotate_Test.YYYY-MM-DD.txt
-    base_filename, ext, date = default_name.split(".")
-    return f"{base_filename}.{date}.{ext}"
+	base_filename, ext, date = default_name.split(".")
+	return f"{base_filename}.{date}.{ext}"
 
 # logger for pyLightIO
 # +++++++++++++++++++++++++++++++++++++++++++++
@@ -248,10 +249,6 @@ LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_in
 LookingGlassAddonLogger.info("----------------------------------------------")
 LookingGlassAddonLogger.info("Initializing '%s' ..." % LookingGlassAddon.name)
 LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
-
-# append the add-on's path to Blender's python PATH
-sys.path.append(LookingGlassAddon.path)
-sys.path.append(LookingGlassAddon.libpath)
 
 try:
 
