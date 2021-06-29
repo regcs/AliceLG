@@ -158,6 +158,15 @@ LookingGlassAddonLogger.addHandler(logfile_handler)
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
 
+# this function is by @ranrande from stackoverflow:
+# https://stackoverflow.com/a/67213458
+def logfile_namer(default_name):
+    # This will be called when doing the log rotation
+    # default_name is the default filename that would be assigned, e.g. Rotate_Test.txt.YYYY-MM-DD
+    # Do any manipulations to that name here, for example this changes the name to Rotate_Test.YYYY-MM-DD.txt
+    base_filename, ext, date = default_name.split(".")
+    return f"{base_filename}.{date}.{ext}"
+
 # logger for pyLightIO
 # +++++++++++++++++++++++++++++++++++++++++++++
 # NOTE: This is just to get the logger messages invoked by pyLightIO.
@@ -173,6 +182,7 @@ console_handler.setLevel(logging.WARNING)
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
 logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.namer = logfile_namer
 
 # create formatter
 formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
@@ -199,6 +209,7 @@ console_handler.setLevel(logging.WARNING)
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.path + '/logs/alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
 logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.namer = logfile_namer
 
 # create formatter
 formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
@@ -235,8 +246,8 @@ LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_in
 
 # log a info message
 LookingGlassAddonLogger.info("----------------------------------------------")
-LookingGlassAddonLogger.info("Initializing '%s'" % LookingGlassAddon.name)
-LookingGlassAddonLogger.info(" # Add-on path: %s" % LookingGlassAddon.path)
+LookingGlassAddonLogger.info("Initializing '%s' ..." % LookingGlassAddon.name)
+LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(LookingGlassAddon.path)
@@ -246,13 +257,13 @@ try:
 
 	# TODO: Let pylightio handle dependencies to PIL, pynng, cbor, sniffio, etc.
 	from .lib import PIL
-	LookingGlassAddonLogger.info(" # Imported pillow v.%s" % PIL.__version__)
+	LookingGlassAddonLogger.info(" [#] Imported pillow v.%s" % PIL.__version__)
 
 	# TODO: Would be better, if from .lib import pylightio could be called,
 	#		but for some reason that does not import all modules and throws
 	#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
 	import pylightio as pylio
-	LookingGlassAddonLogger.info(" # Imported pyLightIO v.%s" % pylio.__version__)
+	LookingGlassAddonLogger.info(" [#] Imported pyLightIO v.%s" % pylio.__version__)
 
 	# all python dependencies are fulfilled
 	LookingGlassAddon.python_dependecies = True

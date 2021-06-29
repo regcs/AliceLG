@@ -36,13 +36,8 @@ class LookingGlassAddon:
 	python_dependecies = False
 	show_preferences = True
 
-	# Was the connection to the holoplay service successfully initialized?
-	HoloPlayService = False
+	# the pyLightIO service for display communication
 	service = None
-
-	# List of dictionaries with one dictionary for each connected Looking Glass
-	# Each Dictionary contains all available data on the Looking Glass (including calibrations data)
-	deviceList = []
 
 	# Lockfile
 	has_lockfile = False
