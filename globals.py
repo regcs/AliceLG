@@ -31,6 +31,7 @@ class LookingGlassAddon:
 	path = bpy.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 	tmp_path = bpy.path.abspath(path + "/tmp/")
 	libpath = bpy.path.abspath(path + "/lib/")
+	logpath = bpy.path.abspath(path + "/logs/")
 
 	# python dependencies of the add-on present?
 	python_dependecies = False

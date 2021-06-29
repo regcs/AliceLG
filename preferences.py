@@ -55,8 +55,8 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			if bpy.app.version >= (2, 91, 0): python_path = bpy.path.abspath(sys.executable)
 
 			# generate logfile
-			logfile = open(bpy.path.abspath(LookingGlassAddon.libpath + "/logs/side-packages-install.log"), 'a')
-			LookingGlassAddonLogger.info("Installing missing side-packages. See '%s' for details." % (LookingGlassAddon.libpath + "/logs/side-packages-install.log",))
+			logfile = open(bpy.path.abspath(LookingGlassAddon.logpath + 'side-packages-install.log'), 'a')
+			LookingGlassAddonLogger.info("Installing missing side-packages. See '%s' for details." % (LookingGlassAddon.logpath + 'side-packages-install.log',))
 
 			# install the dependencies to the add-on's library path
 			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
