@@ -568,6 +568,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
+		# get all quilt presets from pylio
+		self.qs = pylio.LookingGlassQuilt.formats.get()
+
+
+
 		# RENDER SETTINGS
 		################################################################
 
