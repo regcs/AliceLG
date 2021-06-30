@@ -223,6 +223,22 @@ class LookingGlassAddonFunctions:
 		# return the item list
 		return items
 
+	# This callback is required to be able to update the list of presets
+	def quilt_preset_list_callback(self, context):
+
+		# prepare a item list with entries of the form "identifier, name, description"
+		items = []
+
+		# then for each display in the device list
+		for idx, preset in pylio.LookingGlassQuilt.formats.get().items():
+
+			# add an entry in the item list
+			items.append((str(idx), preset['description'], 'Use this Looking Glass for lightfield rendering.'))
+
+
+		# return the item list
+		return items
+
 	# poll function for the Looking Glass camera selection
 	# this prevents that an object is picked, which is no camera
 	def camera_selection_poll(self, object):
@@ -334,28 +350,28 @@ class LookingGlassAddonFunctions:
 				device = pylio.DeviceManager.get_active()
 
 				# apply render settings for the scene to get the correct rendering frustum
-				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewWidth"]
-				context.scene.render.resolution_y = LookingGlassAddon.qs[int(context.scene.settings.quiltPreset)]["viewHeight"]
+				context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.quiltPreset)]["view_width"]
+				context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.quiltPreset)]["view_height"]
 
 				# for landscape formatted devices
-				if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device['aspectRatio'] > 1:
+				if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device.aspect > 1:
 
 					# apply the correct aspect ratio
 					context.scene.render.pixel_aspect_x = 1.0
-					context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * device['aspectRatio'])
+					context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * device.aspect)
 
 				# for portrait formatted devices
 				else:
 
 					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device['aspectRatio']) / context.scene.render.resolution_x
+					context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device.aspect) / context.scene.render.resolution_x
 					context.scene.render.pixel_aspect_y = 1.0
 
 			else:
 
 				# apply render settings for the scene to get the correct rendering frustum
-				context.scene.render.resolution_x = LookingGlassAddon.qs[int(context.scene.settings.render_quilt_preset)]["viewWidth"]
-				context.scene.render.resolution_y = LookingGlassAddon.qs[int(context.scene.settings.render_quilt_preset)]["viewHeight"]
+				context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_width"]
+				context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_height"]
 
 				# TODO: At the moment this is hardcoded.
 				# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
@@ -721,17 +737,9 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											)
 
 	quiltPreset: bpy.props.EnumProperty(
-										items = [
-												('0', 'Resolution: Portrait Quilt, 48 Views', 'Display an 3360x3360 quilt with 48 views in the connected Looking Glass Portrait.'),
-												('1', 'Resolution: Portrait Quilt, 88 Views', 'Display an 4026x4096 quilt with 88 views in the connected Looking Glass Portrait.'),
-												('2', 'Resolution: Portrait Quilt, 91 Views', 'Display an 4225x4095 quilt with 91 views in the connected Looking Glass Portrait.'),
-												('3', 'Resolution: Portrait Quilt, 96 Views', 'Display an 4224x4096 quilt with 96 views in the connected Looking Glass Portrait.'),
-												('4', 'Resolution: Portrait Quilt, 108 Views', 'Display an 4224x4230 quilt with 108 views in the connected Looking Glass Portrait.'),
-												('5', 'Resolution: 2k Quilt, 32 Views', 'Display a 2k quilt with 32 views in the connected Looking Glass.'),
-												('6', 'Resolution: 4k Quilt, 45 Views', 'Display a 4k quilt with 45 views in the connected Looking Glass.'),
-												('7', 'Resolution: 8k Quilt, 45 Views', 'Display an 8k quilt with 45 views in the connected Looking Glass.')],
-										default='0',
-										name="View Resolution"
+										items = LookingGlassAddonFunctions.quilt_preset_list_callback,
+										name="View Resolution",
+										update=LookingGlassAddonFunctions.update_render_setting,
 										)
 
 	debug_view: bpy.props.BoolProperty(

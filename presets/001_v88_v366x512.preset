@@ -1,8 +1,10 @@
 {
-  'id': 1,
-  'description': "Portrait Quilt, 88 Views",
-  'view_width': 366,
-  'view_height': 512,
-  'columns': 11,
-  'rows': 8
+  "description": "Portrait, 88 Views",
+  "view_width": 366,
+  "view_height": 512,
+  "quilt_width": 4026,
+  "quilt_height": 4096,
+  "columns": 11,
+  "rows": 8,
+  "total_views": 88
 }

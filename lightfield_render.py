@@ -541,6 +541,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# get the calibration data of the selected Looking Glass from the deviceList
 		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
+		# get all quilt presets from pylio
+		self.qs = pylio.LookingGlassQuilt.formats.get()
+
+
+
 		# RENDER SETTINGS
 		################################################################
 
@@ -767,21 +772,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if self.settings.render_use_device == True:
 
 				self.rendering_deviceType = self.device.type
-				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewWidth"]
-				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["viewHeight"]
-				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["rows"]
-				self.rendering_columns = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["columns"]
-				self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.quiltPreset)]["totalViews"]
+				self.rendering_viewWidth = self.qs[int(self.settings.quiltPreset)]["view_width"]
+				self.rendering_viewHeight = self.qs[int(self.settings.quiltPreset)]["view_height"]
+				self.rendering_rows = self.qs[int(self.settings.quiltPreset)]["rows"]
+				self.rendering_columns = self.qs[int(self.settings.quiltPreset)]["columns"]
+				self.rendering_totalViews = self.qs[int(self.settings.quiltPreset)]["total_views"]
 
 			# else, if the settings were specified separately
 			else:
 
 				self.rendering_deviceType = self.render_setting_scene.settings.render_device_type
-				self.rendering_viewWidth = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewWidth"]
-				self.rendering_viewHeight = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["viewHeight"]
-				self.rendering_rows = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["rows"]
-				self.rendering_columns = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["columns"]
-				self.rendering_totalViews = LookingGlassAddon.qs[int(self.settings.render_quilt_preset)]["totalViews"]
+				self.rendering_viewWidth = self.qs[int(self.settings.render_quilt_preset)]["view_width"]
+				self.rendering_viewHeight = self.qs[int(self.settings.render_quilt_preset)]["view_height"]
+				self.rendering_rows = self.qs[int(self.settings.render_quilt_preset)]["rows"]
+				self.rendering_columns = self.qs[int(self.settings.render_quilt_preset)]["columns"]
+				self.rendering_totalViews = self.qs[int(self.settings.render_quilt_preset)]["total_views"]
 
 			# if the operator was called with the animation flag set
 			if self.animation == True:

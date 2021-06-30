@@ -36,7 +36,7 @@ sys.path.append(LookingGlassAddon.libpath)
 
 # TODO: Would be better, if from .lib import pylightio could be called,
 #		but for some reason that does not import all modules and throws
-#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+#		"AliceLG.lib.pylio has no attribute 'lookingglass"
 import pylightio as pylio
 
 
@@ -44,6 +44,237 @@ import pylightio as pylio
 
 
 # ------------ LIGHTFIELD RENDERING -------------
+# Modal operator for controlled redrawing of the lightfield window.
+class LOOKINGGLASS_OT_render_lightfield_viewport(bpy.types.Operator):
+
+	bl_idname = "render.lightfield"
+	bl_label = "Looking Glass Lightfield Viewport rendering"
+	bl_options = {'REGISTER', 'INTERNAL'}
+
+	# poll method
+	@classmethod
+	def poll(cls, context):
+
+		# if the lightfield viewport is active
+		if LookingGlassAddon.lightfieldWindow != None:
+
+			# return True, so the operator is executed
+			return True
+
+		else:
+
+			# return False, so the operator is NOT executed
+			return False
+
+
+	# cancel the modal operator
+	def cancel(self, context):
+
+		# stop timer
+		context.window_manager.event_timer_remove(self.timerEvent)
+
+
+	# invoke the operator
+	def invoke(self, context, event):
+		start = time.time()
+
+		# make an internal variable for the window_manager,
+		# which can be accessed from methods that have no "context" parameter
+		self.settings = context.scene.settings
+
+		# update the variable for the current Looking Glass device
+		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+
+
+
+		# PREPARE THE OFFSCREEN RENDERING
+		################################################################
+
+		# get all quilt presets from pylio
+		self.qs = pylio.LookingGlassQuilt.formats.get()
+
+
+		# CREATE OFFSCREENS FOR DRAWING
+		# iterate through all presets
+		for i in range(0, len(self.qs), 1):
+
+			# create a GPUOffscreen for the quilt / lightfield
+			self.qs[i]["quiltOffscreen"] = gpu.types.GPUOffScreen(self.qs[i]["quilt_width"], self.qs[i]["quilt_height"])
+			self.qs[i]["viewOffscreens"] = []
+
+			# create a list for the GPUOffscreens of the different views
+			for view in range(0, self.qs[i]["total_views"], 1):
+
+				self.qs[i]["viewOffscreens"].append(gpu.types.GPUOffScreen(int(self.qs[i]["view_width"]), int(self.qs[i]["view_height"])))
+
+
+		# TODO: REMOVE THIS
+		# Load the lightfield shaders
+		if self.loadlightFieldShaders() == None:
+			self.report({"ERROR"}, "Lightfield shader not compiled")
+			raise Exception()
+
+		# Load the specific calibration data of the LG into the shaders
+		self.loadCalibrationIntoShader()
+
+		# pass quilt settings to the lightfield shader
+		self.passQuiltSettingsToShader(self.preset)
+
+
+
+		# PREPARE THE LIGHTFIELD WINDOW AND OVERRIDE CONTEXT
+		################################################################
+
+		# # make a temporary variable
+		# print("Window: ", LookingGlassAddon.lightfieldWindow)
+		# print(" # x: ", LookingGlassAddon.lightfieldWindow.x)
+		# print(" # y: ", LookingGlassAddon.lightfieldWindow.y)
+		# print(" # width: ", LookingGlassAddon.lightfieldWindow.width)
+		# print(" # height: ", LookingGlassAddon.lightfieldWindow.height)
+
+		# we use the last area for our lightfield drawing
+		# NOTE: This is an arbitrary choice, but it needs to be consistent throughout the code
+		area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
+
+		# Switch this area to a SpaceView3D so that we can create the override context from it
+		area.type = "VIEW_3D"
+
+		# find the correct region
+		for region in area.regions:
+			if region.type == "WINDOW":
+
+				# create an override context for the drawing operations later
+				for space in area.spaces:
+					if space.type == "VIEW_3D":
+
+						# remember the area, so that Blender will only draw the lightfield in this area
+						LookingGlassAddon.lightfieldRegion = region
+						LookingGlassAddon.lightfieldArea = area
+						LookingGlassAddon.lightfieldSpace = space
+
+						# create an override context
+						self.override = context.copy()
+
+						self.override['area'] = area
+						self.override['region'] = region
+						self.override['space_data'] = space
+						self.override['scene'] = context.scene
+						self.override['view_layer'] = context.view_layer
+
+						# ADJUST VIEWPORT SETTINGS
+						# lock viewport to local camera
+						space.use_local_camera = True
+						space.lock_camera = True
+
+						# if a looking glass camera is selected
+						if context.scene.settings.lookingglassCamera != None:
+
+							# set space to this camera (automatically None, if none is selected)
+							space.camera = context.scene.settings.lookingglassCamera
+
+						# set viewport view location to default
+						space.region_3d.view_distance = 15
+						space.region_3d.view_matrix = 	(
+														(0.41, -0.4017, 0.8188, 0.0),
+				               							(0.912, 0.1936, -0.3617, 0.0),
+				               							(-0.0133, 0.8959, 0.4458, 0.0),
+				               							(0.0, 0.0, -14.9892, 1.0)
+														)
+
+						# update view transformation matrices
+						space.region_3d.update()
+
+						# set view mode to "CAMERA"
+						if space.region_3d.view_perspective != 'CAMERA': bpy.ops.view3d.view_camera(self.override)
+
+						# set FOV to 14° as suggested by the LookingGlassFactory documentation
+						# we calculate the field of view from the projection matrix
+						self.viewportViewMatrix = space.region_3d.view_matrix.inverted_safe()
+						projectionMatrix = space.region_3d.perspective_matrix @ self.viewportViewMatrix
+
+						# FOV = 2 * arctan(sensor_size / focal_length)
+						# => focal_length = sensor_size / tan(FOV / 2)
+						#
+						# for Blender viewport: fov = degrees(2.0 * atan(1.0 / projectionMatrix[1][1]))
+						#
+						# since we only know the ratio "sensor_size / focal_length", which is given by "1 / projectionMatrix[1][1]",
+						# we need to calculate sensor_size from the projection matrix and the focal length and than set the new
+						# focal length
+						sensor_size = space.lens / projectionMatrix[1][1]
+
+						# set the new focal length, corresponding to a FOV of 14°
+						space.lens = sensor_size / tan(radians(14 / 2))
+
+						# hide header
+						space.show_region_header = False
+						space.show_region_tool_header = False
+						space.show_region_toolbar = False
+						space.show_region_ui = False
+						space.show_gizmo = False
+						space.show_gizmo_tool = False
+
+					break
+
+				break
+
+
+
+
+
+		# REGISTER ALL HANDLERS FOR THE LIGHTFIELD RENDERING
+		################################################################
+
+		# HANDLERS FOR CONTROL PURPOSES
+		# ++++++++++++++++++++++++++++++
+		# we exploit the draw_hanlder of the SpaceView3D to track the SpaceView which is currently modified by the user
+		self._handle_trackActiveWindow = bpy.types.SpaceView3D.draw_handler_add(self.trackActiveWindow, (context,), 'WINDOW', 'PRE_VIEW')
+
+		# Register app handlers that check if the LookingGlass shall be updated:
+		#  (1) Every time something in the scene changed (for camera movement and scene editing)
+		#  (2) Every time, the current frame changed (for animations)
+		self._handle_trackDepsgraphUpdates = bpy.app.handlers.depsgraph_update_post.append(self.trackDepsgraphUpdates)
+		self._handle_trackFrameChanges = bpy.app.handlers.frame_change_post.append(self.trackDepsgraphUpdates)
+
+
+
+		# HANDLERS FOR DRAWING PURPOSES
+		# ++++++++++++++++++++++++++++++
+		# TODO: this needs to be adjusted to enable switching between resolutions with different numbers of views
+		# draw handler for rendering the views
+		# NOTE: - we use 108 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
+		for view in range(0, 108, 1):#self.qs[self.preset]["total_views"]):
+
+			self._handle_viewDrawing.append(bpy.types.SpaceView3D.draw_handler_add(self.copyViewToQuilt, (context, view), 'WINDOW', 'POST_PIXEL'))
+
+		# draw callback to draw the lightfield in the window
+		self._handle_lightfieldDrawing = bpy.types.SpaceView3D.draw_handler_add(self.drawLightfield, (context,), 'WINDOW', 'POST_PIXEL')
+
+		# draw callback to draw the lightfield cursor
+		self._handle_lightfieldCursor = bpy.types.SpaceView3D.draw_handler_add(self.updateLightfieldCursor, (context,), 'WINDOW', 'PRE_VIEW')
+
+
+
+
+		# HANDLERS FOR OPERATOR CONTROL
+		# ++++++++++++++++++++++++++++++
+		# Create timer event that runs every millisecond to check if the lightfield needs to be updated
+		self.timerEvent = context.window_manager.event_timer_add(0.001, window=context.window)
+
+		# add the modal handler
+		context.window_manager.modal_handler_add(self)
+
+
+		# MOVE THE WINDOW TO THE CORRECT SCREEN & TOGGLE FULLSCREEN
+		################################################################
+		# THIS HAS BEEN REMOVED
+
+		# keep the modal operator running
+		return {'RUNNING_MODAL'}
+
+
+
+
+
 # Modal operator for controlled redrawing of the lightfield window.
 class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
@@ -149,19 +380,19 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		if self._handle_lightfieldDrawing: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfieldDrawing, 'WINDOW')
 
 		# iterate through all presets
-		for i in range(0, len(LookingGlassAddon.qs), 1):
+		for i in range(0, len(self.qs), 1):
 
 			# free the GPUOffscreen for the quilt / lightfield
-			LookingGlassAddon.qs[i]["quiltOffscreen"].free()
+			self.qs[i]["quiltOffscreen"].free()
 
 			# iterate through all quilt views
-			for view in range(0, LookingGlassAddon.qs[i]["totalViews"], 1):
+			for view in range(0, self.qs[i]["total_views"], 1):
 
 				# and free the corresponding GPUOffscreen
-				LookingGlassAddon.qs[i]["viewOffscreens"][view].free()
+				self.qs[i]["viewOffscreens"][view].free()
 
 			# clear the list
-			LookingGlassAddon.qs[i]["viewOffscreens"].clear()
+			self.qs[i]["viewOffscreens"].clear()
 
 		# set status variables to default state
 		LookingGlassAddon.lightfieldWindow = None
@@ -212,17 +443,21 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# PREPARE THE SHADERS AND LIGHTFIELD RENDERING
 		################################################################
 
+		# get all quilt presets from pylio
+		self.qs = pylio.LookingGlassQuilt.formats.get()
+
 		# CREATE OFFSCREENS FOR DRAWING
 		# iterate through all presets
-		for i in range(0, len(LookingGlassAddon.qs), 1):
+		for i, preset in self.qs.items():
 
 			# create a GPUOffscreen for the quilt / lightfield
-			LookingGlassAddon.qs[i]["quiltOffscreen"] = gpu.types.GPUOffScreen(LookingGlassAddon.qs[i]["width"], LookingGlassAddon.qs[i]["height"])
+			self.qs[i]["quiltOffscreen"] = gpu.types.GPUOffScreen(self.qs[i]["quilt_width"], self.qs[i]["quilt_height"])
+			self.qs[i]["viewOffscreens"] = []
 
 			# create a list for the GPUOffscreens of the different views
-			for view in range(0, LookingGlassAddon.qs[i]["totalViews"], 1):
+			for view in range(0, self.qs[i]["total_views"], 1):
 
-				LookingGlassAddon.qs[i]["viewOffscreens"].append(gpu.types.GPUOffScreen(int(LookingGlassAddon.qs[i]["viewWidth"]), int(LookingGlassAddon.qs[i]["viewHeight"])))
+				self.qs[i]["viewOffscreens"].append(gpu.types.GPUOffScreen(int(self.qs[i]["view_width"]), int(self.qs[i]["view_height"])))
 
 		# Load the lightfield shaders
 		if self.loadlightFieldShaders() == None:
@@ -357,7 +592,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# TODO: this needs to be adjusted to enable switching between resolutions with different numbers of views
 		# draw handler for rendering the views
 		# NOTE: - we use 108 handlers, because this enables rendering of all views at maximum speed (limited by the fps of the Blender viewport)
-		for view in range(0, 108, 1):#LookingGlassAddon.qs[self.preset]["totalViews"]):
+		for view in range(0, 108, 1):#self.qs[self.preset]["total_views"]):
 
 			self._handle_viewDrawing.append(bpy.types.SpaceView3D.draw_handler_add(self.copyViewToQuilt, (context, view), 'WINDOW', 'POST_PIXEL'))
 
@@ -659,13 +894,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		try:
 			# set viewportion to the full view
 			# NOTE: This is always 1 for landscape, but might be different for portait LG?
-			self.lightFieldShader.uniform_float("viewPortion", (LookingGlassAddon.qs[self.preset]["viewWidth"] * LookingGlassAddon.qs[self.preset]["columns"] / LookingGlassAddon.qs[self.preset]["width"], LookingGlassAddon.qs[self.preset]["viewHeight"] * LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["height"]))
+			self.lightFieldShader.uniform_float("viewPortion", (self.qs[self.preset]["view_width"] * self.qs[self.preset]["columns"] / self.qs[self.preset]["quilt_width"], self.qs[self.preset]["view_height"] * self.qs[self.preset]["rows"] / self.qs[self.preset]["quilt_height"]))
 			self.lightFieldShader.uniform_int("overscan", 0)
 		except ValueError:
 			pass  # These uniforms are not used by the free shader
 
 		# number of columns and rows of views
-		self.lightFieldShader.uniform_float("tile", (LookingGlassAddon.qs[self.preset]["columns"], LookingGlassAddon.qs[self.preset]["rows"], LookingGlassAddon.qs[self.preset]["totalViews"]))
+		self.lightFieldShader.uniform_float("tile", (self.qs[self.preset]["columns"], self.qs[self.preset]["rows"], self.qs[self.preset]["total_views"]))
 
 
 
@@ -753,7 +988,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			cameraSize = cameraDistance * tan(fov / 2)
 
 			# start at viewCone * 0.5 and go up to -viewCone * 0.5
-			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device.viewCone)
+			offsetAngle = (0.5 - view / (self.qs[self.preset]["total_views"] - 1)) * radians(self.device.viewCone)
 
 			# calculate the offset that the camera should move
 			offset = cameraDistance * tan(offsetAngle)
@@ -779,7 +1014,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			cameraSize = cameraDistance * tan(fov / 2)
 
 			# start at viewCone * 0.5 and go up to -viewCone * 0.5
-			offsetAngle = (0.5 - view / (LookingGlassAddon.qs[self.preset]["totalViews"] - 1)) * radians(self.device.viewCone)
+			offsetAngle = (0.5 - view / (self.qs[self.preset]["total_views"] - 1)) * radians(self.device.viewCone)
 
 			# calculate the offset that the camera should move
 			offset = cameraDistance * tan(offsetAngle)
@@ -924,7 +1159,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 					# pass quilt settings to the lightfield shader
 					self.passQuiltSettingsToShader(self.preset)
 
-			#print("copyViewToQuilt start (view: ", view, ": ", time.time() - self.start_multi_view, (LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].width, LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].height))
+			#print("copyViewToQuilt start (view: ", view, ": ", time.time() - self.start_multi_view, (self.qs[self.preset]["viewOffscreens"][view].width, self.qs[self.preset]["viewOffscreens"][view].height))
 
 
 			# PREPARE VIEW & PROJECTION MATRIX
@@ -952,10 +1187,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
 						depsgraph=LookingGlassAddon.lightfieldWindow.view_layer.depsgraph,
-						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
-						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+						x = self.qs[self.preset]["view_width"],
+						y = self.qs[self.preset]["view_height"],
 						scale_x = 1.0,
-						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device.aspect,
+						scale_y = (self.qs[self.preset]["rows"] / self.qs[self.preset]["columns"]) / self.device.aspect,
 					)
 
 			# otherwise we take the (lightfield) viewport matrices
@@ -981,7 +1216,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			# 		- files bug report (on 2020-12-28): https://developer.blender.org/T84227
 
 			# draw the viewport rendering to the offscreen for the current view
-			LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].draw_view3d(
+			self.qs[self.preset]["viewOffscreens"][view].draw_view3d(
 				# we use the "Scene" and the "View Layer" that is active in the Window
 				# the user currently works in
 				scene=LookingGlassAddon.lightfieldWindow.scene,
@@ -996,7 +1231,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 			#print("copyViewToQuilt end: ", time.time() - self.start_multi_view)
 
 			# if this was the last view
-			if view == LookingGlassAddon.qs[self.preset]["totalViews"] - 1:
+			if view == self.qs[self.preset]["total_views"] - 1:
 
 				# update the quilt image in the image_editor,
 				# which is used for display in the LookingGlass
@@ -1026,11 +1261,11 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				if self.updateQuilt == True or self.settings.viewport_show_cursor == True:
 
 					# bind the offscreen used for the quilt
-					with LookingGlassAddon.qs[self.preset]["quiltOffscreen"].bind():
+					with self.qs[self.preset]["quiltOffscreen"].bind():
 
 						start_blit = time.time()
 						# for all views
-						for view in range(LookingGlassAddon.qs[self.preset]["totalViews"]):
+						for view in range(self.qs[self.preset]["total_views"]):
 
 							# push/pop the projection matrices
 							with gpu.matrix.push_pop_projection():
@@ -1041,13 +1276,13 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 								gpu.matrix.load_projection_matrix(Matrix.Identity(4))
 
 								# calculate the position of the view
-								x = 2 * (view % LookingGlassAddon.qs[self.preset]["columns"]) * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"] - 1
-								y = 2 * int(view / LookingGlassAddon.qs[self.preset]["columns"]) * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"] - 1
+								x = 2 * (view % self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"] - 1
+								y = 2 * int(view / self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"] - 1
 
 								# Copy the view texture into the quilt texture,
 								# but transform the position and dimensions to
 								# normalized device coordinates before that
-								draw_texture_2d(LookingGlassAddon.qs[self.preset]["viewOffscreens"][view].color_texture, (x, y), 2 * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"], 2 * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"])
+								draw_texture_2d(self.qs[self.preset]["viewOffscreens"][view].color_texture, (x, y), 2 * self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"], 2 * self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"])
 
 								# draw the lightfield mouse cursor if desired
 								if self.settings.viewport_show_cursor == True:
@@ -1067,7 +1302,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 				# bind the quilt texture
 				bgl.glActiveTexture(bgl.GL_TEXTURE0)
-				bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.qs[self.preset]["quiltOffscreen"].color_texture)
+				bgl.glBindTexture(bgl.GL_TEXTURE_2D, self.qs[self.preset]["quiltOffscreen"].color_texture)
 
 				# bind the lightfield shader for drawing operations
 				self.lightFieldShader.bind()
@@ -1093,8 +1328,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# try to find the fitting preset based on quilt size
 				# TODO: For the moment checking for the quilt size is okay,
 				#		but later we need better checks. Can we access metadata?
-				for i in range(len(LookingGlassAddon.qs)):
-					if LookingGlassAddon.qs[i]['width'] == context.scene.settings.quiltImage.size[0]:
+				for i in range(len(self.qs)):
+					if self.qs[i]['width'] == context.scene.settings.quiltImage.size[0]:
 
 						# use this preset
 						preset = i
@@ -1165,10 +1400,10 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# get the camera's projection matrix
 				projection_matrix = camera.calc_matrix_camera(
 						depsgraph = LookingGlassAddon.lightfieldWindow.view_layer.depsgraph,
-						x = LookingGlassAddon.qs[self.preset]["viewWidth"],
-						y = LookingGlassAddon.qs[self.preset]["viewHeight"],
+						x = self.qs[self.preset]["view_width"],
+						y = self.qs[self.preset]["view_height"],
 						scale_x = 1.0,
-						scale_y = (LookingGlassAddon.qs[self.preset]["rows"] / LookingGlassAddon.qs[self.preset]["columns"]) / self.device.aspect,
+						scale_y = (self.qs[self.preset]["rows"] / self.qs[self.preset]["columns"]) / self.device.aspect,
 					)
 
 			# otherwise we take the (lightfield) viewport matrices
@@ -1214,8 +1449,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 				# if point is in front of camera
 				if prj.w > 0.0:
 
-					width_half = (2 * LookingGlassAddon.qs[self.preset]["viewWidth"] / LookingGlassAddon.qs[self.preset]["width"]) / 2.0
-					height_half = (2 * LookingGlassAddon.qs[self.preset]["viewHeight"] / LookingGlassAddon.qs[self.preset]["height"]) / 2.0
+					width_half = (2 * self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"]) / 2.0
+					height_half = (2 * self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"]) / 2.0
 
 					location = Vector((
 						width_half + width_half * (prj.x / prj.w),

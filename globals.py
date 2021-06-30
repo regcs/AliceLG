@@ -18,7 +18,8 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-import os
+import sys, os, json
+
 
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
@@ -32,6 +33,7 @@ class LookingGlassAddon:
 	tmp_path = bpy.path.abspath(path + "/tmp/")
 	libpath = bpy.path.abspath(path + "/lib/")
 	logpath = bpy.path.abspath(path + "/logs/")
+	presetpath = bpy.path.abspath(path + "/presets/")
 
 	# python dependencies of the add-on present?
 	python_dependecies = False
@@ -70,122 +72,28 @@ class LookingGlassAddon:
 	lightfieldVertexShaderSource = None
 	lightfieldFragmentShaderSource = None
 
-
-
-	# GLOBAL LIST OF QUILT Settings
+	# LOOKING GLASS QUILT PRESETS
 	# +++++++++++++++++++++++++++++++++++++++
-	# define a list
-	qs = []
-
 	# set up quilt settings
-	def setupQuiltPresets():
+	@classmethod
+	def setupQuiltPresets(cls):
 
-		# there are 5 presets to choose from:
-		# - portrait standard settings
-		LookingGlassAddon.qs.append({
-				"width": 3360,
-				"height": 3360,
-				"columns": 8,
-				"rows": 6,
-				"totalViews": 48,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
+		# append the add-on's path to Blender's python PATH
+		sys.path.append(cls.path)
+		sys.path.append(cls.libpath)
 
-		# - portrait settings with many views
-		LookingGlassAddon.qs.append({
-				"width": 4026,
-				"height": 4096,
-				"columns": 11,
-				"rows": 8,
-				"totalViews": 88,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
+		# TODO: Would be better, if from .lib import pylightio could be called,
+		#		but for some reason that does not import all modules and throws
+		#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+		import pylightio as pylio
 
-		# - portrait settings with many views
-		LookingGlassAddon.qs.append({
-				"width": 4225,
-				"height": 4095,
-				"columns": 13,
-				"rows": 7,
-				"totalViews": 91,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
+		# read the user-defined quilt presets from the add-on directory
+		# and add them to the pylio quilt presets
+		for file_name in sorted(os.listdir(cls.presetpath)):
+			if file_name.endswith('.preset'):
+				with open(cls.presetpath + file_name) as preset_file:
+					pylio.LookingGlassQuilt.formats.add(json.load(preset_file))
 
-		# - portrait settings with many views
-		LookingGlassAddon.qs.append({
-				"width": 4224,
-				"height": 4096,
-				"columns": 12,
-				"rows": 8,
-				"totalViews": 96,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
-
-		# - portrait settings with many views
-		LookingGlassAddon.qs.append({
-				"width": 4224,
-				"height": 4230,
-				"columns": 12,
-				"rows": 9,
-				"totalViews": 108,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
-
-		# - standard settings
-		LookingGlassAddon.qs.append({
-				"width": 2048,
-				"height": 2048,
-				"columns": 4,
-				"rows": 8,
-				"totalViews": 32,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
-
-		# - high resolution settings (4k)
-		LookingGlassAddon.qs.append({
-				"width": 4095,
-				"height": 4095,
-				"columns": 5,
-				"rows": 9,
-				"totalViews": 45,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
-
-		# - 8k settings
-		LookingGlassAddon.qs.append({
-				"width": 4096 * 2,
-				"height": 4096 * 2,
-				"columns": 5,
-				"rows": 9,
-				"totalViews": 45,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
-
-		# - LOW RESOLUTION FOR PREVIEW
-		LookingGlassAddon.qs.append({
-				"width": 512,
-				"height": 512,
-				"columns": 4,
-				"rows": 8,
-				"totalViews": 32,
-				"quiltOffscreen": None,
-				"viewOffscreens": []
-				})
-
-		# iterate through all presets
-		for i in range(0, len(LookingGlassAddon.qs), 1):
-
-			# calculate viewWidth and viewHeight
-			LookingGlassAddon.qs[i]["viewWidth"] = int(round(LookingGlassAddon.qs[i]["width"] / LookingGlassAddon.qs[i]["columns"]))
-			LookingGlassAddon.qs[i]["viewHeight"] = int(round(LookingGlassAddon.qs[i]["height"] / LookingGlassAddon.qs[i]["rows"]))
 
 
 	# GLOBAL QUILT VIEWER DATA
