@@ -204,14 +204,29 @@ class LookingGlassAddonFunctions:
 		# prepare a item list with entries of the form "identifier, name, description"
 		items = []
 
-		# if at least one Looking Glass is connected
-		if len(pylio.DeviceManager.to_list()) > 0:
+		# if at least one Looking Glass is connected OR debug mode is activated
+		if len(pylio.DeviceManager.to_list()) > 0 or debugging_use_dummy_device:
 
 			# then for each display in the device list
 			for idx, device in enumerate(pylio.DeviceManager.to_list()):
 
-				# add an entry in the item list
-				items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
+				# if this device is a real one OR the debug mode is active
+				if (not device.emulated or debugging_use_dummy_device):
+
+					# add an entry in the item list
+					items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
+
+			# FOR DEBUGGING ONLY
+			if debugging_use_dummy_device:
+
+				# then for each display in the device list
+				for idx, device in enumerate(pylio.DeviceManager.to_list(None, True)):
+
+					# if this device is a real one OR the debug mode is active
+					if (not device.emulated or debugging_use_dummy_device):
+
+						# add an entry in the item list
+						items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
 
 		else:
 
@@ -403,8 +418,8 @@ class LookingGlassAddonFunctions:
 	# update function for property updates concerning camera selection
 	def update_camera_selection(self, context):
 
-		# if no Looking Glass was detected
-		if not pylio.DeviceManager.count():
+		# if no Looking Glass was detected AND debug mode is not activated
+		if not pylio.DeviceManager.count() and not debugging_use_dummy_device:
 
 			# set the checkbox to False (because there is no device we
 			# could take the settings from)
@@ -1121,7 +1136,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 				bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
 
 				# Invoke modal operator for the lightfield rendering
-				bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+				bpy.ops.render.viewport(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 			else:
 
@@ -1132,8 +1147,8 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 				bpy.context.scene.settings.ShowLightfieldWindow = False
 
 
-	# if no Looking Glass was detected
-	if not pylio.DeviceManager.count():
+	# if no Looking Glass was detected AND debug mode is not activated
+	if not pylio.DeviceManager.count() and not debugging_use_dummy_device:
 
 		# set the "use device" checkbox in quilt setup to False
 		# (because there is no device we could take the settings from)
@@ -1169,13 +1184,13 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 			LookingGlassAddonLogger.info(" [#] Number of connected displays: %i" % pylio.DeviceManager.count())
 
 			# loop through the connected devices
-			for idx, device in enumerate(pylio.DeviceManager.to_list()):
+			for idx, device in enumerate(pylio.DeviceManager.to_list(None, None)):
 
 				# log info
 				LookingGlassAddonLogger.info(" [#] Display %i: %s" % (idx, device.name,))
 
-		# if no Looking Glass was detected
-		if not pylio.DeviceManager.count():
+		# if no Looking Glass was detected AND debug mode is deaqctivated
+		if not pylio.DeviceManager.count() and not debugging_use_dummy_device:
 
 			# set the checkbox to False (because there is no device we
 			# could take the settings from)
@@ -1185,7 +1200,7 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 		elif (pylio.DeviceManager.count() and int(context.scene.settings.activeDisplay) == -1):
 
 			# make the first display the active display
-			pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+			pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
 
 		return {'FINISHED'}
 
@@ -1224,7 +1239,7 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), 'INVOKE_DEFAULT', use_hide_panels=True)
 
 			# Invoke modal operator for the lightfield rendering
-			bpy.ops.render.lightfield(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
+			bpy.ops.render.viewport(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
 
 		else:
 
@@ -1270,8 +1285,8 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		row_preset.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 		#column.separator()
 
-		# if no Looking Glass was detected
-		if not pylio.DeviceManager.count():
+		# if no Looking Glass was detected AND debug mode is not activated
+		if not pylio.DeviceManager.count() and not debugging_use_dummy_device:
 
 			# deactivate quilt preset and debug buttons
 			row_preset.enabled = False
@@ -1512,8 +1527,8 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_orientation.enabled = False
 			row_preset.enabled = False
 
-		# if no Looking Glass was detected
-		if not pylio.DeviceManager.count():
+		# if no Looking Glass was detected AND debug mode is not activated
+		if not pylio.DeviceManager.count() and not debugging_use_dummy_device:
 
 			# deactivate the checkbox
 			row_use_device.enabled = False
@@ -1837,7 +1852,7 @@ def register():
 	bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
 	# Looking Glass viewport & camera frustum
-	bpy.utils.register_class(LOOKINGGLASS_OT_render_lightfield)
+	bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
 	bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
 
 	# UI elements
@@ -1892,6 +1907,7 @@ def register():
 		pylio.DeviceManager.refresh()
 
 		# if device are connected, make the first one the active one
+		if debugging_use_dummy_device: pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
 		if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
 
 
@@ -2033,7 +2049,7 @@ def unregister():
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
 	# Looking Glass viewport & camera frustum
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_lightfield)
+	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 
 
