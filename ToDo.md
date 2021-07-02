@@ -24,7 +24,11 @@
 
   => check: if 'pip install' to defined path, are dependencies also installed there?
 
+- store user defined presets
+
 - decide: move all panel / ui related things to an extra file 'ui.py' (?)
+
+- decide: remove the quilt debug view button or find a way to activate from within Alice?
 
 ## BUGS / ENHANCEMENTS
 
