@@ -39,7 +39,7 @@ Please keep in mind that this beta version of the add-on might contain errors th
 
 1. _Optional:_ Install the Holoplay Service App on your PC or Mac (recommended for maximum compatability).
 
-2. Download the [zip file](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip) of this addon.
+2. Download the [zip file](https://github.com/regcs/AliceLG/releases/download/v1.1.5-beta/AliceLG-beta7.zip) of this addon.
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
