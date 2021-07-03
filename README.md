@@ -2,7 +2,7 @@
 
 **Author:** Christian Stolze
 
-### Let [Alice/LG](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
+### Let [Alice/LG](https://github.com/regcs/AliceLG/releases/download/v1.1.5-beta/AliceLG-beta7.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## About the Add-on
 This add-on was created for the use of Blender with the Looking Glass holographic displays. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). 
