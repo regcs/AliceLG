@@ -834,7 +834,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		if self.rendering_deviceType == 'portrait':
 
 			# set the correct view cone
-			self.rendering_viewCone = 58.0
+			self.rendering_viewCone = 40.0
 
 			# apply the correct aspect ratio
 			self.render_setting_scene.render.pixel_aspect_x = (0.75 * self.render_setting_scene.render.resolution_y) / self.render_setting_scene.render.resolution_x
@@ -1082,7 +1082,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						if self.animation == False:
 
 							# rename the backup view file
-							os.rename(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
+							os.replace(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
 
 							# rename the Blender image to "Quilt Render Result"
 							bpy.data.images[os.path.basename(self.rendering_view_filepath)].name = "Quilt Render Result"
@@ -1099,10 +1099,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					else:
 
 						# rename the quilt file
-						os.rename(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_filepath))
+						os.replace(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_filepath))
 
 						# rename the backup view file
-						os.rename(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
+						os.replace(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
 
 						# update path in the image data
 						self.quiltImage.filepath_raw = self.quiltImage.filepath = bpy.path.abspath(self.rendering_filepath)

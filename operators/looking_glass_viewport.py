@@ -110,8 +110,8 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 	WindowCheck = False
 
 	# SETTINGS VARIABLES
-	preset = 1
-	last_preset = 1
+	preset = 0
+	last_preset = 0
 
 	# DRAWING OPERATION VARIABLES
 	modal_redraw = True
