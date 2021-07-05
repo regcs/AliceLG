@@ -83,6 +83,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_rows = None
 	rendering_columns = None
 	rendering_totalViews = None
+	rendering_quiltAspect = None
 	rendering_viewCone = None
 	rendering_filepath = None
 	rendering_view_filepath = None
@@ -125,6 +126,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# get the file or directory path
 		filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
 
+		# metadata for HoloPlay Studio etc. is stored in the file name as a suffix
+		# example of the format convention: quiltfilename_qs5x9a1.6.png
+		quiltSuffix = "_qs" + str(self.rendering_columns) + "x" + str(self.rendering_rows) + "a" + str(self.rendering_quiltAspect)
+		# path = Path(self.rendering_filepath)
+		# rendering_filepath_with_suffix = path.with_name(f"{path.stem}{quiltSuffix}{path.suffix}")
+
 		# if an animation shall be rendered
 		if self.animation == True:
 
@@ -132,7 +139,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 				# include the frame number in the temporary filename
-				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + self.render_setting_scene.render.file_extension)
+				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + quiltSuffix + self.render_setting_scene.render.file_extension)
 
 			# if this path + extension is a filename
 			elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
@@ -142,7 +149,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					extension = self.render_setting_scene.render.file_extension
 
 				# include the frame number in the temporary filename
-				self.rendering_filepath = filepath + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + extension
+				self.rendering_filepath = filepath + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + quiltSuffix + extension
 
 		# if a single frame shall be rendered
 		elif self.animation == False:
@@ -151,7 +158,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
 				# use a temporary filename
-				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + self.render_setting_scene.render.file_extension)
+				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + quiltSuffix + self.render_setting_scene.render.file_extension)
 
 			# if this path + extension is a filename
 			elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
@@ -160,8 +167,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if extension == "":
 					extension = self.render_setting_scene.render.file_extension
 
-				# add the file extension
-				self.rendering_filepath = filepath + extension
+				# add the suffix and file extension
+				self.rendering_filepath = filepath + quiltSuffix + extension
 
 
 		# GET THE PIXEL DATA OF THE RENDERED VIEWS
@@ -179,7 +186,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if view <= self.lockfile_start_view:
 
 					# adjust the file name for current view:
-					# used format: FILENAME_fXXX_vXXX.EXTENSION
+					# used format: FILENAME_fXXX_vXXX_QUILTSUFFIX.EXTENSION
 					self.rendering_view_filepath, extension = os.path.splitext(self.rendering_filepath)
 					self.rendering_view_filepath = self.rendering_view_filepath.replace("_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))), "")
 
@@ -840,6 +847,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.pixel_aspect_x = (0.75 * self.render_setting_scene.render.resolution_y) / self.render_setting_scene.render.resolution_x
 			self.render_setting_scene.render.pixel_aspect_y = 1.0
 
+			# apply the correct quilt aspect ratio
+			self.rendering_quiltAspect = 0.75
+
 		# if for Looking Glass 8.9''
 		elif self.rendering_deviceType == 'standard':
 
@@ -849,6 +859,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# apply the correct aspect ratio
 			self.render_setting_scene.render.pixel_aspect_x = 1.0
 			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_scene.render.resolution_x / (1.6 * self.render_setting_scene.render.resolution_y)
+
+			# apply the correct quilt aspect ratio
+			self.rendering_quiltAspect = 1.6
 
 		# if for Looking Glass 15.6'' or 8k
 		elif self.rendering_deviceType == 'large' or self.rendering_deviceType == '8k':
@@ -860,6 +873,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.pixel_aspect_x = 1.0
 			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_scene.render.resolution_x / (1.777777777 * self.render_setting_scene.render.resolution_y)
 
+			# apply the correct quilt aspect ratio
+			self.rendering_quiltAspect = 1.777777777
 
 
 		# CHECK IF USER OPTED TO DISCARD AN INCOMPLETE RENDER JOB
