@@ -129,8 +129,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# metadata for HoloPlay Studio etc. is stored in the file name as a suffix
 		# example of the format convention: quiltfilename_qs5x9a1.6.png
 		quiltSuffix = "_qs" + str(self.rendering_columns) + "x" + str(self.rendering_rows) + "a" + str(self.rendering_quiltAspect)
-		# path = Path(self.rendering_filepath)
-		# rendering_filepath_with_suffix = path.with_name(f"{path.stem}{quiltSuffix}{path.suffix}")
 
 		# if an animation shall be rendered
 		if self.animation == True:
