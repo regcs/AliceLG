@@ -360,7 +360,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			for view in range(0, self.rendering_totalViews):
 
 				# get the file or directory path
-				filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
+				filepath, extension = os.path.splitext(bpy.path.abspath(self.rendering_filepath))
 
 				# if this path is a valid directory path AND not a filename
 				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
@@ -372,14 +372,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if extension == "":
 					extension = self.render_setting_scene.render.file_extension
 
-				# append the frame number
-				filepath = filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
-
 				# append the view number
 				filepath = filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
 
 				# delete this file, if it exists
-				if os.path.isfile(filepath) == True: os.remove(filepath)
+				if os.path.isfile(filepath) == True:
+					os.remove(filepath)
+				else:
+					print("Trying to remove file " + filepath + " but it cannot be found.")
 
 
 		# if it was a still image
