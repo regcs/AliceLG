@@ -450,6 +450,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# if the view files shall not be kept OR (still was rendered AND no filename was specfied) OR the file keeping is forced OR the incomplete render job was discarded
 		if ((self.settings.render_output == '1' or (not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True))) and self.force_keep == False) or self.discard_lockfile == True:
 
+			print("Cleaning up the files")
+
 			# if it was an animation
 			if self.animation == True:
 
@@ -1092,13 +1094,18 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					shutil.copy(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_view_filepath + '_bkp'))
 
 					# save the quilt in a file
-					self.quiltImage.save()#filepath=self.rendering_filepath, scene=self.render_setting_scene)
+					# self.quiltImage.filepath = self.rendering_filepath
+					self.quiltImage.save() #scene=self.render_setting_scene)
+					print("Saved Quilt Image to: " + self.quiltImage.filepath)
 
 					# (if no filename was specified AND no animation is to be rendered) OR an animation is rendered
 					if not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True):
 
 						# if a single frame shall be rendered
 						if self.animation == False:
+							
+							# rename the quilt file
+							os.replace(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_filepath))
 
 							# rename the backup view file
 							os.replace(bpy.path.abspath(self.rendering_view_filepath + '_bkp'), bpy.path.abspath(self.rendering_view_filepath))
@@ -1113,7 +1120,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 						# remove the file
-						if os.path.isfile(self.rendering_filepath) == True: os.remove(self.rendering_filepath)
+						# if os.path.isfile(self.rendering_filepath) == True:
+						# 	print("Render file found, removing it: " + self.rendering_filepath)
+						# 	os.remove(self.rendering_filepath)
 
 					else:
 
@@ -1148,9 +1157,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 											# fit the zoom factor in this window to show the complete quilt
 											# bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
-
-											# remove the render result image
-											#bpy.data.images.remove(bpy.data.images["Render Result"])
 
 											break
 
