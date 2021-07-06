@@ -1595,7 +1595,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		else:
 
 			# disable the UI
-			row_0.enabled = False
+			column_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1616,7 +1616,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 
 		# disable the render settings, if a rendering process is running
 		if LookingGlassAddon.RenderInvoked == True:
-			row_0.enabled = False
+			column_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1628,7 +1628,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		if context.scene.settings.lookingglassCamera == None:
 
 			# disable all elements
-			row_0.enabled = False
+			column_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1646,7 +1646,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		if len(LookingGlassAddon.deviceList) == 0:
 
 			# deactivate the checkbox
-			row_0.enabled = False
+			column_0.enabled = False
 
 
 # ------------- The Lightfield Settings Panel ----------------
