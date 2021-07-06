@@ -926,6 +926,14 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										update=LookingGlassAddonFunctions.update_render_setting,
 										)
 
+	# Add a suffix with metadata to the file name
+	render_add_suffix: bpy.props.BoolProperty(
+										name="Add Metadata",
+										description="If enabled, metadata will be added to the quilt filename as a suffix. That metadata is used by Holoplay Studio and other applications in the Looking Glass ecosystem to automatically determine the correct settings for displaying or editing the quilt.",
+										default = True,
+										update=LookingGlassAddonFunctions.update_render_setting,
+										)
+
 	# Orientation of the views
 	render_device_type: bpy.props.EnumProperty(
 										items = [('portrait', 'Looking Glass Portrait', 'Render the quilt for the Looking Glasses Portrait.'),
@@ -1527,8 +1535,9 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		layout = self.layout
 
 		# Render orientation
-		row_0 = layout.row(align = True)
-		render_use_device = row_0.prop(context.scene.settings, "render_use_device")
+		column_0 = layout.column(align = True)
+		render_use_device = column_0.prop(context.scene.settings, "render_use_device")
+		render_add_suffix = column_0.prop(context.scene.settings, "render_add_suffix")
 
 		# Render orientation
 		row_1 = layout.row(align = True)
