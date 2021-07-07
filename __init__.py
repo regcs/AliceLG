@@ -99,7 +99,9 @@ logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARNING)
+
+if debugging_print_pylio_logger_all == True: console_handler.setLevel(logging.DEBUG)
+elif debugging_print_pylio_logger_all == False: console_handler.setLevel(logging.WARNING)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
@@ -126,7 +128,9 @@ LookingGlassAddonLogger.setLevel(logging.DEBUG)
 
 # create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARNING)
+
+if debugging_print_internal_logger_all == True: console_handler.setLevel(logging.DEBUG)
+if debugging_print_internal_logger_all == False: console_handler.setLevel(logging.WARNING)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
