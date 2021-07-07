@@ -168,9 +168,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# delete the current LightfieldImage
 		if self.lightfield_image: self.lightfield_image = None
 
-		# stop the operator execution
-		return {'FINISHED'}
-
 
 	# invoke the operator
 	def invoke(self, context, event):
@@ -270,7 +267,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 		# cancel the operator, if the lightfield viewport was deactivated
-		if not self.settings.ShowLightfieldWindow: return self.cancel(context)
+		if not self.settings.ShowLightfieldWindow:
+			self.cancel(context)
+			return {'FINISHED'}
 
 		# if this scene was created AFTER the lightfield viewport was
 		# invoked, it might not have the correct setting for the lightfield window

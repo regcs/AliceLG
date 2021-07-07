@@ -25,6 +25,8 @@
 
 - BUG: quilt viewer is not updated under all circumstances
 
+- BUG: Loading a file, where the lightfield viewport was active is not initialized correctly
+
 - BUG: if no LG is connected the preset can't be read, which results in an exception
   as soon as a camera is selected in the add-on panel
 
