@@ -358,8 +358,20 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	@classmethod
 	def poll(self, context):
 
-		# return True, so the operator is executed
-		return True
+		# if a device is active
+		if pylio.DeviceManager.get_active():
+
+			# return True, so the operator is executed
+			return True
+
+		else:
+
+			# notify user
+			self.report({"ERROR"}, "Cannot determine proper render settings, if no device is selected.")
+
+			# return False, so the operator is executed
+			return False
+
 
 
 	# delete the views
@@ -538,8 +550,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# which can be accessed from methods that have no "context" parameter
 		self.settings = context.scene.settings
 
-		# get the calibration data of the selected Looking Glass from the deviceList
-		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+		# get the calibration data of the active Looking Glass
+		# NOTE: this can either be a connected or an emulated device.
+		self.device = pylio.DeviceManager.get_active()
 
 		# get all quilt presets from pylio
 		self.qs = pylio.LookingGlassQuilt.formats.get()
@@ -781,7 +794,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# else, if the settings were specified separately
 			else:
 
-				self.rendering_deviceType = self.render_setting_scene.settings.render_device_type
+				self.rendering_deviceType = self.device.type
 				self.rendering_viewWidth = self.qs[int(self.settings.render_quilt_preset)]["view_width"]
 				self.rendering_viewHeight = self.qs[int(self.settings.render_quilt_preset)]["view_height"]
 				self.rendering_rows = self.qs[int(self.settings.render_quilt_preset)]["rows"]
@@ -856,51 +869,29 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# APPLY RENDER SETTINGS
 		# ++++++++++++++++++++++++
 
+		# apply device view cone
+		self.rendering_viewCone = self.device.viewCone
+
+		# apply the correct quilt aspect ratio
+		self.rendering_quiltAspect = self.device.aspect
+
 		# apply the render resolution to Blender render settings
 		self.render_setting_scene.render.resolution_x = self.rendering_viewWidth
 		self.render_setting_scene.render.resolution_y = self.rendering_viewHeight
 
-		# TODO: At the moment this is hardcoded.
-		# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
-		#		This would be more future proof and allow users to add presets manually.
-		# if for Looking Glass Portrait
-		if self.rendering_deviceType == 'portrait':
-
-			# set the correct view cone
-			self.rendering_viewCone = 40.0
+		# for landscape formatted devices
+		if (context.scene.render.resolution_x / context.scene.render.resolution_y) / self.device.aspect > 1:
 
 			# apply the correct aspect ratio
-			self.render_setting_scene.render.pixel_aspect_x = (0.75 * self.render_setting_scene.render.resolution_y) / self.render_setting_scene.render.resolution_x
-			self.render_setting_scene.render.pixel_aspect_y = 1.0
+			context.scene.render.pixel_aspect_x = 1.0
+			context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * self.device.aspect)
 
-			# apply the correct quilt aspect ratio
-			self.rendering_quiltAspect = 0.75
-
-		# if for Looking Glass 8.9''
-		elif self.rendering_deviceType == 'standard':
-
-			# set the correct view cone
-			self.rendering_viewCone = 40.0
+		# for portrait formatted devices
+		else:
 
 			# apply the correct aspect ratio
-			self.render_setting_scene.render.pixel_aspect_x = 1.0
-			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_scene.render.resolution_x / (1.6 * self.render_setting_scene.render.resolution_y)
-
-			# apply the correct quilt aspect ratio
-			self.rendering_quiltAspect = 1.6
-
-		# if for Looking Glass 15.6'' or 8k
-		elif self.rendering_deviceType == 'large' or self.rendering_deviceType == '8k':
-
-			# set the correct view cone
-			self.rendering_viewCone = 50.0
-
-			# apply the correct aspect ratio
-			self.render_setting_scene.render.pixel_aspect_x = 1.0
-			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_scene.render.resolution_x / (1.777777777 * self.render_setting_scene.render.resolution_y)
-
-			# apply the correct quilt aspect ratio
-			self.rendering_quiltAspect = 1.777777777
+			context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * self.device.aspect) / context.scene.render.resolution_x
+			context.scene.render.pixel_aspect_y = 1.0
 
 
 		# CHECK IF USER OPTED TO DISCARD AN INCOMPLETE RENDER JOB

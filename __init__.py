@@ -199,13 +199,13 @@ except:
 class LookingGlassAddonFunctions:
 
 	# This callback is required to be able to update the list of connected Looking Glass devices
-	def looking_glass_list_callback(self, context):
+	def connected_device_list_callback(self, context):
 
 		# prepare a item list with entries of the form "identifier, name, description"
 		items = []
 
 		# if at least one Looking Glass is connected OR debug mode is activated
-		if len(pylio.DeviceManager.to_list()) > 0 or debugging_use_dummy_device:
+		if pylio.DeviceManager.count() > 0 or debugging_use_dummy_device:
 
 			# then for each display in the device list
 			for idx, device in enumerate(pylio.DeviceManager.to_list()):
@@ -232,6 +232,35 @@ class LookingGlassAddonFunctions:
 
 			# add an entry to notify the user about the missing Looking Glass
 			items.append(('-1', 'No Looking Glass Found', 'Please connect a Looking Glass.'))
+
+
+
+		# return the item list
+		return items
+
+
+	# This callback is required to be able to update the list of emulated Looking Glass devices
+	def emulated_device_list_callback(self, context):
+
+		# prepare a item list with entries of the form "identifier, name, description"
+		items = []
+
+		# if at least one emulated Looking Glass exists
+		if pylio.DeviceManager.count(False, True) > 0:
+
+			# then for each display in the device list
+			for idx, device in enumerate(pylio.DeviceManager.to_list(False, True)):
+
+				# if this device is a real one OR the debug mode is active
+				if device.emulated:
+
+					# add an entry in the item list
+					items.append((device.type, device.name, 'Use this Looking Glass type for lightfield rendering.'))
+
+		else:
+
+			# add an entry to notify the user about the missing Looking Glass
+			items.append(('-1', 'No Emulated Devices Found', 'Please connect a Looking Glass.'))
 
 
 
@@ -353,10 +382,13 @@ class LookingGlassAddonFunctions:
 		if int(self.activeDisplay) != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
 		else: 						 	  pylio.DeviceManager.reset_active()
 
+		# set device variable
+		device = None
+
 		# if a camera is selected
 		if context.scene.settings.lookingglassCamera != None:
 
-			# UPDATE RENDER SETTINGS
+			# GET DEVICE INFORMATION
 			# +++++++++++++++++++++++++++++++++++++++++++++++++++++
 			# if the settings are to be taken from device selection
 			if context.scene.settings.render_use_device == True:
@@ -364,53 +396,55 @@ class LookingGlassAddonFunctions:
 				# currently selected device
 				device = pylio.DeviceManager.get_active()
 
-				# apply render settings for the scene to get the correct rendering frustum
-				context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.quiltPreset)]["view_width"]
-				context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.quiltPreset)]["view_height"]
-
-				# for landscape formatted devices
-				if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device.aspect > 1:
-
-					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = 1.0
-					context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * device.aspect)
-
-				# for portrait formatted devices
-				else:
-
-					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device.aspect) / context.scene.render.resolution_x
-					context.scene.render.pixel_aspect_y = 1.0
-
 			else:
 
-				# apply render settings for the scene to get the correct rendering frustum
-				context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_width"]
-				context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_height"]
-
 				# TODO: At the moment this is hardcoded.
-				# 		May make sense to use the Blender preset mechanisms instead ("preset_add", "execute_preset", etc.)
+				#		Should integrate something that gets the class from identifier string in pylio
 				# if for Looking Glass Portrait
 				if context.scene.settings.render_device_type == 'portrait':
 
-					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = (0.75 *  context.scene.render.resolution_y) / context.scene.render.resolution_x
-					context.scene.render.pixel_aspect_y = 1.0
+					# try to find tan emulated device of this type
+					device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassPortrait)
 
 				# if for Looking Glass 8.9''
 				elif context.scene.settings.render_device_type == 'standard':
 
-					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = 1.0
-					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 1.6
+					# try to find tan emulated device of this type
+					device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassStandard)
 
 				# if for Looking Glass 15.6'' or 8k
-				elif context.scene.settings.render_device_type == 'large' or context.scene.settings.render_device_type == '8k':
+				elif context.scene.settings.render_device_type == 'large' or context.scene.settings.render_device_type == 'pro' or context.scene.settings.render_device_type == '8k':
 
-					# apply the correct aspect ratio
-					context.scene.render.pixel_aspect_x = 1.0
-					context.scene.render.pixel_aspect_y = (context.scene.render.resolution_x / context.scene.render.resolution_y) / 1.777777777
+					# try to find tan emulated device of the selected type
+					if context.scene.settings.render_device_type == 'large': device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassLarge)
+					if context.scene.settings.render_device_type == 'pro': device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassLargePro)
+					if context.scene.settings.render_device_type == '8k': device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlass8k)
 
+				# make the emulated device the active device, if one was found
+				if device:
+					device = device[0]
+					pylio.DeviceManager.set_active(device.id)
+
+
+			# APPLY RENDER SETTINGS
+			# +++++++++++++++++++++++++++++++++++++++++++++++++++++
+			# apply render settings for the scene to get the correct rendering frustum
+			context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_width"]
+			context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_height"]
+
+			# for landscape formatted devices
+			if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device.aspect > 1:
+
+				# apply the correct aspect ratio
+				context.scene.render.pixel_aspect_x = 1.0
+				context.scene.render.pixel_aspect_y = context.scene.render.resolution_x / (context.scene.render.resolution_y * device.aspect)
+
+			# for portrait formatted devices
+			else:
+
+				# apply the correct aspect ratio
+				context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device.aspect) / context.scene.render.resolution_x
+				context.scene.render.pixel_aspect_y = 1.0
 
 		return None
 
@@ -694,7 +728,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# PANEL: GENERAL
 	# a list of connected Looking Glass displays
 	activeDisplay: bpy.props.EnumProperty(
-										items = LookingGlassAddonFunctions.looking_glass_list_callback,
+										items = LookingGlassAddonFunctions.connected_device_list_callback,
 										name="Please select a Looking Glass.",
 										update=LookingGlassAddonFunctions.update_render_setting,
 										)
@@ -793,26 +827,14 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	# Orientation of the views
 	render_device_type: bpy.props.EnumProperty(
-										items = [('portrait', 'Looking Glass Portrait', 'Render the quilt for the Looking Glasses Portrait.'),
-												 ('standard', 'Looking Glass 8.9''', 'Render the quilt for the Looking Glass 8.9''.'),
- 												 ('large', 'Looking Glass 15.6''', 'Render the quilt for the Looking Glass 15.6''.'),
-		 										 ('8k', 'Looking Glass 8K', 'Render the quilt for the Looking Glass 8k.')],
-										default='portrait',
+										items = LookingGlassAddonFunctions.emulated_device_list_callback,
 										name="Device Type",
 										update = LookingGlassAddonFunctions.update_render_setting,
 										)
 
 	# Quilt presets
 	render_quilt_preset: bpy.props.EnumProperty(
-									items = [('0', 'Portrait, 48 view', 'Render a 3360x3360 quilt with 48 views.'),
-											 ('1', 'Portrait, 88 view', 'Render a 4026x4096 quilt with 88 views.'),
-		 									 ('2', 'Portrait, 91 view', 'Render a 4225x4095 quilt with 91 views.'),
- 											 ('3', 'Portrait, 96 view', 'Render a 4224x4096 quilt with 96 views.'),
- 		 									 ('4', 'Portrait, 108 view', 'Render a 4224x4230 quilt with 108 views.'),
-											 ('5', '2k Quilt, 32 view', 'Render a 2k quilt with 32 views.'),
-		 									 ('6', '4k Quilt, 45 view', 'Render a 4k quilt with 45 views.'),
-		 									 ('7', '8k Quilt, 45 view', 'Render a 8k quilt with 45 views.'),],
-									default='0',
+									items = LookingGlassAddonFunctions.quilt_preset_list_callback,
 									name="Quilt Preset",
 									update = LookingGlassAddonFunctions.update_render_setting,
 									)
@@ -1116,8 +1138,8 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 			# log info
 			LookingGlassAddonLogger.info(" [#] Number of connected displays: %i" % pylio.DeviceManager.count())
 
-			# loop through the connected devices
-			for idx, device in enumerate(pylio.DeviceManager.to_list(None, None)):
+			# loop through all connected devices
+			for idx, device in enumerate(pylio.DeviceManager.to_list()):
 
 				# log info
 				LookingGlassAddonLogger.info(" [#] Display %i: %s" % (idx, device.name,))
@@ -1130,10 +1152,22 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 			context.scene.settings.render_use_device = False
 
 		# if a Looking Glass was detected, but non was previously selected
-		elif (pylio.DeviceManager.count() and int(context.scene.settings.activeDisplay) == -1):
+		elif pylio.DeviceManager.count():
 
-			# make the first display the active display
-			pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
+			# get currently active device
+			device = pylio.DeviceManager.get_active()
+
+			# if None is active or the active device is an emulated one
+			if not device or (device and device.emulated):
+
+				# log info
+				LookingGlassAddonLogger.info(" [#] Setting active display %i: %s" % (pylio.DeviceManager.to_list()[0].id, pylio.DeviceManager.to_list()[0].name,))
+
+				# make the first connected display the active display
+				pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+
+				# set the checkbox to True (because now we want to use the device settings)
+				context.scene.settings.render_use_device = True
 
 		return {'FINISHED'}
 
