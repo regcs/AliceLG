@@ -34,6 +34,12 @@ bl_info = {
 # this is only for debugging purposes
 debugging_use_dummy_device = False
 
+# console output: if set to true, the Alice/LG and pyLightIO logger messages
+# of all levels are printed to the console. If set to falls, only warnings and
+# errors are printed to console.
+debugging_print_pylio_logger_all = False
+debugging_print_internal_logger_all = True
+
 
 
 
@@ -94,7 +100,9 @@ logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARNING)
+
+if debugging_print_pylio_logger_all == True: console_handler.setLevel(logging.DEBUG)
+elif debugging_print_pylio_logger_all == False: console_handler.setLevel(logging.WARNING)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
@@ -121,7 +129,9 @@ LookingGlassAddonLogger.setLevel(logging.DEBUG)
 
 # create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.WARNING)
+
+if debugging_print_internal_logger_all == True: console_handler.setLevel(logging.DEBUG)
+if debugging_print_internal_logger_all == False: console_handler.setLevel(logging.WARNING)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
@@ -1855,88 +1865,6 @@ def register():
 		# if device are connected, make the first one the active one
 		if debugging_use_dummy_device: pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
 		if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
-
-
-
-		# get shader source codes
-		# TODO: THIS IS JUST HERE UNTIL LIVE VIEW IS REALIZED VIA HOPS
-		LookingGlassAddon.lightfieldVertexShaderSource = '''
-	        // INPUT AND OUTPUT VARIABLES
-	        layout (location = 0)
-	        in vec2 vertPos_data;
-	        out vec2 texCoords;
-
-	        // VERTEX SHADER
-	        void main()
-	        {
-	        	gl_Position = vec4(vertPos_data.xy, 0.0, 1.0);
-	        	texCoords = (vertPos_data.xy + 1.0) * 0.5;
-	        }
-	    '''
-		LookingGlassAddon.lightfieldFragmentShaderSource = '''
-	        in vec2 texCoords;
-	        out vec4 fragColor;
-
-	        // CALIBRATION VALUES
-	        uniform float pitch;
-	        uniform float tilt;
-	        uniform float center;
-	        uniform int invView;
-	        uniform float subp;
-	        uniform float displayAspect;
-	        uniform int ri;
-	        uniform int bi;
-
-	        // QUILT SETTINGS
-	        uniform vec3 tile;
-	        uniform vec2 viewPortion;
-	        uniform int debug;
-
-	        // QUILT TEXTURE
-	        uniform sampler2D screenTex;
-
-	        // GET CORRECT VIEW
-	        vec2 quilt_map(vec2 pos, float a) {
-
-	            // Tile ordering
-	            vec2 tile2 = vec2(tile.x - 1, tile.y - 1), dir=vec2(-1, -1);
-
-	            a = fract(a) * tile.y;
-	            tile2.y += dir.y * floor(a);
-	            a = fract(a) * tile.x;
-	            tile2.x += dir.x * floor(a);
-	            return (tile2 + pos) / tile.xy;
-
-	        }
-
-	        // SHADER
-	        void main()
-	        {
-
-	            float a;
-	            vec4 res;
-
-	            a = (-texCoords.x - texCoords.y * tilt) * pitch - center;
-	            res.r = texture(screenTex, quilt_map(texCoords.xy, a-ri*subp)).r;
-	            res.g = texture(screenTex, quilt_map(texCoords.xy, a-   subp)).g;
-	            res.b = texture(screenTex, quilt_map(texCoords.xy, a-bi*subp)).b;
-
-	            if (debug == 1) {
-	                // use quilt texture
-	                res = texture(screenTex, texCoords.xy);
-	            }
-	            else if (debug == 2) {
-	                // Mark center line only in central view
-	                res.r = res.r * 0.001 + (texCoords.x>0.49 && texCoords.x<0.51 && fract(a)>0.48&&fract(a)<0.51 ?1.0:0.0);
-	                res.g = res.g * 0.001 + texCoords.x;
-	                res.b = res.b * 0.001 + texCoords.y;
-	            }
-
-	            res.a = 1.0;
-	            fragColor = res;
-
-	        }
-	    '''
 
 	else:
 
