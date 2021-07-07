@@ -60,12 +60,6 @@ class LookingGlassAddon:
 	RenderInvoked = False
 	RenderAnimation = None
 
-	# SHADER SOURCES
-	# +++++++++++++++++++++++++++++++++++++++
-	# TODO: REMOVE
-	lightfieldVertexShaderSource = None
-	lightfieldFragmentShaderSource = None
-
 	# LOOKING GLASS QUILT PRESETS
 	# +++++++++++++++++++++++++++++++++++++++
 	# set up quilt settings

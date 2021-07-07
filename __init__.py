@@ -92,7 +92,7 @@ def logfile_namer(default_name):
 logger = logging.getLogger('pyLightIO')
 logger.setLevel(logging.DEBUG)
 
-# create console handler and set level to debug
+# create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.WARNING)
 
@@ -119,7 +119,7 @@ logger.addHandler(logfile_handler)
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 LookingGlassAddonLogger.setLevel(logging.DEBUG)
 
-# create console handler and set level to debug
+# create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.WARNING)
 
