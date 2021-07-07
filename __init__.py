@@ -135,7 +135,7 @@ if debugging_print_internal_logger_all == False: console_handler.setLevel(loggin
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
-logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.setLevel(logging.INFO)
 logfile_handler.namer = logfile_namer
 
 # create formatter

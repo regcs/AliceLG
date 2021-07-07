@@ -28,8 +28,6 @@ from bpy.types import AddonPreferences
 
 # ---------------- GLOBAL ADDON LOGGER -------------------
 import logging
-
-# get the library logger
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 
 # ------------- DEFINE ADDON PREFERENCES ----------------

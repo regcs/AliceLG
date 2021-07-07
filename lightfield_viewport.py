@@ -40,6 +40,9 @@ sys.path.append(LookingGlassAddon.libpath)
 #		"AliceLG.lib.pylio has no attribute 'lookingglass"
 import pylightio as pylio
 
+# ---------------- GLOBAL ADDON LOGGER -------------------
+import logging
+LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 
 
 
@@ -108,6 +111,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	# cancel the modal operator
 	def cancel(self, context):
 
+		# log info
+		LookingGlassAddonLogger.info("Closing lightfield viewport ...")
+
 		# stop timer
 		context.window_manager.event_timer_remove(self.timerEvent)
 
@@ -118,6 +124,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# remove the handler for the viewport tracking
 		if self._handle_trackActiveWindow: bpy.types.SpaceView3D.draw_handler_remove(self._handle_trackActiveWindow, 'WINDOW')
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Cancelled control handlers.")
+
 		# remove the draw handlers for all quilt views
 		if self._handle_view_rendering: bpy.types.SpaceView3D.draw_handler_remove(self._handle_view_rendering, 'WINDOW')
 
@@ -127,11 +136,17 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# remove the draw handler for the displaying the lightfield on the device
 		if self._handle_lightfield_display: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfield_display, 'WINDOW')
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Cancelled drawing handlers.")
+
 		# iterate through all presets
 		for i, preset in self.qs.items():
 
 			# free the GPUOffscreen for the view rendering
 			self.qs[i]["viewOffscreen"].free()
+
+		# log info
+		LookingGlassAddonLogger.info(" [#] Freed GPUOffscreens of the lightfield views.")
 
 		# set status variables to default state
 		#LookingGlassAddon.BlenderWindow = None
@@ -168,10 +183,15 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# delete the current LightfieldImage
 		if self.lightfield_image: self.lightfield_image = None
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Done.")
 
 	# invoke the operator
 	def invoke(self, context, event):
 		start = time.time()
+
+		# log info
+		LookingGlassAddonLogger.info("Invoking lightfield viewport ...")
 
 		# get the current settings of this scene
 		self.settings = context.scene.settings
@@ -196,6 +216,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			# create a GPUOffscreen for the views
 			self.qs[i]["viewOffscreen"] = gpu.types.GPUOffScreen(int(self.qs[i]["view_width"]), int(self.qs[i]["view_height"]))
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Prepared GPUOffscreens for view rendering.")
 
 
 		# PREPARE THE OVERRIDE CONTEXT THAT CONTAINS THE RENDER SETTINGS
@@ -207,6 +229,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# update the viewport settings
 		self.updateViewportSettings(context)
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Created override context.")
 
 
 		# REGISTER ALL HANDLERS FOR THE LIGHTFIELD RENDERING
@@ -223,7 +247,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		self._handle_trackDepsgraphUpdates = bpy.app.handlers.depsgraph_update_post.append(self.trackDepsgraphUpdates)
 		self._handle_trackFrameChanges = bpy.app.handlers.frame_change_post.append(self.trackDepsgraphUpdates)
 
-
+		# log info
+		LookingGlassAddonLogger.info(" [#] Initialized control handlers.")
 
 		# HANDLERS FOR DRAWING PURPOSES
 		# ++++++++++++++++++++++++++++++
@@ -236,6 +261,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# draw callback to draw the lightfield cursor
 		#self._handle_lightfield_cursor = bpy.types.SpaceView3D.draw_handler_add(self.updateLightfieldCursor, (context,), 'WINDOW', 'PRE_VIEW')
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Initialized drawing handlers.")
 
 
 
@@ -247,10 +274,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# add the modal handler
 		context.window_manager.modal_handler_add(self)
 
-
-		# MOVE THE WINDOW TO THE CORRECT SCREEN & TOGGLE FULLSCREEN
-		################################################################
-		# THIS HAS BEEN REMOVED
+		# log info
+		LookingGlassAddonLogger.info(" [#] Initialized modal operator.")
+		LookingGlassAddonLogger.info(" [#] Done.")
 
 		# keep the modal operator running
 		return {'RUNNING_MODAL'}
@@ -652,7 +678,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		bgl.glActiveTexture(bgl.GL_TEXTURE0)
 		bgl.glBindTexture(bgl.GL_TEXTURE_2D, texture)
 
-		# then we pass the memory view to the bgl.Buffer as template,
+		# then we pass the numpy array to the bgl.Buffer as template,
 		# which causes Blender to write the buffer data into the numpy array directly
 		buffer = bgl.Buffer(bgl.GL_BYTE, array.shape, array)
 		bgl.glGetTexImage(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, buffer)
@@ -695,10 +721,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# create a new set of LightfieldViews
 				self.lightfield_image.set_views([pylio.LightfieldView(np.empty((self.qs[self.preset]["viewOffscreen"].height, self.qs[self.preset]["viewOffscreen"].width, 4), dtype=np.uint8), pylio.LightfieldView.formats.numpyarray) for view in range(0, self.qs[self.preset]["total_views"])], pylio.LightfieldView.formats.numpyarray)
 
-			print("-----------------------------")
-			print("Start rendering lightfield viewport (view dimensions: %i x %i)" % (self.qs[self.preset]["viewOffscreen"].width, self.qs[self.preset]["viewOffscreen"].height))
-			print(" [#] LightfieldImage views: %i" % len(self.lightfield_image.get_view_data()))
-			print(" [#] Using quilt preset: %i" % self.preset)
+			LookingGlassAddonLogger.debug("Start rendering lightfield views ...")
+			LookingGlassAddonLogger.debug(" [#] View dimensions: %i x %i" % (self.qs[self.preset]["viewOffscreen"].width, self.qs[self.preset]["viewOffscreen"].height))
+			LookingGlassAddonLogger.debug(" [#] LightfieldImage views: %i" % len(self.lightfield_image.get_view_data()))
+			LookingGlassAddonLogger.debug(" [#] Using quilt preset: %i" % self.preset)
 
 
 			# PREPARE VIEW & PROJECTION MATRIX
@@ -740,7 +766,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# get the viewports projection matrix
 				camera_projection_matrix = LookingGlassAddon.BlenderViewport.region_3d.window_matrix.copy()
 
-			print(" [#] Get view & projection matrices: %.6f" % (time.time() - self.start_multi_view))
+			LookingGlassAddonLogger.debug(" [#] Geting view & projection matrices took %.6f s" % (time.time() - self.start_multi_view))
 
 
 			# RENDER THE VIEWS
@@ -753,7 +779,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# calculate the offset-projection of the current view
 				view_matrix, projection_matrix = self.setupVirtualCameraForView(camera, view, camera_view_matrix.copy(), camera_projection_matrix.copy())
 
-				print(" [#] [%i] Setup view camera: %.6f" % (view, time.time() - start_test))
+				LookingGlassAddonLogger.debug(" [#] [%i] Settin up view camera took %.6f s" % (view, time.time() - start_test))
 				start_test = time.time()
 
 				# RENDER THE VIEW INTO THE OFFSCREEN
@@ -774,7 +800,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						view_matrix=view_matrix,
 						projection_matrix=projection_matrix)
 
-					print(" [#] [%i] Draw view into offscreen: %.6f" % (view, time.time() - start_test))
+					LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.6f s" % (view, time.time() - start_test))
 					start_test = time.time()
 
 					# copy texture into LightfieldView array
@@ -790,11 +816,11 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						self.drawCursor3D(context, view, view_matrix, projection_matrix, self.settings.viewport_cursor_size, 8)
 
 
-					print(" [#] [%i] Copy texture to numpy array: %.6f" % (view, time.time() - start_test))
+					LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.6f" % (view, time.time() - start_test))
 
-			print("-----------------------------")
-			print(" Finished in total time: %.3f" % (time.time() - self.start_multi_view))
-			print("-----------------------------")
+			LookingGlassAddonLogger.debug("-----------------------------")
+			LookingGlassAddonLogger.debug("Rendering took in total %.3f s" % (time.time() - self.start_multi_view))
+			LookingGlassAddonLogger.debug("-----------------------------")
 
 			# update the quilt image in the image_editor,
 			# which is used for display in the LookingGlass
