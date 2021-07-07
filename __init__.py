@@ -456,26 +456,6 @@ class LookingGlassAddonFunctions:
 			# update render settings
 			LookingGlassAddonFunctions.update_render_setting(self, context)
 
-			# if a lightfield window exists
-			if LookingGlassAddon.lightfieldWindow != None and LookingGlassAddon.lightfieldSpace != None:
-
-				# set lightfield space to this camera (automatically NONE if no camera is selected)
-				LookingGlassAddon.lightfieldSpace.camera = context.scene.settings.lookingglassCamera
-
-				# set view mode to "CAMERA"
-				if LookingGlassAddon.lightfieldSpace.region_3d.view_perspective != 'CAMERA': bpy.ops.view3d.view_camera(dict(window=LookingGlassAddon.lightfieldWindow, area=LookingGlassAddon.lightfieldArea, region=LookingGlassAddon.lightfieldRegion, space_data=LookingGlassAddon.lightfieldSpace))
-
-		else:
-
-			# if a valid space is existing
-			if LookingGlassAddon.lightfieldWindow != None and LookingGlassAddon.lightfieldSpace != None:
-
-				# set lightfield space to no camera
-				LookingGlassAddon.lightfieldSpace.camera = None
-
-				# set view mode to "PERSP"
-				if LookingGlassAddon.lightfieldSpace.region_3d.view_perspective != 'PERSP': bpy.ops.view3d.view_camera(dict(window=LookingGlassAddon.lightfieldWindow, area=LookingGlassAddon.lightfieldArea, region=LookingGlassAddon.lightfieldRegion, space_data=LookingGlassAddon.lightfieldSpace))
-
 		return None
 
 
@@ -509,31 +489,6 @@ class LookingGlassAddonFunctions:
 			# apply the clipping values to the selected camera
 			camera.data.clip_start = context.scene.settings.clip_start
 			camera.data.clip_end = context.scene.settings.clip_end
-
-			# if a valid space is existing
-			if LookingGlassAddon.lightfieldSpace != None:
-
-				# set space to the selected camera
-				LookingGlassAddon.lightfieldSpace.camera = context.scene.settings.lookingglassCamera
-				LookingGlassAddon.lightfieldSpace.use_local_camera = True
-				LookingGlassAddon.lightfieldSpace.lock_camera = True
-
-				# set view mode to "CAMERA VIEW"
-				LookingGlassAddon.lightfieldSpace.region_3d.view_perspective = 'CAMERA'
-
-				#print("SPACE SETTINGS UPDATED: ", LookingGlassAddon.lightfieldSpace, LookingGlassAddon.lightfieldSpace.camera)
-
-		else:
-
-			# if a valid space is existing
-			if LookingGlassAddon.lightfieldSpace != None:
-
-				# set space camera to None
-				LookingGlassAddon.lightfieldSpace.camera = None
-
-				# set view mode to "PERSPECTIVE VIEW"
-				LookingGlassAddon.lightfieldSpace.region_3d.view_perspective = 'PERSP'
-
 
 		return None
 
@@ -570,7 +525,7 @@ class LookingGlassAddonFunctions:
 				for area in screen.areas:
 					for space in area.spaces:
 						# TODO: the check "space != LookingGlassAddon.lightfieldSpace" is somewhat hacky. But without it, an additional element is created in the list. Need to clarify later, why ...
-						if space.type == 'VIEW_3D' and space != LookingGlassAddon.lightfieldSpace:
+						if space.type == 'VIEW_3D':
 
 							# add an item to the item list
 							items.append((str(space), 'Viewport ' + str(len(items) + 1), 'The Blender viewport to which the Looking Glass adjusts'))
@@ -600,21 +555,21 @@ class LookingGlassAddonFunctions:
 			if LookingGlassAddon.quiltPixels is None:
 
 				# create a numpy array for the pixel data
-				LookingGlassAddon.quiltPixels = np.empty(len(context.scene.settings.quiltImage.pixels), np.float32)
+				LookingGlassAddon.quiltPixels = np.empty(len(context.scene.settings.quiltImage.pixels), dtype=np.float32)
 
 			else:
 
 				# resize the numpy array
 				LookingGlassAddon.quiltPixels.resize(len(context.scene.settings.quiltImage.pixels), refcheck=False)
 
-				# delete the texture, if it is existing
-				# NOTE: Unclear why glIsTexture expects integer and DeleteTexture a Buffer object
-				if LookingGlassAddon.quiltTextureID != None and bgl.glIsTexture(LookingGlassAddon.quiltTextureID[0]) == True:
-					bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
-
-			# create a new texture
-			LookingGlassAddon.quiltTextureID = bgl.Buffer(bgl.GL_INT, [1])
-			bgl.glGenTextures(1, LookingGlassAddon.quiltTextureID)
+			# 	# delete the texture, if it is existing
+			# 	# NOTE: Unclear why glIsTexture expects integer and DeleteTexture a Buffer object
+			# 	if LookingGlassAddon.quiltTextureID != None and bgl.glIsTexture(LookingGlassAddon.quiltTextureID[0]) == True:
+			# 		bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
+			#
+			# # create a new texture
+			# LookingGlassAddon.quiltTextureID = bgl.Buffer(bgl.GL_INT, [1])
+			# bgl.glGenTextures(1, LookingGlassAddon.quiltTextureID)
 
 
 
@@ -687,7 +642,7 @@ class LookingGlassAddonFunctions:
 
 				# copy pixel data to the array and a BGL Buffer
 				tempImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
-				LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(tempImage.pixels), LookingGlassAddon.quiltPixels)
+				#LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(tempImage.pixels), LookingGlassAddon.quiltPixels)
 
 			# TODO: The following lines would be enough, if the color
 			#		management settings would be applied in memory. Not deleted
@@ -699,17 +654,17 @@ class LookingGlassAddonFunctions:
 
 
 
-			# APPLY CORRECT COLOR FORMAT TO OPENGL TEXTURE
-			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-			if tempImage.colorspace_settings.name == 'sRGB':
-
-				# bind the texture and apply bgl.GL_SRGB8_ALPHA8 as internal format
-				# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
-				#		see: https://developer.blender.org/T79788#1034183
-				bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
-				bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
-				bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
-				bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
+			# # APPLY CORRECT COLOR FORMAT TO OPENGL TEXTURE
+			# # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+			# if tempImage.colorspace_settings.name == 'sRGB':
+			#
+			# 	# bind the texture and apply bgl.GL_SRGB8_ALPHA8 as internal format
+			# 	# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
+			# 	#		see: https://developer.blender.org/T79788#1034183
+			# 	bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
+			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
+			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
+			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
 
 			# else:
 			# 	print("# USING GL_RGBA")
@@ -729,8 +684,8 @@ class LookingGlassAddonFunctions:
 		# if the quilt selection was deleted
 		else:
 
-			# delete the texture
-			bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
+			# reset the variables
+			LookingGlassAddon.quiltPixels = None
 
 
 # Preferences pane for this Addon in the Blender preferences
@@ -1113,38 +1068,16 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	# if the lightfield window was active
 	if bpy.context.scene.settings.ShowLightfieldWindow == True:
 
-		# if the window was found
-		if LookingGlassAddon.lightfieldWindow != None:
+		# if the device list is not empty, create a new lightfield window
+		if pylio.DeviceManager.count() > 0:
 
-			# close this window
-			bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
+			# Invoke modal operator for the lightfield rendering
+			bpy.ops.render.viewport('INVOKE_DEFAULT')
 
-			# if the device list is not empty, create a new lightfield window
-			if pylio.DeviceManager.count() > 0:
+		else:
 
-				# Create a new main window
-				bpy.ops.wm.window_new_main(dict(window=bpy.context.window_manager.windows[0]))
-
-				# assume the last window in the screen list is the created window
-				LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows[-1]
-
-				# Change the area type of the last area of the looking glass window to SpaceView3D
-				area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
-				area.type = "VIEW_3D"
-
-				# hide all panels in the image editor and make the area full screen
-				bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), use_hide_panels=True)
-
-				# Invoke modal operator for the lightfield rendering
-				bpy.ops.render.viewport(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
-
-			else:
-
-				# reset the window variable
-				LookingGlassAddon.lightfieldWindow = None
-
-				# deactivate the corresponding UI elements
-				bpy.context.scene.settings.ShowLightfieldWindow = False
+			# deactivate the corresponding UI elements
+			bpy.context.scene.settings.ShowLightfieldWindow = False
 
 
 	# if no Looking Glass was detected AND debug mode is not activated
@@ -1225,29 +1158,8 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 			# assign the current viewport for the shading & overlay settings
 			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
 
-			# Create a new main window
-			bpy.ops.wm.window_new_main('INVOKE_DEFAULT')
-
-			# assume the last window in the screen list is the created window
-			LookingGlassAddon.lightfieldWindow = context.window_manager.windows[-1]
-
-			# Change the area type of the last area of the looking glass window to SpaceView3D
-			area = LookingGlassAddon.lightfieldWindow.screen.areas[-1]
-			area.type = "VIEW_3D"
-
-			# hide all panels in the image editor and make the area full screen
-			bpy.ops.screen.screen_full_area(dict(window=LookingGlassAddon.lightfieldWindow, screen=LookingGlassAddon.lightfieldWindow.screen, area=area), 'INVOKE_DEFAULT', use_hide_panels=True)
-
 			# Invoke modal operator for the lightfield rendering
-			bpy.ops.render.viewport(dict(window=LookingGlassAddon.lightfieldWindow), 'INVOKE_DEFAULT')
-
-		else:
-
-			# if a lightfield window still exists
-			if LookingGlassAddon.lightfieldWindow != None:
-
-				# close this window
-				bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
+			bpy.ops.render.viewport('INVOKE_DEFAULT')
 
 		return {'FINISHED'}
 

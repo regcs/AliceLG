@@ -52,12 +52,6 @@ class LookingGlassAddon:
 	FrustumInitialized = False
 	FrustumDrawHandler = None
 
-	# The Window object representing the Blender main window and the Space object, which are used for the lightfield rendering
-	lightfieldWindow = None
-	lightfieldRegion = None
-	lightfieldArea = None
-	lightfieldSpace = None
-
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
 	BlenderViewport = None
@@ -68,7 +62,7 @@ class LookingGlassAddon:
 
 	# SHADER SOURCES
 	# +++++++++++++++++++++++++++++++++++++++
-	# TODO: This needs to be removed later
+	# TODO: REMOVE
 	lightfieldVertexShaderSource = None
 	lightfieldFragmentShaderSource = None
 
@@ -99,8 +93,7 @@ class LookingGlassAddon:
 	# GLOBAL QUILT VIEWER DATA
 	# +++++++++++++++++++++++++++++++++++++++
 	quiltPixels = None
-	quiltTextureBuffer = None
-	quiltTextureID = None
+	quiltLightfieldImage = None
 	# TODO: Is there a better way to check for color management setting changes?
 	quiltViewAsRender = None
 	quiltImageColorSpaceSetting = None
