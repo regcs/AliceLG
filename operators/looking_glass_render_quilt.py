@@ -1103,7 +1103,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# if a single frame shall be rendered
 						if self.animation == False:
-							
+
 							# rename the quilt file
 							os.replace(bpy.path.abspath(self.rendering_view_filepath), bpy.path.abspath(self.rendering_filepath))
 
@@ -1119,10 +1119,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 							bpy.data.images[os.path.basename(self.rendering_view_filepath)].name = "Quilt Render Result (f: " + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + ")"
 
 
-						# remove the file
-						# if os.path.isfile(self.rendering_filepath) == True:
-						# 	print("Render file found, removing it: " + self.rendering_filepath)
-						# 	os.remove(self.rendering_filepath)
+						# remove the file, this mimics the behaviour of Blender
+						if os.path.isfile(self.rendering_filepath) == True:
+							print("Render file found, removing it: " + self.rendering_filepath)
+							os.remove(self.rendering_filepath)
 
 					else:
 
