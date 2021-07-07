@@ -1530,14 +1530,17 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		# the panel should always be drawn
 		return True
 
-	# draw the IntProperties for the tiles in the panel
+	# draw the UI for the configuration options
 	def draw(self, context):
 		layout = self.layout
 
-		# Render orientation
-		column_0 = layout.column(align = True)
-		render_use_device = column_0.prop(context.scene.settings, "render_use_device")
-		render_add_suffix = column_0.prop(context.scene.settings, "render_add_suffix")
+		# Chose the settings from the device or use a preset?
+		row_0 = layout.row(align = True)
+		render_use_device = row_0.prop(context.scene.settings, "render_use_device")
+
+		# Metadata handling
+		row_metadata = layout.row(align = True)
+		render_add_suffix = row_metadata.prop(context.scene.settings, "render_add_suffix")
 
 		# Render orientation
 		row_1 = layout.row(align = True)
@@ -1595,7 +1598,8 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		else:
 
 			# disable the UI
-			column_0.enabled = False
+			row_metadata = False
+			row_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1616,7 +1620,8 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 
 		# disable the render settings, if a rendering process is running
 		if LookingGlassAddon.RenderInvoked == True:
-			column_0.enabled = False
+			row_metadata.enabled = False
+			row_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1628,7 +1633,8 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		if context.scene.settings.lookingglassCamera == None:
 
 			# disable all elements
-			column_0.enabled = False
+			row_metadata.enabled = False
+			row_0.enabled = False
 			row_1.enabled = False
 			row_2.enabled = False
 			row_3.enabled = False
@@ -1646,7 +1652,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		if len(LookingGlassAddon.deviceList) == 0:
 
 			# deactivate the checkbox
-			column_0.enabled = False
+			row_0.enabled = False
 
 
 # ------------- The Lightfield Settings Panel ----------------
