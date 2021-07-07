@@ -1080,100 +1080,103 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 					# currently selected camera
 					camera = context.scene.settings.lookingglassCamera
 
-					# get modelview matrix
-					view_matrix = camera.matrix_world
+					# if the camera is visible
+					if camera.hide_get() == False:
 
-					# correct for the camera scaling
-					view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
-					view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
-					view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
+						# get modelview matrix
+						view_matrix = camera.matrix_world
 
-					# we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
-					# based on the intercept theorems
-					view_frame = camera.data.view_frame(scene=context.scene)
-					view_frame_upper_right = view_frame[0]
-					view_frame_lower_right = view_frame[1]
-					view_frame_lower_left = view_frame[2]
-					view_frame_upper_left = view_frame[3]
-					view_frame_distance = abs(view_frame_upper_right[2])
+						# correct for the camera scaling
+						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
+						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
+						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
 
-					# get the clipping settings
-					clipStart = camera.data.clip_start
-					clipEnd = camera.data.clip_end
-					focalPlane = context.scene.settings.focalPlane
+						# we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
+						# based on the intercept theorems
+						view_frame = camera.data.view_frame(scene=context.scene)
+						view_frame_upper_right = view_frame[0]
+						view_frame_lower_right = view_frame[1]
+						view_frame_lower_left = view_frame[2]
+						view_frame_upper_left = view_frame[3]
+						view_frame_distance = abs(view_frame_upper_right[2])
 
-					# TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
-					# define the vertices of the camera frustum in camera coordinates
-					# NOTE: - the z-value is negative, because the Blender camera always looks into negative z-direction
-					coords_local = [
-									# near clipping plane
-									(view_frame_lower_right[0] / view_frame_distance * clipStart, view_frame_lower_right[1] / view_frame_distance * clipStart, -clipStart), (view_frame_lower_left[0] / view_frame_distance * clipStart, view_frame_lower_left[1] / view_frame_distance * clipStart, -clipStart),
-									(view_frame_upper_left[0] / view_frame_distance * clipStart, view_frame_upper_left[1] / view_frame_distance * clipStart, -clipStart), (view_frame_upper_right[0] / view_frame_distance * clipStart, view_frame_upper_right[1] / view_frame_distance * clipStart, -clipStart),
-									# far clipping plane
-									(view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
-									(view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
-									# focal plane
-									(view_frame_lower_right[0] / view_frame_distance * focalPlane, view_frame_lower_right[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_lower_left[0] / view_frame_distance * focalPlane, view_frame_lower_left[1] / view_frame_distance * focalPlane, -focalPlane),
-									(view_frame_upper_left[0] / view_frame_distance * focalPlane, view_frame_upper_left[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_upper_right[0] / view_frame_distance * focalPlane, view_frame_upper_right[1] / view_frame_distance * focalPlane, -focalPlane),
-									]
+						# get the clipping settings
+						clipStart = camera.data.clip_start
+						clipEnd = camera.data.clip_end
+						focalPlane = context.scene.settings.focalPlane
 
-					# if the camera fustum shall be drawn
-					if context.scene.settings.showFrustum == True:
-						batch_lines = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_lines)
-						batch_faces = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_faces)
+						# TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
+						# define the vertices of the camera frustum in camera coordinates
+						# NOTE: - the z-value is negative, because the Blender camera always looks into negative z-direction
+						coords_local = [
+										# near clipping plane
+										(view_frame_lower_right[0] / view_frame_distance * clipStart, view_frame_lower_right[1] / view_frame_distance * clipStart, -clipStart), (view_frame_lower_left[0] / view_frame_distance * clipStart, view_frame_lower_left[1] / view_frame_distance * clipStart, -clipStart),
+										(view_frame_upper_left[0] / view_frame_distance * clipStart, view_frame_upper_left[1] / view_frame_distance * clipStart, -clipStart), (view_frame_upper_right[0] / view_frame_distance * clipStart, view_frame_upper_right[1] / view_frame_distance * clipStart, -clipStart),
+										# far clipping plane
+										(view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
+										(view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
+										# focal plane
+										(view_frame_lower_right[0] / view_frame_distance * focalPlane, view_frame_lower_right[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_lower_left[0] / view_frame_distance * focalPlane, view_frame_lower_left[1] / view_frame_distance * focalPlane, -focalPlane),
+										(view_frame_upper_left[0] / view_frame_distance * focalPlane, view_frame_upper_left[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_upper_right[0] / view_frame_distance * focalPlane, view_frame_upper_right[1] / view_frame_distance * focalPlane, -focalPlane),
+										]
 
-					# if the focal plane shall be drawn
-					if context.scene.settings.showFocalPlane == True:
-						batch_focalplane_outline = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_focalplane_outline)
-						batch_focalplane_face = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_focalplane_face)
+						# if the camera fustum shall be drawn
+						if context.scene.settings.showFrustum == True:
+							batch_lines = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_lines)
+							batch_faces = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_faces)
 
-					# draw everything
-					self.frustum_shader.bind()
+						# if the focal plane shall be drawn
+						if context.scene.settings.showFocalPlane == True:
+							batch_focalplane_outline = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_focalplane_outline)
+							batch_focalplane_face = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_focalplane_face)
 
-					# get the current projection matrix
-					viewMatrix = gpu.matrix.get_model_view_matrix()
-					projectionMatrix = gpu.matrix.get_projection_matrix()
+						# draw everything
+						self.frustum_shader.bind()
 
-					# load the model view matrix, which transforms the local camera coordinates to world coordinates.
-					# this makes sure that the frustum is always drawn relative to the camera location
-					gpu.matrix.reset()
-					gpu.matrix.load_matrix(viewMatrix @ view_matrix)
-					gpu.matrix.load_projection_matrix(projectionMatrix)
+						# get the current projection matrix
+						viewMatrix = gpu.matrix.get_model_view_matrix()
+						projectionMatrix = gpu.matrix.get_projection_matrix()
 
-					bgl.glEnable(bgl.GL_DEPTH_TEST)
-					bgl.glDepthMask(bgl.GL_TRUE)
+						# load the model view matrix, which transforms the local camera coordinates to world coordinates.
+						# this makes sure that the frustum is always drawn relative to the camera location
+						gpu.matrix.reset()
+						gpu.matrix.load_matrix(viewMatrix @ view_matrix)
+						gpu.matrix.load_projection_matrix(projectionMatrix)
 
-					# if the camera fustum shall be drawn
-					if context.scene.settings.showFrustum == True:
-						# draw outline
-						self.frustum_shader.uniform_float("color", (0.3, 0, 0, 1))
-						batch_lines.draw(self.frustum_shader)
+						bgl.glEnable(bgl.GL_DEPTH_TEST)
+						bgl.glDepthMask(bgl.GL_TRUE)
 
-					# if the focal plane shall be drawn
-					if context.scene.settings.showFocalPlane == True:
-						# draw focal plane outline
-						self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
-						batch_focalplane_outline.draw(self.frustum_shader)
+						# if the camera fustum shall be drawn
+						if context.scene.settings.showFrustum == True:
+							# draw outline
+							self.frustum_shader.uniform_float("color", (0.3, 0, 0, 1))
+							batch_lines.draw(self.frustum_shader)
 
-					bgl.glDepthMask(bgl.GL_FALSE)
-					bgl.glEnable(bgl.GL_BLEND)
+						# if the focal plane shall be drawn
+						if context.scene.settings.showFocalPlane == True:
+							# draw focal plane outline
+							self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
+							batch_focalplane_outline.draw(self.frustum_shader)
 
-					# if the camera fustum shall be drawn
-					if context.scene.settings.showFrustum == True:
-						# fill faces
-						self.frustum_shader.uniform_float("color", (0.5, 0.5, 0.5, 0.05))
-						batch_faces.draw(self.frustum_shader)
+						bgl.glDepthMask(bgl.GL_FALSE)
+						bgl.glEnable(bgl.GL_BLEND)
 
-					# if the focal plane shall be drawn
-					if context.scene.settings.showFocalPlane == True:
-						# draw focal plane face
-						self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
-						batch_focalplane_face.draw(self.frustum_shader)
+						# if the camera fustum shall be drawn
+						if context.scene.settings.showFrustum == True:
+							# fill faces
+							self.frustum_shader.uniform_float("color", (0.5, 0.5, 0.5, 0.05))
+							batch_faces.draw(self.frustum_shader)
 
-					bgl.glDisable(bgl.GL_DEPTH_TEST)
-					bgl.glDisable(bgl.GL_BLEND)
+						# if the focal plane shall be drawn
+						if context.scene.settings.showFocalPlane == True:
+							# draw focal plane face
+							self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
+							batch_focalplane_face.draw(self.frustum_shader)
 
-					# reset the matrices to their original state
-					gpu.matrix.reset()
-					gpu.matrix.load_matrix(viewMatrix)
-					gpu.matrix.load_projection_matrix(projectionMatrix)
+						bgl.glDisable(bgl.GL_DEPTH_TEST)
+						bgl.glDisable(bgl.GL_BLEND)
+
+						# reset the matrices to their original state
+						gpu.matrix.reset()
+						gpu.matrix.load_matrix(viewMatrix)
+						gpu.matrix.load_projection_matrix(projectionMatrix)
