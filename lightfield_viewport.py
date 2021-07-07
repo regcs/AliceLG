@@ -155,7 +155,12 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# set the button controls for the lightfield window to False
 		self.settings.ShowLightfieldWindow = False
 
+			# make current scene the invoking scene
+			LookingGlassAddon.LightfieldWindowInvoker = context.scene
 
+			# iterate through all scenes
+			for scene in bpy.data.scenes:
+				if scene != None and scene.settings != None:
 
 		# SCENE UPDATES
 		# ++++++++++++++++++++++++++
