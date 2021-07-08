@@ -1535,11 +1535,12 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		layout = self.layout
 
 		# Chose the settings from the device or use a preset?
-		row_use_device = layout.row(align = True)
+		row_general_options = layout.column(align = True)
+		row_use_device = row_general_options.row(align = True)
 		render_use_device = row_use_device.prop(context.scene.settings, "render_use_device")
 
 		# Metadata handling
-		row_metadata = layout.row(align = True)
+		row_metadata = row_general_options.row(align = True)
 		render_add_suffix = row_metadata.prop(context.scene.settings, "render_add_suffix")
 
 		# Render orientation
