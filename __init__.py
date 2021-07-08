@@ -1386,39 +1386,39 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		column = layout.column()
 
 		# Device selection
-		row_1 = column.row(align = True)
-		column_1 = row_1.column(align=True)
-		row_1a = column_1.row(align = True)
-		row_1a.prop(context.scene.settings, "activeDisplay", text="")
-		row_1a.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
-		row_1.separator()
+		row_orientation = column.row(align = True)
+		column_1 = row_orientation.column(align=True)
+		row_orientationa = column_1.row(align = True)
+		row_orientationa.prop(context.scene.settings, "activeDisplay", text="")
+		row_orientationa.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
+		row_orientation.separator()
 
 		# Lightfield window & debug button
-		column_2 = row_1.column(align=True)
-		row_1b = column_2.row(align = True)
+		column_2 = row_orientation.column(align=True)
+		row_orientationb = column_2.row(align = True)
 		if LookingGlassAddon.lightfieldWindow != None:
-			toggle_fullscreen = row_1b.operator("lookingglass.toggle_fullscreen", text="", icon='FULLSCREEN_ENTER', depress=LookingGlassAddon.LightfieldWindowIsFullscreen)
+			toggle_fullscreen = row_orientationb.operator("lookingglass.toggle_fullscreen", text="", icon='FULLSCREEN_ENTER', depress=LookingGlassAddon.LightfieldWindowIsFullscreen)
 			toggle_fullscreen.button_pressed = True
-		row_1b.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.settings.ShowLightfieldWindow)
+		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.settings.ShowLightfieldWindow)
 
 		# Resolution selection of the quilt views
-		row_2 = column.row()
-		row_2.prop(context.scene.settings, "quiltPreset", text="")
-		row_2.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
+		row_preset = column.row()
+		row_preset.prop(context.scene.settings, "quiltPreset", text="")
+		row_preset.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 		#column.separator()
 
 		# if no Looking Glass was detected
 		if len(LookingGlassAddon.deviceList) == 0:
 
 			# deactivate quilt preset and debug buttons
-			row_2.enabled = False
+			row_preset.enabled = False
 
 
 		# if the HoloPlay Service is NOT available
 		if LookingGlassAddon.HoloPlayService == False and debugging_use_dummy_device == False:
 
 			# deactivate the looking glass selection
-			row_1a.enabled = False
+			row_orientationa.enabled = False
 
 		# if NO Looking Glass is selected or detected OR the user is in an fullscreen area
 		# TODO: Blender doesn't allow creating a new window from a fullscreen area.
@@ -1427,7 +1427,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		if int(context.scene.settings.activeDisplay) == -1 or context.screen.show_fullscreen == True:
 
 			# deactivate the lightfield window button and debug button
-			row_1b.enabled = False
+			row_orientationb.enabled = False
 
 
 
@@ -1487,30 +1487,30 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		# define a column of UI elements
 		column = layout.column(align = True)
 
-		row_1 = column.row(align = True)
-		row_1.prop(context.scene.settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
-		row_1.operator("object.add_lookingglass_camera", text="", icon='ADD')
-		row_1.separator()
-		row_1.prop(context.scene.settings, "showFrustum", text="", icon='MESH_CUBE')
-		row_1.prop(context.scene.settings, "showFocalPlane", text="", icon='MESH_PLANE')
+		row_orientation = column.row(align = True)
+		row_orientation.prop(context.scene.settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
+		row_orientation.operator("object.add_lookingglass_camera", text="", icon='ADD')
+		row_orientation.separator()
+		row_orientation.prop(context.scene.settings, "showFrustum", text="", icon='MESH_CUBE')
+		row_orientation.prop(context.scene.settings, "showFocalPlane", text="", icon='MESH_PLANE')
 
 		column.separator()
 
 		# display the clipping settings
-		row_2 = column.row(align = True)
-		row_2.prop(context.scene.settings, "clip_start")
-		row_3 = column.row(align = True)
-		row_3.prop(context.scene.settings, "clip_end")
-		row_4 = column.row(align = True)
-		row_4.prop(context.scene.settings, "focalPlane")
+		row_preset = column.row(align = True)
+		row_preset.prop(context.scene.settings, "clip_start")
+		row_output = column.row(align = True)
+		row_output.prop(context.scene.settings, "clip_end")
+		row_render_still = column.row(align = True)
+		row_render_still.prop(context.scene.settings, "focalPlane")
 
 		# if no camera is Selected
 		if context.scene.settings.lookingglassCamera == None:
 
 			# disable clipping and focal plane modifieres
-			row_2.enabled = False
-			row_3.enabled = False
-			row_4.enabled = False
+			row_preset.enabled = False
+			row_output.enabled = False
+			row_render_still.enabled = False
 
 # ------------- The Render Settings Panel ----------------
 # the panel for the camera settings
@@ -1535,37 +1535,37 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		layout = self.layout
 
 		# Chose the settings from the device or use a preset?
-		row_0 = layout.row(align = True)
-		render_use_device = row_0.prop(context.scene.settings, "render_use_device")
+		row_use_device = layout.row(align = True)
+		render_use_device = row_use_device.prop(context.scene.settings, "render_use_device")
 
 		# Metadata handling
 		row_metadata = layout.row(align = True)
 		render_add_suffix = row_metadata.prop(context.scene.settings, "render_add_suffix")
 
 		# Render orientation
-		row_1 = layout.row(align = True)
-		column_1 = row_1.row(align = True)
+		row_orientation = layout.row(align = True)
+		column_1 = row_orientation.row(align = True)
 		column_1.label(text="Device:")
 		column_1.scale_x = 0.3
-		column_2 = row_1.row(align = True)
+		column_2 = row_orientation.row(align = True)
 		column_2.prop(context.scene.settings, "render_device_type", text="")
 		column_2.scale_x = 0.7
 
 		# Quilt preset
-		row_2 = layout.row(align = True)
-		column_1 = row_2.row(align = True)
+		row_preset = layout.row(align = True)
+		column_1 = row_preset.row(align = True)
 		column_1.label(text="Quilt:")
 		column_1.scale_x = 0.3
-		column_2 = row_2.row(align = True)
+		column_2 = row_preset.row(align = True)
 		column_2.prop(context.scene.settings, "render_quilt_preset", text="")
 		column_2.scale_x = 0.7
 
 		# Output file handling
-		row_3 = layout.row(align = True)
-		column_1 = row_3.row(align = True)
+		row_output = layout.row(align = True)
+		column_1 = row_output.row(align = True)
 		column_1.label(text="Output:")
 		column_1.scale_x = 0.3
-		column_2 = row_3.row(align = True)
+		column_2 = row_output.row(align = True)
 		column_2.prop(context.scene.settings, "render_output", text="")
 		column_2.scale_x = 0.7
 
@@ -1575,22 +1575,22 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			# Buttons and progress bars
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:
 				# Show the corresponding progress bar for the rendering process
-				row_4 = layout.row(align = True)
-				row_4.prop(context.scene.settings, "render_progress", text="", slider=True)
+				row_render_still = layout.row(align = True)
+				row_render_still.prop(context.scene.settings, "render_progress", text="", slider=True)
 			else:
 				# Button to start rendering a single quilt using the current render settings
-				row_4 = layout.row(align = True)
-				render_quilt = row_4.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+				row_render_still = layout.row(align = True)
+				render_quilt = row_render_still.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
 				render_quilt.animation = False
 
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
 				# Show the corresponding progress bar for the rendering process
-				row_5 = layout.row(align = True)
-				row_5.prop(context.scene.settings, "render_progress", text="", slider=True)
+				row_render_animation = layout.row(align = True)
+				row_render_animation.prop(context.scene.settings, "render_progress", text="", slider=True)
 			else:
 				# Button to start rendering a animation quilt using the current render settings
-				row_5 = layout.row(align = True)
-				render_quilt = row_5.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+				row_render_animation = layout.row(align = True)
+				render_quilt = row_render_animation.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
 				render_quilt.animation = True
 
 
@@ -1599,19 +1599,19 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 
 			# disable the UI
 			row_metadata = False
-			row_0.enabled = False
-			row_1.enabled = False
-			row_2.enabled = False
-			row_3.enabled = False
+			row_use_device.enabled = False
+			row_orientation.enabled = False
+			row_preset.enabled = False
+			row_output.enabled = False
 
 			# inform the user and provide options to continue or to discard
-			row_4 = layout.row(align = True)
-			row_4.label(text = "Last render job incomplete:", icon="ERROR")
+			row_render_still = layout.row(align = True)
+			row_render_still.label(text = "Last render job incomplete:", icon="ERROR")
 
-			row_5 = layout.row(align = False)
-			render_quilt = row_5.operator("render.quilt", text="Continue", icon='RENDER_STILL')
+			row_render_animation = layout.row(align = False)
+			render_quilt = row_render_animation.operator("render.quilt", text="Continue", icon='RENDER_STILL')
 			render_quilt.use_lockfile = True
-			render_quilt = row_5.operator("render.quilt", text="Discard", icon='CANCEL')
+			render_quilt = row_render_animation.operator("render.quilt", text="Discard", icon='CANCEL')
 			render_quilt.use_lockfile = True
 			render_quilt.discard_lockfile = True
 
@@ -1621,38 +1621,38 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		# disable the render settings, if a rendering process is running
 		if LookingGlassAddon.RenderInvoked == True:
 			row_metadata.enabled = False
-			row_0.enabled = False
-			row_1.enabled = False
-			row_2.enabled = False
-			row_3.enabled = False
+			row_use_device.enabled = False
+			row_orientation.enabled = False
+			row_preset.enabled = False
+			row_output.enabled = False
 
-			if LookingGlassAddon.RenderAnimation == True: row_4.enabled = False
-			if LookingGlassAddon.RenderAnimation == False: row_5.enabled = False
+			if LookingGlassAddon.RenderAnimation == True: row_render_still.enabled = False
+			if LookingGlassAddon.RenderAnimation == False: row_render_animation.enabled = False
 
 		# if no camera is selected
 		if context.scene.settings.lookingglassCamera == None:
 
 			# disable all elements
 			row_metadata.enabled = False
-			row_0.enabled = False
-			row_1.enabled = False
-			row_2.enabled = False
-			row_3.enabled = False
-			row_4.enabled = False
-			row_5.enabled = False
+			row_use_device.enabled = False
+			row_orientation.enabled = False
+			row_preset.enabled = False
+			row_output.enabled = False
+			row_render_still.enabled = False
+			row_render_animation.enabled = False
 
 		# if the settings are to be taken from device selection
 		elif context.scene.settings.render_use_device == True:
 
 			# disable all elements
-			row_1.enabled = False
-			row_2.enabled = False
+			row_orientation.enabled = False
+			row_preset.enabled = False
 
 		# if no Looking Glass was detected
 		if len(LookingGlassAddon.deviceList) == 0:
 
 			# deactivate the checkbox
-			row_0.enabled = False
+			row_use_device.enabled = False
 
 
 # ------------- The Lightfield Settings Panel ----------------
@@ -1719,17 +1719,17 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 		if context.scene.settings.renderMode == '0':
 
 			# Lightfield rendering mode & refresh button
-			row_1 = column.row()
-			row_1.label(text="Lightfield Window Mode:")
-			row_2 = column.row()
-			row_2.prop(context.scene.settings, "lightfieldMode", text="")
-			row_2.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
+			row_orientation = column.row()
+			row_orientation.label(text="Lightfield Window Mode:")
+			row_preset = column.row()
+			row_preset.prop(context.scene.settings, "lightfieldMode", text="")
+			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
 
 			# Preview settings
-			row_3 = column.row(align = True)
-			row_3.prop(context.scene.settings, "lightfield_preview_resolution", text="")
-			row_3.separator()
-			row_3.prop(context.scene.settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
+			row_output = column.row(align = True)
+			row_output.prop(context.scene.settings, "lightfield_preview_resolution", text="")
+			row_output.separator()
+			row_output.prop(context.scene.settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
 
 
 		# if the lightfield window is in quilt viewer mode
@@ -1778,11 +1778,11 @@ class LOOKINGGLASS_PT_panel_lightfield_cursor(bpy.types.Panel):
 
 		# Lightfield cursor settings
 		column = layout.column(align = True)
-		row_1 = column.row()
-		row_1.prop(context.scene.settings, "viewport_cursor_size", text="Size", slider=True)
-		row_1.prop(context.scene.settings, "viewport_show_cursor", text="", icon='RESTRICT_SELECT_OFF')
-		row_2 = column.row()
-		row_2.prop(context.scene.settings, "viewport_cursor_color", text="")
+		row_orientation = column.row()
+		row_orientation.prop(context.scene.settings, "viewport_cursor_size", text="Size", slider=True)
+		row_orientation.prop(context.scene.settings, "viewport_show_cursor", text="", icon='RESTRICT_SELECT_OFF')
+		row_preset = column.row()
+		row_preset.prop(context.scene.settings, "viewport_cursor_color", text="")
 
 
 
