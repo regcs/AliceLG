@@ -234,13 +234,6 @@ class LookingGlassAddonFunctions:
 		return object.type == 'CAMERA'
 
 
-	# Update the Boolean property that creates the hologram rendering window
-	def toggleFullscrenMode(self, context):
-
-		# assign the current viewport for the shading & overlay settings
-		if context != None: bpy.ops.lookingglass.toggle_fullscreen(context.copy(), 'EXEC_DEFAULT')
-
-
 	# update function for the workspace selection
 	def update_workspace_selection(self, context):
 
@@ -727,20 +720,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											default = False,
 											)
 
-	# a boolean to toogle the render window on or off
-	toggleLightfieldWindowFullscreen: bpy.props.BoolProperty(
-											name="Toggle Fullscreen Mode",
-											description = "Press this button, if the lightfield window was moved to the Looking Glass to make it fullscreen.",
-											default = False,
-											update=LookingGlassAddonFunctions.toggleFullscrenMode
-											)
-
-	# the index of the lightfield window among the Blender windows
-	lightfieldWindowIndex: bpy.props.IntProperty(
-											name="Lightfield Window",
-											default = -1,
-											)
-
 	quiltPreset: bpy.props.EnumProperty(
 										items = [
 												('0', 'Resolution: Portrait Quilt, 48 Views', 'Display an 3360x3360 quilt with 48 views in the connected Looking Glass Portrait.'),
@@ -1109,10 +1088,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	LookingGlassAddon.BlenderWindow = bpy.context.window
 
 	# if the lightfield window was active
-	if bpy.context.scene.settings.ShowLightfieldWindow == True and bpy.context.scene.settings.lightfieldWindowIndex != -1:
-
-		# get the lightfield window by the index of this window in the list of windows in the WindowManager
-		LookingGlassAddon.lightfieldWindow = bpy.context.window_manager.windows.values()[bpy.context.scene.settings.lightfieldWindowIndex]
+	if bpy.context.scene.settings.ShowLightfieldWindow == True:
 
 		# if the window was found
 		if LookingGlassAddon.lightfieldWindow != None:
@@ -1145,7 +1121,6 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 				LookingGlassAddon.lightfieldWindow = None
 
 				# deactivate the corresponding UI elements
-				bpy.context.scene.settings.toggleLightfieldWindowFullscreen = False
 				bpy.context.scene.settings.ShowLightfieldWindow = False
 
 
@@ -1198,6 +1173,12 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 			# could take the settings from)
 			context.scene.settings.render_use_device = False
 
+		# if a Looking Glass was detected, but non was previously selected
+		elif (pylio.DeviceManager.count() and int(context.scene.settings.activeDisplay) == -1):
+
+			# make the first display the active display
+			pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+
 		return {'FINISHED'}
 
 
@@ -1220,11 +1201,6 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 
 			# assign the current viewport for the shading & overlay settings
 			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
-
-			# if on linux, get the currently open windows
-			if platform.system() == "Linux":
-				LookingGlassAddon.LinuxWindowList = list(map(int, str(subprocess.run(['xdotool', 'search', '--name', 'Blender'], check=True, capture_output=True).stdout).replace('b\'','').split('\\n')[:-1]))
-				print("Following Blender windows are open: ", LookingGlassAddon.LinuxWindowList)
 
 			# Create a new main window
 			bpy.ops.wm.window_new_main('INVOKE_DEFAULT')
@@ -1249,39 +1225,6 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 
 				# close this window
 				bpy.ops.wm.window_close(dict(window=LookingGlassAddon.lightfieldWindow))
-
-		return {'FINISHED'}
-
-# an operator that controls lightfield window opening and closing
-class LOOKINGGLASS_OT_toggle_fullscreen(bpy.types.Operator):
-	bl_idname = "lookingglass.toggle_fullscreen"
-	bl_label = "Toggle Lightfield Window Fullscreen Mode"
-	bl_description = "Press this button, if the lightfield window was moved to the Looking Glass to make it fullscreen."
-	bl_options = {'REGISTER', 'INTERNAL'}
-
-	# OPERATOR ARGUMENTS
-	button_pressed: bpy.props.BoolProperty(default = False)
-
-	# Update the Boolean property that creates the hologram rendering window
-	def execute(self, context):
-
-		# if a lightfield window exists AND the window shall be toggled
-		if context != None and LookingGlassAddon.lightfieldWindow != None and LookingGlassAddon.LightfieldWindowIsFullscreen != context.scene.settings.toggleLightfieldWindowFullscreen:
-
-			# toggle fullscreen mode off
-			bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
-
-			# update global variable
-			LookingGlassAddon.LightfieldWindowIsFullscreen = context.scene.settings.toggleLightfieldWindowFullscreen
-
-		# if a lightfield window exists AND the button was pressed
-		elif context != None and LookingGlassAddon.lightfieldWindow != None and self.button_pressed == True:
-
-			# toggle fullscreen mode off
-			bpy.ops.wm.window_fullscreen_toggle(dict(window=LookingGlassAddon.lightfieldWindow))
-
-			# update global variable
-			LookingGlassAddon.LightfieldWindowIsFullscreen = (not LookingGlassAddon.LightfieldWindowIsFullscreen)
 
 		return {'FINISHED'}
 
@@ -1311,9 +1254,6 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# Lightfield window & debug button
 		column_2 = row_orientation.column(align=True)
 		row_orientationb = column_2.row(align = True)
-		if LookingGlassAddon.lightfieldWindow != None:
-			toggle_fullscreen = row_orientationb.operator("lookingglass.toggle_fullscreen", text="", icon='FULLSCREEN_ENTER', depress=LookingGlassAddon.LightfieldWindowIsFullscreen)
-			toggle_fullscreen.button_pressed = True
 		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.settings.ShowLightfieldWindow)
 
 		# Resolution selection of the quilt views
@@ -1880,7 +1820,6 @@ def register():
 	bpy.utils.register_class(LookingGlassAddonSettings)
 	bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
-	bpy.utils.register_class(LOOKINGGLASS_OT_toggle_fullscreen)
 	bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
 	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
 	bpy.utils.register_class(LOOKINGGLASS_OT_blender_viewport_assign)
@@ -2078,7 +2017,6 @@ def unregister():
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_toggle_fullscreen)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
 	bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)

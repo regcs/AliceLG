@@ -91,21 +91,16 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 
 
-	# inititalize the lightfield window
-	@classmethod
-	def __init__(self):
-
-		# set global status variable
-		LookingGlassAddon.LightfieldWindowInitialized = True
-
-
-
-	# deinititalize the lightfield window
-	@classmethod
-	def __del__(self):
-
-		# set global status variable
-		LookingGlassAddon.LightfieldWindowInitialized = False
+	# # inititalize the lightfield window
+	# @classmethod
+	# def __init__(self):
+	#
+	#
+	# # deinititalize the lightfield window
+	# @classmethod
+	# def __del__(self):
+	#
+	#
 
 
 
@@ -175,9 +170,7 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		LookingGlassAddon.BlenderViewport = None
 
 		# set the button controls for the lightfield window to False
-		self.settings.toggleLightfieldWindowFullscreen = False
 		self.settings.ShowLightfieldWindow = False
-		self.settings.lightfieldWindowIndex = -1
 
 
 		# SCENE UPDATES
@@ -193,12 +186,9 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 					# update the status variables
 					scene.settings.ShowLightfieldWindow = False
-					scene.settings.toggleLightfieldWindowFullscreen = LookingGlassAddon.LightfieldWindowInvoker.settings.toggleLightfieldWindowFullscreen
-					scene.settings.lightfieldWindowIndex = -1
 
 			# reset global variable
 			LookingGlassAddon.LightfieldWindowInvoker = None
-			LookingGlassAddon.LightfieldWindowIsFullscreen = False
 
 
 		# return None since this is expected by the operator
@@ -256,10 +246,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 		# print(" # y: ", LookingGlassAddon.lightfieldWindow.y)
 		# print(" # width: ", LookingGlassAddon.lightfieldWindow.width)
 		# print(" # height: ", LookingGlassAddon.lightfieldWindow.height)
-
-		# get the index of the lightfield window in the list of windows in the WindowManager
-		# NOTE: This is required for reloading a blend file in which the lightfield window was open
-		self.settings.lightfieldWindowIndex = context.window_manager.windows.values().index(LookingGlassAddon.lightfieldWindow)
 
 		# we use the last area for our lightfield drawing
 		# NOTE: This is an arbitrary choice, but it needs to be consistent throughout the code
@@ -420,9 +406,6 @@ class LOOKINGGLASS_OT_render_lightfield(bpy.types.Operator):
 
 				# adjust the setting
 				self.settings.ShowLightfieldWindow = LookingGlassAddon.LightfieldWindowInvoker.settings.ShowLightfieldWindow
-				self.settings.toggleLightfieldWindowFullscreen = LookingGlassAddon.LightfieldWindowInvoker.settings.toggleLightfieldWindowFullscreen
-				self.settings.lightfieldWindowIndex = LookingGlassAddon.LightfieldWindowInvoker.settings.lightfieldWindowIndex
-
 
 
 		# Check, whether the lightfield window still exists

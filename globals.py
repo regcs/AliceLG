@@ -43,13 +43,8 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
-	# List of windows on Linux
-	LinuxWindowList = []
-
-	# Was the operator for the lightfield window invoked?
-	LightfieldWindowInitialized = None
+	# the scene from which the lightfield viewport was invoked
 	LightfieldWindowInvoker = None
-	LightfieldWindowIsFullscreen = False
 
 	# Was the modal operator for the frustum initialized?
 	FrustumInitialized = False
@@ -71,6 +66,7 @@ class LookingGlassAddon:
 
 	# SHADER SOURCES
 	# +++++++++++++++++++++++++++++++++++++++
+	# TODO: This needs to be removed later
 	lightfieldVertexShaderSource = None
 	lightfieldFragmentShaderSource = None
 
