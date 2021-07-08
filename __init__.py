@@ -144,7 +144,7 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
 			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
 			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
 			logfile.write("Installed: " + str(datetime.datetime.now()) + '\n')
