@@ -667,17 +667,23 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		"""copy the current texture to a numpy array"""
 
 		# TODO: Replace these BGL calls with the new BPY API for OpenGL
-
-		# The following seems to be the basic approach for 3.0 to get the
+		# ++++++++++++++
+		# The following seems to be the basic approach for Blender 3.0 to get the
 		# offscreen image data into a buffer. Not implemented in 2.93:
-
 		# with offscreen.bind():
 		#     fb = gpu.state.active_framebuffer_get()
 		#     buffer = fb.read_color(0, 0, WIDTH, HEIGHT, 4, 0, 'UBYTE')
 		#
 		# offscreen.free()
-
-		# +++++
+		#
+		# ++++++++++++++
+		#
+		# ALTERNATIVELY (also working only in Blender 3.0+):
+		#
+		# - get the gpu.types.GPUTexture of the GPUOffscreen from its texture_color attribute
+		# - use the read() method of gpu.types.GPUTexture to obtain a buffer with pixel data
+		#
+		# ++++++++++++++
 
 		# activate the texture
 		bgl.glActiveTexture(bgl.GL_TEXTURE0)
@@ -1115,7 +1121,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 					if camera.hide_get() == False:
 
 						# get modelview matrix
-						view_matrix = camera.matrix_world
+						view_matrix = camera.matrix_world.copy()
 
 						# correct for the camera scaling
 						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))

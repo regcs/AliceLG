@@ -45,6 +45,10 @@ sys.path.append(LookingGlassAddon.libpath)
 #		"AliceLG.lib.pylio has no attribute 'lookingglass'"
 import pylightio as pylio
 
+# ---------------- GLOBAL ADDON LOGGER -------------------
+import logging
+LookingGlassAddonLogger = logging.getLogger('Alice/LG')
+
 # ------------ QUILT RENDERING -------------
 # Modal operator for handling rendering of a quilt out of Blender
 class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
@@ -139,7 +143,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# reset the operator state to IDLE
 		if self.operator_state != "CANCEL_RENDER": self.operator_state = "INIT_RENDER"
 
-		print("[INFO] Rendering job initialized.")
+		LookingGlassAddonLogger.info("Rendering job initialized.")
 
 		# get the file or directory path
 		filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
@@ -279,14 +283,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# reset the operator state to PRE_RENDER
 		if self.operator_state != "CANCEL_RENDER": self.operator_state = "PRE_RENDER"
 
-		print("[INFO] Rendering view is going to be prepared.")
+		LookingGlassAddonLogger.info("Rendering view is going to be prepared.")
 
 		# output current status
-		print(" # active camera: ", self.camera_active)
-		print(" # current frame: ", self.rendering_frame)
-		print(" # current subframe: ", self.rendering_subframe)
-		print(" # current view: ", self.rendering_view)
-		print(" # current file: ", self.rendering_filepath)
+		LookingGlassAddonLogger.info(" [#] active camera: %s" % self.camera_active)
+		LookingGlassAddonLogger.info(" [#] current frame: %s" % self.rendering_frame)
+		LookingGlassAddonLogger.info(" [#] current subframe: %s" % self.rendering_subframe)
+		LookingGlassAddonLogger.info(" [#] current view: %s" % self.rendering_view)
+		LookingGlassAddonLogger.info(" [#] current file: %s" % self.rendering_filepath)
 
 
 	# function that is called after rendering finished
@@ -295,7 +299,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# reset the operator state to PRE_RENDER
 		if self.operator_state != "CANCEL_RENDER": self.operator_state = "POST_RENDER"
 
-		print("[INFO] Saving view in ", self.rendering_view_filepath)
+		LookingGlassAddonLogger.info("Saving view file: %s" % self.rendering_view_filepath)
 
 		# STORE THE PIXEL DATA OF THE RENDERED IMAGE
 		# ++++++++++++++++++++++++++++++++++++++++++++
@@ -342,6 +346,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# set operator state to CANCEL
 		self.operator_state = "CANCEL_RENDER"
+
+		LookingGlassAddonLogger.info("Rendering job was cancelled.")
 
 
 
@@ -411,8 +417,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# delete this file, if it exists
 				if os.path.isfile(filepath) == True:
 					os.remove(filepath)
-				else:
-					print("Trying to remove file " + filepath + " but it cannot be found.")
+				# else:
+				# 	LookingGlassAddonLogger.info("Trying to remove file " + filepath + " but it cannot be found.")
 
 
 		# if it was a still image
@@ -441,8 +447,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# delete this file, if it exists
 				if os.path.isfile(filepath) == True:
 					os.remove(filepath)
-				else:
-					print("Trying to remove file " + filepath + " but it cannot be found.")
+				# else:
+				# 	LookingGlassAddonLogger.info("Trying to remove file " + filepath + " but it cannot be found.")
 
 
 	# cancel modal operator
@@ -480,7 +486,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# if the view files shall not be kept OR (still was rendered AND no filename was specfied) OR the file keeping is forced OR the incomplete render job was discarded
 		if ((self.settings.render_output == '1' or (not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True))) and self.force_keep == False) or self.discard_lockfile == True:
 
-			print("Cleaning up the files")
+			LookingGlassAddonLogger.info("Cleaning up the disk files.")
 
 			# if it was an animation
 			if self.animation == True:
@@ -952,7 +958,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		#print("[INFO] Operator state: ", self.operator_state)
+		LookingGlassAddonLogger.debug("Current operator state: %s" % self.operator_state)
 
 		# if the TIMER event for the quilt rendering is called
 		if event.type == 'TIMER':
@@ -968,7 +974,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# https://github.com/regcs/AliceLG-beta/issues/9
 				self.render_setting_scene.render.use_lock_interface = False
 
-				# print("[INFO] Invoking new render job.")
+				# log debug info
+				LookingGlassAddonLogger.debug("Invoking new render job.")
 
 				# FRAME AND VIEW
 				# ++++++++++++++++++++++
@@ -1094,8 +1101,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "COMPLETE_RENDER":
 
-				print("[INFO] Render job completed.")
-
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if this was the last view
@@ -1140,7 +1145,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# save the quilt in a file
 					# self.quiltImage.filepath = self.rendering_filepath
 					self.quiltImage.save() #scene=self.render_setting_scene)
-					print("Saved Quilt Image to: " + self.quiltImage.filepath)
+
+					# log debug info
+					LookingGlassAddonLogger.debug("Saved quilt file to: " + self.quiltImage.filepath)
 
 					# (if no filename was specified AND no animation is to be rendered) OR an animation is rendered
 					if not ((self.animation == False and ("Quilt Render Result" in self.rendering_filepath) == False) or self.animation == True):
@@ -1165,8 +1172,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# remove the file, this mimics the behaviour of Blender
 						if os.path.isfile(self.rendering_filepath) == True:
-							print("Render file found, removing it: " + self.rendering_filepath)
 							os.remove(self.rendering_filepath)
+
+							# log debug info
+							LookingGlassAddonLogger.debug("Render removed: " + self.rendering_filepath)
 
 					else:
 
@@ -1337,7 +1346,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 							self.cancel_sign = "INFO"
 							self.cancel_message = "Complete animation quilt rendered."
 
-
+				# log debug info
+				LookingGlassAddonLogger.debug("Render job completed.")
 
 
 			# CANCEl-RENDER STEP
@@ -1346,7 +1356,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# if nothing is rendering, but the last view is not yet rendered
 			elif self.operator_state == "CANCEL_RENDER":
 
-				# print("[INFO] Render job cancelled.")
+				# log debug info
+				LookingGlassAddonLogger.debug("Render job cancelled.")
 
 				# cancel the operator
 				# NOTE: - this includes recovering all original user settings
