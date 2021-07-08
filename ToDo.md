@@ -20,7 +20,6 @@
 - decide: how to handle the case if no LookingGlassCamera is activated? Use viewport matrix?
 
 
-
 ## BUGS / ENHANCEMENTS
 
 - BUG: quilt viewer is not updated under all circumstances
@@ -30,6 +29,8 @@
 - BUG: after adding a new scene, if the lightfield viewport was active, it is closed
 
 - when opening a quilt image in quilt viewer, check for the metadata suffix
+
+- overwrite the `sys.excepthook` to add unhandled exceptions to the log files; by default only WARNINGS and higher should be written to log, but we need a preferences option to make additional debugging info toggable by the user
 
 
 
