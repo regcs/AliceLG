@@ -107,7 +107,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# event and app handler ids
 	_handle_event_timer = None	# modal timer event
 
-	# define cancel standard messages
+	# define cancel state and standard messages
+	cancel_state = False
 	cancel_sign = "INFO"
 	cancel_message = "Quilt rendering was cancelled."
 
@@ -119,211 +120,214 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	def init_render(self, Scene, depsgraph):
 
 		# reset the operator state to IDLE
-		if self.operator_state != "CANCEL_RENDER": self.operator_state = "INIT_RENDER"
+		if self.operator_state != "CANCEL_RENDER" and self.cancel_state == False:
+			self.operator_state = "INIT_RENDER"
 
-		print("[INFO] Rendering job initialized.")
+			print("[INFO] Rendering job initialized.")
 
-		# get the file or directory path
-		filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
+			# get the file or directory path
+			filepath, extension = os.path.splitext(bpy.path.abspath(self.render_setting_filepath))
 
-		# metadata for HoloPlay Studio etc. is stored in the file name as a suffix
-		# example of the format convention: quiltfilename_qs5x9a1.6.png
-		if self.settings.render_add_suffix:
-			quiltSuffix = "_qs" + str(self.rendering_columns) + "x" + str(self.rendering_rows) + "a" + str(self.rendering_quiltAspect)
-		else:
-			quiltSuffix = ""
+			# metadata for HoloPlay Studio etc. is stored in the file name as a suffix
+			# example of the format convention: quiltfilename_qs5x9a1.6.png
+			if self.settings.render_add_suffix:
+				quiltSuffix = "_qs" + str(self.rendering_columns) + "x" + str(self.rendering_rows) + "a" + str(self.rendering_quiltAspect)
+			else:
+				quiltSuffix = ""
 
-		# if an animation shall be rendered
-		if self.animation == True:
+			# if an animation shall be rendered
+			if self.animation == True:
 
-			# if this path is a valid directory path AND not a filename
-			if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+				# if this path is a valid directory path AND not a filename
+				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
-				# include the frame number in the temporary filename
-				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + quiltSuffix + self.render_setting_scene.render.file_extension)
+					# include the frame number in the temporary filename
+					self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + quiltSuffix + self.render_setting_scene.render.file_extension)
 
-			# if this path + extension is a filename
-			elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
+				# if this path + extension is a filename
+				elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
 
-				# if no extension is in the filename use Blender's
-				if extension == "":
-					extension = self.render_setting_scene.render.file_extension
+					# if no extension is in the filename use Blender's
+					if extension == "":
+						extension = self.render_setting_scene.render.file_extension
 
-				# include the frame number in the temporary filename
-				self.rendering_filepath = filepath + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + quiltSuffix + extension
+					# include the frame number in the temporary filename
+					self.rendering_filepath = filepath + "_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))) + quiltSuffix + extension
 
-		# if a single frame shall be rendered
-		elif self.animation == False:
+			# if a single frame shall be rendered
+			elif self.animation == False:
 
-			# if this path is a valid directory path AND not a filename
-			if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
+				# if this path is a valid directory path AND not a filename
+				if os.path.isdir(filepath) == True or os.path.basename(filepath + self.render_setting_scene.render.file_extension) == self.render_setting_scene.render.file_extension:
 
-				# use a temporary filename
-				self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + quiltSuffix + self.render_setting_scene.render.file_extension)
+					# use a temporary filename
+					self.rendering_filepath = bpy.path.abspath(filepath + "/Quilt Render Result" + quiltSuffix + self.render_setting_scene.render.file_extension)
 
-			# if this path + extension is a filename
-			elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
+				# if this path + extension is a filename
+				elif os.path.basename(filepath + self.render_setting_scene.render.file_extension) != self.render_setting_scene.render.file_extension:
 
-				# if no extension is in the filename use Blender's
-				if extension == "":
-					extension = self.render_setting_scene.render.file_extension
+					# if no extension is in the filename use Blender's
+					if extension == "":
+						extension = self.render_setting_scene.render.file_extension
 
-				# add the suffix and file extension
-				self.rendering_filepath = filepath + quiltSuffix + extension
+					# add the suffix and file extension
+					self.rendering_filepath = filepath + quiltSuffix + extension
 
 
-		# GET THE PIXEL DATA OF THE RENDERED VIEWS
-		# ++++++++++++++++++++++++++++++++++++++++++++
-		# if the lockfile shall be used AND this is the first render
-		if (self.use_lockfile == True and (self.rendering_frame == self.lockfile_start_frame and self.rendering_view == self.lockfile_start_view)):
+			# GET THE PIXEL DATA OF THE RENDERED VIEWS
+			# ++++++++++++++++++++++++++++++++++++++++++++
+			# if the lockfile shall be used AND this is the first render
+			if (self.use_lockfile == True and (self.rendering_frame == self.lockfile_start_frame and self.rendering_view == self.lockfile_start_view)):
 
-			# set current frame
-			frame = self.rendering_frame
+				# set current frame
+				frame = self.rendering_frame
 
-			# iterate through all views
-			for view in range(0, self.rendering_totalViews):
+				# iterate through all views
+				for view in range(0, self.rendering_totalViews):
 
-				# if this view was already rendered
-				if view <= self.lockfile_start_view:
+					# if this view was already rendered
+					if view <= self.lockfile_start_view:
 
-					# adjust the file name for current view:
-					# used format: FILENAME_fXXX_vXXX_QUILTSUFFIX.EXTENSION
-					self.rendering_view_filepath, extension = os.path.splitext(self.rendering_filepath)
-					self.rendering_view_filepath = self.rendering_view_filepath.replace("_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))), "")
+						# adjust the file name for current view:
+						# used format: FILENAME_fXXX_vXXX_QUILTSUFFIX.EXTENSION
+						self.rendering_view_filepath, extension = os.path.splitext(self.rendering_filepath)
+						self.rendering_view_filepath = self.rendering_view_filepath.replace("_f" + str(self.rendering_frame).zfill(len(str(self.render_setting_scene.frame_end))), "")
 
-					# append frame number, if a animation is rendered
-					if self.animation == True: self.rendering_view_filepath = self.rendering_view_filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
+						# append frame number, if a animation is rendered
+						if self.animation == True: self.rendering_view_filepath = self.rendering_view_filepath + "_f" + str(frame).zfill(len(str(self.render_setting_scene.frame_end)))
 
-					# append view number
-					self.rendering_view_filepath = self.rendering_view_filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
+						# append view number
+						self.rendering_view_filepath = self.rendering_view_filepath + "_v" + str(view).zfill(len(str(self.rendering_totalViews - 1))) + extension
 
-					# if the file exists
-					if os.path.exists(self.rendering_view_filepath):
+						# if the file exists
+						if os.path.exists(self.rendering_view_filepath):
 
-						# load the view image
-						self.viewImage = bpy.data.images.load(filepath=self.rendering_view_filepath)
+							# load the view image
+							self.viewImage = bpy.data.images.load(filepath=self.rendering_view_filepath)
 
-						# store the pixel data in an numpy array
-						# NOTE: we use foreach_get, since this is significantly faster
-						tmp_pixels = np.empty(len(self.viewImage.pixels), np.float32)
-						self.viewImage.pixels.foreach_get(tmp_pixels)
+							# store the pixel data in an numpy array
+							# NOTE: we use foreach_get, since this is significantly faster
+							tmp_pixels = np.empty(len(self.viewImage.pixels), np.float32)
+							self.viewImage.pixels.foreach_get(tmp_pixels)
 
-						# append the pixel data to the list of views
-						self.viewImagesPixels.append(tmp_pixels)
+							# append the pixel data to the list of views
+							self.viewImagesPixels.append(tmp_pixels)
 
-						# if this was the last view
-						if self.rendering_view == (self.rendering_totalViews - 1):
+							# if this was the last view
+							if self.rendering_view == (self.rendering_totalViews - 1):
 
-							# NOTE: Creating a new image via the dedicated operators and methods
-							# 		didn't apply the correct image formats and settings
-							#		and therefore, we use the created image
-							self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
-							self.quiltImage = self.viewImage
+								# NOTE: Creating a new image via the dedicated operators and methods
+								# 		didn't apply the correct image formats and settings
+								#		and therefore, we use the created image
+								self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
+								self.quiltImage = self.viewImage
 
+							else:
+
+								# delete the Blender image of this view
+								bpy.data.images.remove(self.viewImage)
+
+						# if the file does not exist
 						else:
 
-							# delete the Blender image of this view
-							bpy.data.images.remove(self.viewImage)
+							# cancel the operator
+							self.operator_state = "CANCEL_RENDER"
 
-					# if the file does not exist
-					else:
+							# force the operator to keep the view Files
+							self.force_keep = True
 
-						# cancel the operator
-						self.operator_state = "CANCEL_RENDER"
-
-						# force the operator to keep the view Files
-						self.force_keep = True
-
-						# notify user
-						self.cancel_sign = "ERROR"
-						self.cancel_message = "Render job can not be continued. Missing view file(s) of the previous render job."
-
-						return {"PASS_THROUGH"}
+							# notify user
+							self.cancel_sign = "ERROR"
+							self.cancel_message = "Render job can not be continued. Missing view file(s) of the previous render job."
 
 
-		# Some status infos
-		# if a single frame shall be rendered
-		if self.animation == False:
+			# Some status infos
+			# if a single frame shall be rendered
+			if self.animation == False:
 
-			# notify user
-			self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " ...")
+				# notify user
+				self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " ...")
 
-		# if an animation shall be rendered
-		elif self.animation == True:
+			# if an animation shall be rendered
+			elif self.animation == True:
 
-			# notify user
-			self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " of frame " + str(self.rendering_frame) +  " ...")
+				# notify user
+				self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " of frame " + str(self.rendering_frame) +  " ...")
 
 
 	# function that is called before rendering starts
 	def pre_render(self, Scene, depsgraph):
 
 		# reset the operator state to PRE_RENDER
-		if self.operator_state != "CANCEL_RENDER": self.operator_state = "PRE_RENDER"
+		if self.operator_state != "CANCEL_RENDER" and self.cancel_state == False:
+			self.operator_state = "PRE_RENDER"
 
-		print("[INFO] Rendering view is going to be prepared.")
+			print("[INFO] Rendering view is going to be prepared.")
 
-		# output current status
-		print(" # active camera: ", self.camera_active)
-		print(" # current frame: ", self.rendering_frame)
-		print(" # current subframe: ", self.rendering_subframe)
-		print(" # current view: ", self.rendering_view)
-		print(" # current file: ", self.rendering_filepath)
+			# output current status
+			print(" # active camera: ", self.camera_active)
+			print(" # current frame: ", self.rendering_frame)
+			print(" # current subframe: ", self.rendering_subframe)
+			print(" # current view: ", self.rendering_view)
+			print(" # current file: ", self.rendering_filepath)
 
 
 	# function that is called after rendering finished
 	def post_render(self, Scene, depsgraph):
 
 		# reset the operator state to PRE_RENDER
-		if self.operator_state != "CANCEL_RENDER": self.operator_state = "POST_RENDER"
+		if self.operator_state != "CANCEL_RENDER" and self.cancel_state == False:
+			self.operator_state = "POST_RENDER"
 
-		print("[INFO] Saving view in ", self.rendering_view_filepath)
+			print("[INFO] Saving view in ", self.rendering_view_filepath)
 
-		# STORE THE PIXEL DATA OF THE RENDERED IMAGE
-		# ++++++++++++++++++++++++++++++++++++++++++++
-		# adjust the file name for current view:
-		# # used format: FILENAME_fXXX_vXXX.EXTENSION
-		self.rendering_view_filepath, extension = os.path.splitext(self.rendering_filepath)
-		self.rendering_view_filepath = self.rendering_view_filepath + "_v" + str(self.rendering_view).zfill(len(str(self.rendering_totalViews - 1))) + extension
+			# STORE THE PIXEL DATA OF THE RENDERED IMAGE
+			# ++++++++++++++++++++++++++++++++++++++++++++
+			# adjust the file name for current view:
+			# # used format: FILENAME_fXXX_vXXX.EXTENSION
+			self.rendering_view_filepath, extension = os.path.splitext(self.rendering_filepath)
+			self.rendering_view_filepath = self.rendering_view_filepath + "_v" + str(self.rendering_view).zfill(len(str(self.rendering_totalViews - 1))) + extension
 
-		# save the rendered image in a file
-		bpy.data.images["Render Result"].save_render(filepath=self.rendering_view_filepath, scene=self.render_setting_scene)
+			# save the rendered image in a file
+			bpy.data.images["Render Result"].save_render(filepath=self.rendering_view_filepath, scene=self.render_setting_scene)
 
-		# load the view image
-		self.viewImage = bpy.data.images.load(filepath=self.rendering_view_filepath)
+			# load the view image
+			self.viewImage = bpy.data.images.load(filepath=self.rendering_view_filepath)
 
-		# store the pixel data in an numpy array
-		# NOTE: we use foreach_get, since this is significantly faster
-		tmp_pixels = np.empty(len(self.viewImage.pixels), np.float32)
-		self.viewImage.pixels.foreach_get(tmp_pixels)
+			# store the pixel data in an numpy array
+			# NOTE: we use foreach_get, since this is significantly faster
+			tmp_pixels = np.empty(len(self.viewImage.pixels), np.float32)
+			self.viewImage.pixels.foreach_get(tmp_pixels)
 
-		# append the pixel data to the list of views
-		self.viewImagesPixels.append(tmp_pixels)
+			# append the pixel data to the list of views
+			self.viewImagesPixels.append(tmp_pixels)
 
-		# if this was the last view
-		if self.rendering_view == (self.rendering_totalViews - 1):
+			# if this was the last view
+			if self.rendering_view == (self.rendering_totalViews - 1):
 
-			# NOTE: Creating a new image via the dedicated operators and methods
-			# 		didn't apply the correct image formats and settings
-			#		and therefore, we use the created image
-			self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
-			self.quiltImage = self.viewImage
+				# NOTE: Creating a new image via the dedicated operators and methods
+				# 		didn't apply the correct image formats and settings
+				#		and therefore, we use the created image
+				self.viewImage.scale(self.render_setting_scene.render.resolution_x * self.rendering_columns, self.render_setting_scene.render.resolution_y * self.rendering_rows)
+				self.quiltImage = self.viewImage
 
-		else:
-			# delete the Blender image of this view
-			bpy.data.images.remove(self.viewImage)
+			else:
+				# delete the Blender image of this view
+				bpy.data.images.remove(self.viewImage)
 
 	# function that is called when the renderjob is completed
 	def completed_render(self, Scene, depsgraph):
 
 		# reset the operator state to COMPLETE_RENDER
-		if self.operator_state != "CANCEL_RENDER": self.operator_state = "COMPLETE_RENDER"
+		if self.operator_state != "CANCEL_RENDER" and self.cancel_state == False:
+			self.operator_state = "COMPLETE_RENDER"
 
 	# function that is called if rendering was cancelled
 	def cancel_render(self, Scene, depsgraph):
 
 		# set operator state to CANCEL
 		self.operator_state = "CANCEL_RENDER"
+		self.cancel_state = True
 
 
 
@@ -911,8 +915,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# HANDLER FOR EVENT TIMER
 		# ++++++++++++++++++++++++++++++++++
-		# Create timer event that runs every 1 ms to check the rendering process
-		self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
+		# Create timer event that runs every 50 ms to check the rendering process
+		self._handle_event_timer = context.window_manager.event_timer_add(0.050, window=context.window)
 
 		# START THE MODAL OPERATOR
 		# ++++++++++++++++++++++++++++++++++
@@ -935,7 +939,15 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		#print("[INFO] Operator state: ", self.operator_state)
 
 		# if the TIMER event for the quilt rendering is called
-		if event.type == 'TIMER':
+		if event.type == 'ESC':
+			self.operator_state = "CANCEL_RENDER"
+			self.cancel_state = True
+
+			# pass event through
+			return {'RUNNING_MODAL'}
+
+		# if the TIMER event for the quilt rendering is called
+		elif event.type == 'TIMER' and self.cancel_state == False:
 
 			# INVOKE NEW RENDER JOB
 			# ++++++++++++++++++++++++++++++++++
@@ -1290,21 +1302,21 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
-			# CANCEl-RENDER STEP
-			# ++++++++++++++++++++++++++++++++++
+		# CANCEl-RENDER STEP
+		# ++++++++++++++++++++++++++++++++++
 
-			# if nothing is rendering, but the last view is not yet rendered
-			elif self.operator_state == "CANCEL_RENDER":
+		# if nothing is rendering, but the last view is not yet rendered
+		if self.operator_state == "CANCEL_RENDER" or self.cancel_state == True:
 
-				# print("[INFO] Render job cancelled.")
+			# print("[INFO] Render job cancelled.")
 
-				# cancel the operator
-				# NOTE: - this includes recovering all original user settings
-				self.cancel(context)
+			# cancel the operator
+			# NOTE: - this includes recovering all original user settings
+			self.cancel(context)
 
-				# notify user
-				self.report({self.cancel_sign}, self.cancel_message)
-				return {"CANCELLED"}
+			# notify user
+			self.report({self.cancel_sign}, self.cancel_message)
+			return {"CANCELLED"}
 
 
 
