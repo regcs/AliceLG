@@ -663,7 +663,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 
 	@staticmethod
-	def from_texture_to_numpy_array(texture, array, view):
+	def from_texture_to_numpy_array(texture, array):
 		"""copy the current texture to a numpy array"""
 
 		# TODO: Replace these BGL calls with the new BPY API for OpenGL
@@ -694,13 +694,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		buffer = bgl.Buffer(bgl.GL_BYTE, array.shape, array)
 		bgl.glGetTexImage(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, buffer)
 		bgl.glBindTexture(bgl.GL_TEXTURE_2D, 0)
-
-		# this is needed to flip the image in Y direction
-		# NOTE: in numpy rows are axis 0 and columns are axis 1. Since our view
-		#		is defined as a "(height, width, colorchannels)" array, we need
-		#		to flip the axis 0 to achieve the desired effect
-		array[:] = np.flip(array, 0)
-
 
 
 	# Draw function which copies data from the 3D View
@@ -800,6 +793,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 				with self.qs[self.preset]["viewOffscreen"].bind():
 
+					# TODO: activate the "do_color_management=True" for Blender 3.0
+					#       to get the correct color space data
 					# draw the viewport rendering to the offscreen for the current view
 					self.qs[self.preset]["viewOffscreen"].draw_view3d(
 						# we use the "Scene" and the "View Layer" that is active in the Window
@@ -815,7 +810,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					start_test = time.time()
 
 					# copy texture into LightfieldView array
-					self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view], view)
+					self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
 
 					# draw the lightfield mouse cursor if desired
 					if self.settings.viewport_show_cursor == True:
@@ -855,7 +850,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			if int(self.settings.renderMode) == 0 or (int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage == None):
 
 				# let the device display the image
-				self.device.display(self.lightfield_image, invert=False)
+				# NOTE: We flip the views in Y direction, because the OpenGL
+				#		and PIL definition of the image origin are different.
+				#		(i.e., top-left vs. bottom-left)
+				self.device.display(self.lightfield_image, flip_views=True, invert=False)
 
 
 
@@ -877,7 +875,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				self.quilt_viewer_image = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, self.settings.quiltImage.size[0], self.settings.quiltImage.size[1], self.settings.quiltImage.channels)
 
 				# let the device display the image
-				self.device.display(self.quilt_viewer_image, invert=False)
+				# NOTE: We DON'T flip the views in Y direction, because the Blender
+				#		and PIL definition of the image origin are the same.
+				# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
+				self.device.display(self.quilt_viewer_image, flip_views=False, invert=False)
 
 				# TODO: A free() method needs to be implemented in pyLightIO
 				# free this lightfield image

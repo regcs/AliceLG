@@ -37,7 +37,7 @@ debugging_use_dummy_device = False
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
 # errors are printed to console.
-debugging_print_pylio_logger_all = False
+debugging_print_pylio_logger_all = True
 debugging_print_internal_logger_all = True
 
 
