@@ -37,7 +37,7 @@ debugging_use_dummy_device = False
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
 # errors are printed to console.
-debugging_print_pylio_logger_all = True
+debugging_print_pylio_logger_all = False
 debugging_print_internal_logger_all = True
 
 
@@ -130,7 +130,7 @@ LookingGlassAddonLogger.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
 
 if debugging_print_internal_logger_all == True: console_handler.setLevel(logging.DEBUG)
-if debugging_print_internal_logger_all == False: console_handler.setLevel(logging.WARNING)
+if debugging_print_internal_logger_all == False: console_handler.setLevel(logging.INFO)
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
@@ -150,8 +150,6 @@ LookingGlassAddonLogger.addHandler(logfile_handler)
 
 
 
-
-
 # ------------- LOAD EXTERNAL MODULES ----------------
 # NOTE: This needs to be called after loading the internal modules,
 # 		because we need to check if "bpy" was already loaded for reload
@@ -163,9 +161,26 @@ from bpy.types import AddonPreferences, PropertyGroup
 from bpy.props import FloatProperty, PointerProperty
 from bpy.app.handlers import persistent
 
+# log uncaught exceptions
+# +++++++++++++++++++++++++++++++++++++++++++++
+# define system exception hook for logging
+def log_exhook(exc_type, exc_value, exc_traceback):
+	if issubclass(type, KeyboardInterrupt):
+		sys.__excepthook__(exc_type, exc_value, exc_traceback)
+		return
+
+	# log that an unhandled exception occured
+	LookingGlassAddonLogger.critical("An unhandled error occured. Here is the traceback:\n", exc_info=(exc_type, exc_value, exc_traceback))
+
+# overwrite the excepthook
+sys.excepthook = log_exhook
+
+# check Blender version and addon dependencies
+# +++++++++++++++++++++++++++++++++++++++++++++
 # check, if a supported version of Blender is executed
 if bpy.app.version < bl_info['blender']:
 	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
+
 
 # define name for registration
 LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
@@ -198,7 +213,6 @@ except:
 	LookingGlassAddon.show_preferences = True
 
 	pass
-
 
 
 
