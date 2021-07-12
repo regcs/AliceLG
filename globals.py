@@ -86,8 +86,32 @@ class LookingGlassAddon:
 
 	# GLOBAL QUILT VIEWER DATA
 	# +++++++++++++++++++++++++++++++++++++++
+	# trigger variables for the live / quilt viewer updates
+	__updateLiveViewer = False
+	__updateQuiltViewer = False
+
 	quiltPixels = None
 	quiltLightfieldImage = None
 	# TODO: Is there a better way to check for color management setting changes?
 	quiltViewAsRender = None
 	quiltImageColorSpaceSetting = None
+
+
+
+	# GLOBAL QUILT VIEWER DATA
+	# +++++++++++++++++++++++++++++++++++++++
+	@property
+	def updateLiveViewer(self):
+		return __updateLiveViewer
+
+	@updateLiveViewer.setter
+	def updateLiveViewer(self, state):
+		__updateLiveViewer = state
+
+	@property
+	def updateQuiltViewer(self):
+		return __updateQuiltViewer
+
+	@updateQuiltViewer.setter
+	def updateQuiltViewer(self, state):
+		__updateQuiltViewer = state

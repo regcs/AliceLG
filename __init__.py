@@ -598,6 +598,16 @@ class LookingGlassAddonFunctions:
 
 
 
+	# update function for property updates concerning lightfield window settings
+	def update_lightfield_window_settings(self, context):
+
+		# if the lightfield viewport is in quilt viewer mode
+		if context.scene.settings.renderMode == '1':
+
+			# update the quilt viewer
+			LookingGlassAddon.updateQuiltViewer = True
+
+
 	# update function for property updates concerning quilt image selection
 	def update_quilt_selection(self, context):
 
@@ -737,6 +747,9 @@ class LookingGlassAddonFunctions:
 
 			# delete the temporary file
 			os.remove(tempFilepath)
+
+			# update the quilt viewer
+			LookingGlassAddon.updateQuiltViewer = True
 
 		# if the quilt selection was deleted
 		else:
@@ -890,6 +903,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 												 ('1', 'Quilt Viewer', 'Display a prerendered quilt image in the Looking Glass', 'RENDER_RESULT', 1)],
 										default='0',
 										name="Render Mode",
+										update=LookingGlassAddonFunctions.update_lightfield_window_settings,
 										)
 
 	# Lightfield Window Mode
@@ -898,6 +912,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 												 ('1', 'Refresh Mode: Manual', 'Refresh the lightfield viewport manually')],
 										default='0',
 										name="Lightfield Window Mode",
+										update=LookingGlassAddonFunctions.update_lightfield_window_settings,
 										)
 
 	# Lightfield Preview Resolution in Auto lightfield mode
@@ -905,6 +920,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										items = [('0', 'Preview: 512 x 512', '32 views'),],
 										default='0',
 										name="Lightfield Preview Resolution",
+										update=LookingGlassAddonFunctions.update_lightfield_window_settings,
 										)
 
 	# pointer property that can be used to load a pre-rendered quilt image
