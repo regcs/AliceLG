@@ -1,6 +1,4 @@
 ## REFACTORING OF ALICE
-- add an set_view_data() to pylio's BaseLightfieldImageFormat to update view data
-  (or should we use the views property?)
 
 - handle installation of pyLightIO and its dependencies from preference pane or
   install automatic on startup (?)
@@ -31,8 +29,6 @@
 - decide: remove the quilt debug view button or find a way to activate from within Alice?
 
 ## BUGS / ENHANCEMENTS
-
-- BUG: quilt viewer is not updated under all circumstances
 
 - BUG: Loading a file, where the lightfield viewport was active is not initialized correctly
 
