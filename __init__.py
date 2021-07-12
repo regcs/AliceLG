@@ -772,7 +772,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# a boolean to toogle the render window on or off
 	ShowLightfieldWindow: bpy.props.BoolProperty(
 											name="Lightfield Window",
-											description = "Creates a window for the lightfield rendering. You need to move the window manually to the Looking Glass screen and toogle it fullscreen",
+											description = "Creates a window for the lightfield rendering on the current Looking Glass device.",
 											default = False,
 											)
 
@@ -780,12 +780,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										items = LookingGlassAddonFunctions.quilt_preset_list_callback,
 										name="View Resolution",
 										update=LookingGlassAddonFunctions.update_render_setting,
-										)
-
-	debug_view: bpy.props.BoolProperty(
-										name="Debug View",
-										description="If enabled, the Looking Glass displays all quilts in the debug view",
-										default = False,
 										)
 
 
@@ -1215,7 +1209,7 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 	bl_idname = "lookingglass.lightfield_window"
 	bl_label = "Lightfield Window"
-	bl_description = "Creates a window for the lightfield rendering. You need to move the window manually to the Looking Glass screen and toogle it fullscreen"
+	bl_description = "Creates a window for the lightfield rendering on the current Looking Glass device"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 
@@ -1267,7 +1261,6 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# Resolution selection of the quilt views
 		row_preset = column.row()
 		row_preset.prop(context.scene.settings, "quiltPreset", text="")
-		row_preset.prop(context.scene.settings, "debug_view", expand=True, text="", icon='TEXTURE')
 		#column.separator()
 
 		# if no Looking Glass was detected AND debug mode is not activated

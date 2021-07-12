@@ -98,7 +98,7 @@ class LookingGlassAddon:
 
 
 
-	# GLOBAL QUILT VIEWER DATA
+	# GLOBAL ADDON PROPERTIES
 	# +++++++++++++++++++++++++++++++++++++++
 	@property
 	def updateLiveViewer(self):

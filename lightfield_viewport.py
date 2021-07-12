@@ -349,7 +349,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		################################################################
 
 		# if mouse was moved AND the viewport is in camera view mode
-		if event.type == 'MOUSEMOVE' and context.space_data.region_3d.view_perspective == 'CAMERA':
+		if event.type == 'MOUSEMOVE' and context.space_data and context.space_data.region_3d.view_perspective == 'CAMERA':
 
 			# save current mouse position
 			self.mouse_x = self.modified_mouse_x = event.mouse_x

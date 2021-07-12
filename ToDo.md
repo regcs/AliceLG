@@ -9,8 +9,6 @@
 
 - decide: move all panel / ui related things to an extra file 'ui.py' (?)
 
-- decide: remove the quilt debug view button or find a way to activate from within Alice?
-
 - handle the holographic cursor correctly
   => only show it, if the user is in camera mode and the mouse hovers over the active viewport
   => calculations are wrong at the moment
