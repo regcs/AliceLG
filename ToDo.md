@@ -5,20 +5,11 @@
 
   => check: if 'pip install' to defined path, are dependencies also installed there?
 
-- store user defined presets
-
-- decide: move all panel / ui related things to an extra file 'ui.py' (?)
-
 - handle the holographic cursor correctly
   => only show it, if the user is in camera mode and the mouse hovers over the active viewport
   => calculations are wrong at the moment
 
-- decide: how to handle the case if no LookingGlassCamera is activated? Use viewport matrix?
-
-- handle installation of pyLightIO and its dependencies from preference pane or
-  install automatic on startup (?)
-
-  => check: if 'pip install' to defined path, are dependencies also installed there?
+- decide: move all panel / ui related things to an extra file 'ui.py' (?)
 
 - store user defined presets
 

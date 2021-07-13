@@ -604,8 +604,8 @@ class LookingGlassAddonFunctions:
 		# if the lightfield viewport is in quilt viewer mode
 		if context.scene.settings.renderMode == '1':
 
-			# update the quilt viewer
-			LookingGlassAddon.updateQuiltViewer = True
+			# update the lightfield displayed on the device
+			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage, flip_views=False, invert=False)
 
 
 	# update function for property updates concerning quilt image selection
@@ -748,8 +748,25 @@ class LookingGlassAddonFunctions:
 			# delete the temporary file
 			os.remove(tempFilepath)
 
-			# update the quilt viewer
-			LookingGlassAddon.updateQuiltViewer = True
+			# CREATE A NEW PYLIGHTIO LIGHTFIELD IMAGE FROM THE BLENDER QUILT
+			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+			# convert to uint8
+			quiltPixels = 255 * LookingGlassAddon.quiltPixels
+			quiltPixels = quiltPixels.astype(dtype=np.uint8)
+
+			# if no quilt viewer LightfieldImage exists
+			if not LookingGlassAddon.quiltViewerLightfieldImage:
+				# TODO: Free the old LightfieldImage here (need a free() method in pylio)
+				pass
+
+			# create a LightfieldImage from the selected quilt
+			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], context.scene.settings.quiltImage.channels)
+
+			# update the lightfield displayed on the device
+			# NOTE: We DON'T flip the views in Y direction, because the Blender
+			#		and PIL definition of the image origin are the same.
+			# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
+			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage, flip_views=False, invert=False)
 
 		# if the quilt selection was deleted
 		else:

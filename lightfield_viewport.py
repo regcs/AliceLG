@@ -89,7 +89,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 	# HANDLER IDENTIFIERS
 	_handle_view_rendering = None
-	_handle_lightfield_display = None
 	_handle_lightfield_cursor = None
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
@@ -131,9 +130,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 		# remove the draw handler for the lightfield cursor
 		if self._handle_lightfield_cursor: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfield_cursor, 'WINDOW')
-
-		# remove the draw handler for the displaying the lightfield on the device
-		if self._handle_lightfield_display: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfield_display, 'WINDOW')
 
 		# log info
 		LookingGlassAddonLogger.info(" [#] Cancelled drawing handlers.")
@@ -258,9 +254,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# ++++++++++++++++++++++++++++++
 		# draw callback for rendering the views
 		self._handle_view_rendering = bpy.types.SpaceView3D.draw_handler_add(self.render_view, (context,), 'WINDOW', 'POST_PIXEL')
-
-		# draw callback to display the lightfield in the Looking Glass
-		self._handle_lightfield_display = bpy.types.SpaceView3D.draw_handler_add(self.display_lightfield, (context,), 'WINDOW', 'POST_PIXEL')
 
 		# draw callback to draw the lightfield cursor
 		#self._handle_lightfield_cursor = bpy.types.SpaceView3D.draw_handler_add(self.updateLightfieldCursor, (context,), 'WINDOW', 'PRE_VIEW')
@@ -827,67 +820,15 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			LookingGlassAddonLogger.debug("Rendering took in total %.3f s" % (time.time() - self.start_multi_view))
 			LookingGlassAddonLogger.debug("-----------------------------")
 
-			# update the quilt image in the image_editor,
-			# which is used for display in the LookingGlass
-			LookingGlassAddon.updateLiveViewer = True
+			# update the lightfield displayed on the device
+			# NOTE: We flip the views in Y direction, because the OpenGL
+			#		and PIL definition of the image origin are different.
+			#		(i.e., top-left vs. bottom-left)
+			LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), self.lightfield_image, flip_views=True, invert=False)
 
 			# reset draw variable:
 			# This is here to prevent excessive redrawing
 			self.modal_redraw = False
-
-
-
-	# display the rendered LightfieldImage on the display
-	def display_lightfield(self, context):
-
-		# VIEWPORT MODE
-		##################################################################
-		if LookingGlassAddon.updateLiveViewer and (int(self.settings.renderMode) == 0 or (int(self.settings.renderMode) == 1 and context.scene.settings.quiltImage == None)):
-
-			# let the device display the image
-			# NOTE: We flip the views in Y direction, because the OpenGL
-			#		and PIL definition of the image origin are different.
-			#		(i.e., top-left vs. bottom-left)
-			self.device.display(self.lightfield_image, flip_views=True, invert=False)
-
-			# reset state variable to avoid excessive redrawing
-			LookingGlassAddon.updateLiveViewer = False
-
-
-		# QUILT VIEWER MODE
-		##################################################################
-		# TODO: Currently only quilts are supported. Maybe implement support
-		#		for Multiview images later? (context.scene.settings.quiltImage.is_multiview == True)
-		# if the quilt view mode is active AND an image is loaded
-		elif LookingGlassAddon.updateQuiltViewer and (int(self.settings.renderMode) == 1 and self.settings.quiltImage != None):
-
-			# Prepare image as LightfieldImage
-			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-			# convert to uint8
-			quiltPixels = 255 * LookingGlassAddon.quiltPixels
-			quiltPixels = quiltPixels.astype(dtype=np.uint8)
-
-			# create a Lightfield image
-			self.quilt_viewer_image = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, self.settings.quiltImage.size[0], self.settings.quiltImage.size[1], self.settings.quiltImage.channels)
-
-			# let the device display the image
-			# NOTE: We DON'T flip the views in Y direction, because the Blender
-			#		and PIL definition of the image origin are the same.
-			# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
-			self.device.display(self.quilt_viewer_image, flip_views=False, invert=False)
-
-			# TODO: A free() method needs to be implemented in pyLightIO
-			# free this lightfield image
-			# self.quilt_viewer_image
-
-			# reset variables
-			quiltPixels = None
-			self.quilt_viewer_image = None
-
-			# reset state variable to avoid excessive redrawing
-			LookingGlassAddon.updateQuiltViewer = False
-
 
 
 

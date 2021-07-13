@@ -20,6 +20,21 @@
 import bpy
 import sys, os, json
 
+# TODO: We have to set the path manually here so that we can import pylightio.
+#       This isn't ideal.
+# append the add-on's path to Blender's python PATH
+sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))) + "/lib/")
+
+# TODO: Would be better, if from .lib import pylightio could be called,
+#		but for some reason that does not import all modules and throws
+#		"AliceLG.lib.pylio has no attribute 'lookingglass"
+import pylightio as pylio
+
+# ---------------- GLOBAL ADDON LOGGER -------------------
+import logging
+LookingGlassAddonLogger = logging.getLogger('Alice/LG')
+
 
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
@@ -86,32 +101,52 @@ class LookingGlassAddon:
 
 	# GLOBAL QUILT VIEWER DATA
 	# +++++++++++++++++++++++++++++++++++++++
-	# trigger variables for the live / quilt viewer updates
-	__updateLiveViewer = False
-	__updateQuiltViewer = False
-
 	quiltPixels = None
-	quiltLightfieldImage = None
+	quiltViewerLightfieldImage = None
 	# TODO: Is there a better way to check for color management setting changes?
 	quiltViewAsRender = None
 	quiltImageColorSpaceSetting = None
 
 
 
+	# GLOBAL ADDON FUNCTIONS
+	# +++++++++++++++++++++++++++++++++++++++
+	# update the lightfield window to display a lightfield on the device
+	@staticmethod
+	def update_lightfield_window(render_mode, lightfield_image, flip_views=False, invert=False):
+		''' update the lightfield image that is displayed on the current device '''
+
+		# update the variable for the current Looking Glass device
+		device = pylio.DeviceManager.get_active()
+		if device:
+			# if a LightfieldImage was given
+			if lightfield_image:
+
+				# VIEWPORT MODE
+				##################################################################
+				if render_mode == 0 or (render_mode == 1 and LookingGlassAddon.quiltViewerLightfieldImage == None):
+
+					# let the device display the image
+					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+
+				# QUILT VIEWER MODE
+				##################################################################
+				# if the quilt view mode is active AND an image is loaded
+				elif render_mode == 1:
+
+					# let the device display the image
+					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+
+			else:
+				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")
+
+
 	# GLOBAL ADDON PROPERTIES
 	# +++++++++++++++++++++++++++++++++++++++
-	@property
-	def updateLiveViewer(self):
-		return __updateLiveViewer
-
-	@updateLiveViewer.setter
-	def updateLiveViewer(self, state):
-		__updateLiveViewer = state
-
-	@property
-	def updateQuiltViewer(self):
-		return __updateQuiltViewer
-
-	@updateQuiltViewer.setter
-	def updateQuiltViewer(self, state):
-		__updateQuiltViewer = state
+	# @property
+	# def updateLiveViewer(self):
+	# 	return __updateLiveViewer
+	#
+	# @updateLiveViewer.setter
+	# def updateLiveViewer(self, state):
+	# 	__updateLiveViewer = state
