@@ -76,6 +76,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_frame = 1	    	# the frame that is currently rendered
 	rendering_subframe = 0.0	# the subframe that is currently rendered
 	rendering_view = 0	  		# the view of the frame that is currently rendered
+	rendering_seed = None 		# the random seed of CYCLES render engine
 
 	rendering_deviceType = None
 	rendering_viewWidth = None
@@ -492,6 +493,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.resolution_y = self.render_setting_original_height
 			self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
 			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_original_aspect_y
+
+
+			# CYCLES SPECIFIC
+			# restore seed setting
+			if self.render_setting_scene.render.engine == "CYCLES":
+				# increment the seed value
+				self.render_setting_scene.cycles.seed = self.rendering_seed
 
 
 		# DELETE LOCKFILE
@@ -958,6 +966,24 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# get the subframe, that will be rendered
 				self.rendering_subframe = self.render_setting_scene.frame_subframe
 
+				# CYCLES: RANDOMIZE SEED
+				# ++++++++++++++++++++++
+				# NOTE: This randomizes the noise pattern from view to view.
+				#		In theory, this enables a higher quilt quality at lower
+				#		render sampling rates due to the overlap of views in the
+				#		Looking Glass.
+				if self.render_setting_scene.render.engine == "CYCLES":
+
+					# TODO: At the moment this counts continously up for animations,
+					#		if the user does not influence the value. Change this later.
+					# if this is the first view
+					if self.rendering_view == 0:
+
+						# use the user setting as seed basis
+						self.rendering_seed = self.render_setting_scene.cycles.seed
+
+					# increment the seed value
+					self.render_setting_scene.cycles.seed = self.rendering_seed + self.rendering_view
 
 				# STORE USER CAMERA SETTINGS
 				# ++++++++++++++++++++++++++++++++++
