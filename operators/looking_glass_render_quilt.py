@@ -498,7 +498,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# CYCLES SPECIFIC
 			# restore seed setting
 			if self.render_setting_scene.render.engine == "CYCLES":
-				# increment the seed value
 				self.render_setting_scene.cycles.seed = self.rendering_seed
 
 
