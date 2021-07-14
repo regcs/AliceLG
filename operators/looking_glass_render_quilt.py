@@ -973,16 +973,22 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				#		Looking Glass.
 				if self.render_setting_scene.render.engine == "CYCLES":
 
-					# TODO: At the moment this counts continously up for animations,
-					#		if the user does not influence the value. Change this later.
 					# if this is the first view of the current frame OR the first view of the lockfile
 					if self.rendering_view == 0 or (self.use_lockfile == True and (self.rendering_frame == self.lockfile_start_frame and self.rendering_view == self.lockfile_start_view)):
 
 						# use the user setting as seed basis
 						self.rendering_seed = self.render_setting_scene.cycles.seed
 
-					# increment the seed value
-					self.render_setting_scene.cycles.seed = self.rendering_seed + self.rendering_view
+					# if the "use_animated_seed" option is active,
+					if self.render_setting_scene.cycles.use_animated_seed:
+
+						# increment the seed value with th frame number AND the view number
+						self.render_setting_scene.cycles.seed = self.rendering_seed + self.rendering_frame + self.rendering_view
+
+					else:
+
+						# increment the seed value only with the view number
+						self.render_setting_scene.cycles.seed = self.rendering_seed + self.rendering_view
 
 				# STORE USER CAMERA SETTINGS
 				# ++++++++++++++++++++++++++++++++++
@@ -1290,6 +1296,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 							# clear the pixel data
 							self.viewImagesPixels.clear()
+
+							# CYCLES SPECIFIC
+							if self.render_setting_scene.render.engine == "CYCLES":
+
+								# restore seed setting
+								self.render_setting_scene.cycles.seed = self.rendering_seed
 
 							# reset the operator state to IDLE
 							self.operator_state = "INVOKE_RENDER"
