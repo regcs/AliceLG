@@ -328,10 +328,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		################################################################
 
 		# if mouse was moved
-		if event.type == 'MOUSEMOVE'
+		if event.type == 'MOUSEMOVE':
 
 			# if the viewport is in camera view mode
-		 	if context.space_data and context.space_data.region_3d.view_perspective == 'CAMERA':
+			if context.space_data and context.space_data.region_3d.view_perspective == 'CAMERA':
 
 				# save current mouse position
 				self.mouse_x = event.mouse_region_x
@@ -345,7 +345,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			else:
 
 				# TODO: here should be code that resets the lightfield cursor
-				pass
+				# pass event through
+				return {'PASS_THROUGH'}
 
 		else:
 
@@ -792,7 +793,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def drawCursor3D(self, context, view, view_matrix, projection_matrix, radius, segments):
 
 		start_timer = time.time()
-		print(" [#] drawCursor3D()")
+
 		# Cursor geometry for the view
 		# ++++++++++++++++++++++++++++++++++++++
 		# location vector
