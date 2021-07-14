@@ -161,7 +161,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# ++++++++++++++++++++++++++
 		if context != None:
 
-			# make current scene the invoking scene
+			# make current scene is the invoking scene
 			LookingGlassAddon.LightfieldWindowInvoker = context.scene
 
 			# iterate through all scenes
@@ -283,26 +283,30 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		# update the internal variable for the settings, in case the scene has changed
-		self.settings = context.scene.settings
+		# if the active scene was changed
+		if context.scene.settings != self.settings:
 
-		# update the variable for the current Looking Glass device
-		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+			# make sure the "lightfield window" button is set correctly
+			context.scene.settings.ShowLightfieldWindow = self.settings.ShowLightfieldWindow
+
+			# update the internal variable for the settings
+			self.settings = context.scene.settings
+
+			# update the lightfield window
+			# Lightfield Viewport
+			if int(self.settings.renderMode) == 0:
+				context.scene.settings.viewport_manual_refresh = True
+			# Quilt Viewer
+			elif int(self.settings.renderMode) == 1:
+				LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 		# cancel the operator, if the lightfield viewport was deactivated
 		if not self.settings.ShowLightfieldWindow:
 			self.cancel(context)
 			return {'FINISHED'}
 
-		# if this scene was created AFTER the lightfield viewport was
-		# invoked, it might not have the correct setting for the lightfield window
-		# button
-		if self.settings != None and LookingGlassAddon.LightfieldWindowInvoker != None:
-
-			if self.settings.ShowLightfieldWindow != LookingGlassAddon.LightfieldWindowInvoker.settings.ShowLightfieldWindow:
-
-				# adjust the setting
-				self.settings.ShowLightfieldWindow = LookingGlassAddon.LightfieldWindowInvoker.settings.ShowLightfieldWindow
+		# update the variable for the current Looking Glass device
+		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 
 
@@ -313,12 +317,12 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		if event.type == 'TIMER':
 
 			# if something has changed OR the user requested a manual redrawing
-			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.lightfieldMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
+			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.settings.viewport_manual_refresh == True):
 
 				# update the viewport settings
 				self.updateViewportSettings(context)
 
-				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (int(context.scene.settings.lightfieldMode) == 1 and context.scene.settings.viewport_manual_refresh == True):
+				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.settings.viewport_manual_refresh == True):
 
 					# set to the currently chosen quality
 					self.preset = int(context.scene.settings.quiltPreset)
@@ -692,7 +696,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def render_view(self, context):
 
 		# if the quilt must be redrawn
-		if self.modal_redraw == True and (context.scene.settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
+		if self.modal_redraw == True and (self.settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
 
 			# UPDATE QUILT SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -727,7 +731,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 			# select camera that belongs to the view
-			camera = context.scene.settings.lookingglassCamera
+			camera = self.settings.lookingglassCamera
 
 			# PREPARE THE MODELVIEW AND PROJECTION MATRICES
 			# if a camera is selected
@@ -821,10 +825,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			LookingGlassAddonLogger.debug("-----------------------------")
 
 			# update the lightfield displayed on the device
-			# NOTE: We flip the views in Y direction, because the OpenGL
-			#		and PIL definition of the image origin are different.
-			#		(i.e., top-left vs. bottom-left)
-			LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), self.lightfield_image, flip_views=True, invert=False)
+			LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), self.lightfield_image)
 
 			# reset draw variable:
 			# This is here to prevent excessive redrawing
@@ -1050,7 +1051,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		# if a camera is selected AND the space is not in camera mode
 		if self and context:
-			if context.scene.settings.lookingglassCamera:
+			if context.scene.settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
 				if (context.space_data != None and context.space_data.region_3d != None) and context.space_data.region_3d.view_perspective != 'CAMERA':
 
 					# currently selected camera

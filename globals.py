@@ -60,9 +60,6 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
-	# the scene from which the lightfield viewport was invoked
-	LightfieldWindowInvoker = None
-
 	# Was the modal operator for the frustum initialized?
 	FrustumInitialized = False
 	FrustumDrawHandler = None
@@ -113,7 +110,7 @@ class LookingGlassAddon:
 	# +++++++++++++++++++++++++++++++++++++++
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
-	def update_lightfield_window(render_mode, lightfield_image, flip_views=False, invert=False):
+	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):
 		''' update the lightfield image that is displayed on the current device '''
 
 		# update the variable for the current Looking Glass device
@@ -124,7 +121,13 @@ class LookingGlassAddon:
 
 				# VIEWPORT MODE
 				##################################################################
-				if render_mode == 0 or (render_mode == 1 and LookingGlassAddon.quiltViewerLightfieldImage == None):
+				if render_mode == 0:
+
+					# NOTE: We flip the views in Y direction, because the OpenGL
+					#		and PIL definition of the image origin are different.
+					#		(i.e., top-left vs. bottom-left)
+					if flip_views == None: flip_views = True
+					if invert == None: invert = False
 
 					# let the device display the image
 					device.display(lightfield_image, flip_views=flip_views, invert=invert)
@@ -133,6 +136,12 @@ class LookingGlassAddon:
 				##################################################################
 				# if the quilt view mode is active AND an image is loaded
 				elif render_mode == 1:
+
+					# NOTE: We DON'T flip the views in Y direction, because the Blender
+					#		and PIL definition of the image origin are the same.
+					# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
+					if flip_views == None: flip_views = False
+					if invert == None: invert = False
 
 					# let the device display the image
 					device.display(lightfield_image, flip_views=flip_views, invert=invert)

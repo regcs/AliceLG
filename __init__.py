@@ -307,14 +307,11 @@ class LookingGlassAddonFunctions:
 		return items
 
 	# poll function for the Looking Glass camera selection
-	# this prevents that an object is picked, which is no camera
+	# this prevents that an object is picked or listed, which is no camera
 	def camera_selection_poll(self, object):
 
-		# TODO
-		# notify user
-		# if not object.type == 'CAMERA': self.report({"ERROR"}, "Selected object", object, "is no camera.")
-
-		return object.type == 'CAMERA'
+		# the object has to be a Camera of the current view layer
+		return (object.type == 'CAMERA' and (object in [o for o in bpy.context.view_layer.objects]))
 
 
 	# update function for the workspace selection
@@ -605,7 +602,7 @@ class LookingGlassAddonFunctions:
 		if context.scene.settings.renderMode == '1':
 
 			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage, flip_views=False, invert=False)
+			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 
 	# update function for property updates concerning quilt image selection
@@ -763,10 +760,7 @@ class LookingGlassAddonFunctions:
 			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], context.scene.settings.quiltImage.channels)
 
 			# update the lightfield displayed on the device
-			# NOTE: We DON'T flip the views in Y direction, because the Blender
-			#		and PIL definition of the image origin are the same.
-			# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
-			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage, flip_views=False, invert=False)
+			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 		# if the quilt selection was deleted
 		else:
