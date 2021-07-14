@@ -7,7 +7,8 @@
 
 - handle the holographic cursor correctly
   => only show it, if the user is in camera mode and the mouse hovers over the active viewport
-  => calculations are wrong at the moment
+  => needs to be implemented via sending the cursor geometry data to HoPS
+     (Doing it via Blender is to slow unless we can dratically reduce the time between sending quilt data via TCP)
 
 - decide: move all panel / ui related things to an extra file 'ui.py' (?)
 

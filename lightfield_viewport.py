@@ -74,8 +74,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	depsgraph_update_time = 0.000
 
 	# LIGHTFIELD CURSOR
-	modified_mouse_x = 0
-	modified_mouse_y = 0
 	mouse_x = 0
 	mouse_y = 0
 	cursor = Vector((0, 0, 0))
@@ -242,9 +240,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# draw callback for rendering the views
 		self._handle_view_rendering = bpy.types.SpaceView3D.draw_handler_add(self.render_view, (context,), 'WINDOW', 'POST_PIXEL')
 
-		# draw callback to draw the lightfield cursor
-		#self._handle_lightfield_cursor = bpy.types.SpaceView3D.draw_handler_add(self.updateLightfieldCursor, (context,), 'WINDOW', 'PRE_VIEW')
-
 		# log info
 		LookingGlassAddonLogger.info(" [#] Initialized drawing handlers.")
 
@@ -328,59 +323,29 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 
 
-
+		# TODO: Decide if to remove?
 		# handle lightfield cursor calculation in the viewport
 		################################################################
 
-		# if mouse was moved AND the viewport is in camera view mode
-		if event.type == 'MOUSEMOVE' and context.space_data and context.space_data.region_3d.view_perspective == 'CAMERA':
+		# if mouse was moved
+		if event.type == 'MOUSEMOVE'
 
-			# save current mouse position
-			self.mouse_x = self.modified_mouse_x = event.mouse_x
-			self.mouse_y = self.modified_mouse_y = event.mouse_y
+			# if the viewport is in camera view mode
+		 	if context.space_data and context.space_data.region_3d.view_perspective == 'CAMERA':
 
-			# currently selected camera
-			camera = self.settings.lookingglassCamera
+				# save current mouse position
+				self.mouse_x = event.mouse_region_x
+				self.mouse_y = event.mouse_region_y
 
-			# if the lightfield viewport is attached to a camera AND a Blender viewport is active
-			if camera and LookingGlassAddon.BlenderViewport:
+				# calculate hit position
+				self.updateLightfieldCursor(context)
 
-				# REMAP MOUSE POSITIONS
-				# +++++++++++++++++++++++++++++++++++++++++++++
-				# NOTE: - this is required because the "CAMERA" view mode
-				#		  does not fill the complete window area
+				return {'RUNNING_MODAL'}
 
-				# get modelview matrix
-				view_matrix = camera.matrix_world
+			else:
 
-				# obtain the viewframe of the camera in 3D coordinates
-				view_frame = camera.data.view_frame(scene=context.scene)
-
-				# transform the coordinates from camera to world coordinates
-				view_frame = [view_matrix @ p for p in view_frame]
-
-				# transform world coordinates of each edge to screen coordinates in pixels
-				view_frame_2D = [location_3d_to_region_2d(context.region, LookingGlassAddon.BlenderViewport.region_3d, p) for p in view_frame]
-
-				# if all viewframe points were obtained
-				if any(p is None for p in view_frame_2D) == False:
-
-					# calculate dimensions in pixels
-					view_frame_width = abs(view_frame_2D[2][0] - view_frame_2D[0][0])
-					view_frame_height = abs(view_frame_2D[1][1] - view_frame_2D[0][1])
-
-					# remap mouse coordinates in complete window to corresponding coordinates in the camera view frame
-					self.modified_mouse_x = int(round(view_frame_2D[2][0] + (event.mouse_x / context.region.width) * view_frame_width))
-					self.modified_mouse_y = int(round(view_frame_2D[2][1] + (event.mouse_y / context.region.height) * view_frame_height))
-
-			# calculate hit position
-			self.updateLightfieldCursor(context)
-
-			# force area redraw to draw the cursor
-			if context.area:
-				context.area.tag_redraw()
-
-			return {'RUNNING_MODAL'}
+				# TODO: here should be code that resets the lightfield cursor
+				pass
 
 		else:
 
@@ -388,14 +353,15 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			return {'PASS_THROUGH'}
 
 
+	# TODO: Decide if to remove?
 	# calculate hit position of a ray cast into the viewport to find the location
 	# for the lightfield cursor in the lightfield
 	def updateLightfieldCursor(self, context):
 
 		# lightfield cursor is drawn in the Looking Glass viewport
 		# because the standard cursor is too small and ... just 2D
-		view_direction = region_2d_to_vector_3d(context.region, LookingGlassAddon.BlenderViewport.region_3d, (self.modified_mouse_x, self.modified_mouse_y))
-		ray_start = region_2d_to_origin_3d(context.region, LookingGlassAddon.BlenderViewport.region_3d, (self.modified_mouse_x, self.modified_mouse_y))
+		view_direction = region_2d_to_vector_3d(context.region, context.space_data.region_3d, (self.mouse_x, self.mouse_y))
+		ray_start = region_2d_to_origin_3d(context.region, context.space_data.region_3d, (self.mouse_x, self.mouse_y))
 
 		# calculate the ray end point (10000 is just an arbitrary length)
 		ray_end = ray_start + (view_direction * 10000)
@@ -404,7 +370,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# NOTE: The first parameter ray_cast expects was changed in Blender 2.91
 		if bpy.app.version < (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
 		if bpy.app.version >= (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
-		#print("CURSOR HIT TEST RESULT: ", result)
+
 		# if no object was under the mouse cursor
 		if self.cursor.length == 0:
 
@@ -795,6 +761,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					# copy texture into LightfieldView array
 					self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
 
+					# TODO: Decide if to remove?
 					# draw the lightfield mouse cursor if desired
 					if self.settings.viewport_show_cursor == True:
 
@@ -820,11 +787,12 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 
 
-	# TODO: In this method is room for speed optimization
+	# TODO: Decide if to remove?
 	# draw the mouse cursor
 	def drawCursor3D(self, context, view, view_matrix, projection_matrix, radius, segments):
 
 		start_timer = time.time()
+		print(" [#] drawCursor3D()")
 		# Cursor geometry for the view
 		# ++++++++++++++++++++++++++++++++++++++
 		# location vector
