@@ -11,27 +11,11 @@
 
 - decide: move all panel / ui related things to an extra file 'ui.py' (?)
 
-- store user defined presets
-
-- decide: move all panel / ui related things to an extra file 'ui.py' (?)
-
-- decide: remove the quilt debug view button or find a way to activate from within Alice?
+- decide: how to handle the case if no LookingGlassCamera is activated? Use viewport matrix?
 
 ## BUGS / ENHANCEMENTS
 
 - BUG: Loading a file, where the lightfield viewport was active is not initialized correctly
-
-- BUG: after adding a new scene, if the lightfield viewport was active, it is closed
-
-- when opening a quilt image in quilt viewer, check for the metadata suffix
-
-- overwrite the `sys.excepthook` to add unhandled exceptions to the log files; by default only WARNINGS and higher should be written to log, but we need a preferences option to make additional debugging info toggable by the user
-
-- BUG: after adding a new scene, if the lightfield viewport was active, it is closed
-
-- when opening a quilt image in quilt viewer, check for the metadata suffix
-
-
 
 ## DOCUMENTATION
 
