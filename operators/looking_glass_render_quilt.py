@@ -76,6 +76,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	rendering_frame = 1	    	# the frame that is currently rendered
 	rendering_subframe = 0.0	# the subframe that is currently rendered
 	rendering_view = 0	  		# the view of the frame that is currently rendered
+	rendering_seed = None 		# the random seed of CYCLES render engine
 
 	rendering_deviceType = None
 	rendering_viewWidth = None
@@ -492,6 +493,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.render_setting_scene.render.resolution_y = self.render_setting_original_height
 			self.render_setting_scene.render.pixel_aspect_x = self.render_setting_original_aspect_x
 			self.render_setting_scene.render.pixel_aspect_y = self.render_setting_original_aspect_y
+
+
+			# CYCLES SPECIFIC
+			# restore seed setting
+			if self.render_setting_scene.render.engine == "CYCLES":
+				self.render_setting_scene.cycles.seed = self.rendering_seed
 
 
 		# DELETE LOCKFILE
@@ -958,6 +965,30 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# get the subframe, that will be rendered
 				self.rendering_subframe = self.render_setting_scene.frame_subframe
 
+				# CYCLES: RANDOMIZE SEED
+				# ++++++++++++++++++++++
+				# NOTE: This randomizes the noise pattern from view to view.
+				#		In theory, this enables a higher quilt quality at lower
+				#		render sampling rates due to the overlap of views in the
+				#		Looking Glass.
+				if self.render_setting_scene.render.engine == "CYCLES":
+
+					# if this is the first view of the current frame OR the first view of the lockfile
+					if self.rendering_view == 0 or (self.use_lockfile == True and (self.rendering_frame == self.lockfile_start_frame and self.rendering_view == self.lockfile_start_view)):
+
+						# use the user setting as seed basis
+						self.rendering_seed = self.render_setting_scene.cycles.seed
+
+					# if the "use_animated_seed" option is active,
+					if self.render_setting_scene.cycles.use_animated_seed:
+
+						# increment the seed value with th frame number AND the view number
+						self.render_setting_scene.cycles.seed = self.rendering_seed + self.rendering_frame + self.rendering_view
+
+					else:
+
+						# increment the seed value only with the view number
+						self.render_setting_scene.cycles.seed = self.rendering_seed + self.rendering_view
 
 				# STORE USER CAMERA SETTINGS
 				# ++++++++++++++++++++++++++++++++++
@@ -1265,6 +1296,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 							# clear the pixel data
 							self.viewImagesPixels.clear()
+
+							# CYCLES SPECIFIC
+							if self.render_setting_scene.render.engine == "CYCLES":
+
+								# restore seed setting
+								self.render_setting_scene.cycles.seed = self.rendering_seed
 
 							# reset the operator state to IDLE
 							self.operator_state = "INVOKE_RENDER"
