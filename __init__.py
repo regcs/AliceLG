@@ -1134,17 +1134,11 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	# if the lightfield window was active
 	if bpy.context.scene.settings.ShowLightfieldWindow == True:
 
-		# if the device list is not empty, create a new lightfield window
-		if pylio.DeviceManager.count() > 0:
+		# for each scene in the file
+		for scene in bpy.context.blend_data.scenes:
 
-			# Invoke modal operator for the lightfield rendering
-			bpy.ops.render.viewport('INVOKE_DEFAULT')
-
-		else:
-
-			# deactivate the corresponding UI elements
-			bpy.context.scene.settings.ShowLightfieldWindow = False
-
+			# set the lightfield window button state to 'deactivated'
+		    scene.settings.ShowLightfieldWindow = False
 
 	# if no Looking Glass was detected AND debug mode is not activated
 	if not pylio.DeviceManager.count() and not debugging_use_dummy_device:
