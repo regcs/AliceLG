@@ -7,11 +7,9 @@
 
 - decide: move all panel / ui related things to an extra file 'ui.py' (?)
 
-- decide: how to handle the case if no LookingGlassCamera is activated? Use viewport matrix?
-
 ## BUGS / ENHANCEMENTS
 
-- BUG: Loading a file, where the lightfield viewport was active is not initialized correctly
+- None
 
 ## DOCUMENTATION
 

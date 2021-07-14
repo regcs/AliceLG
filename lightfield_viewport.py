@@ -97,10 +97,15 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	# ++++++++++++++++++++++++++++++++++++++++++++++++++
 	# poll method
 	@classmethod
-	def poll(cls, context):
+	def poll(self, context):
 
-		# if a context exists, execute the operator
-		if context: return True
+		# check if the context is invalid
+		if not context:
+			LookingGlassAddonLogger.error("Could not open Lightfield Window. Operator was called from invalid context.")
+			return False
+
+		# return True, so the operator is executed
+		return True
 
 
 
@@ -475,31 +480,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			# modify the projection matrix, relative to the camera size and aspect ratio
 			projectionMatrix[0][2] += offset / (cameraSize * self.device.aspect)
 
-		# TODO: THE FOLLOWING WORKS IN PRINCIPLE, BUT IS DISTORTED. WHY?
-		# otherwise we take the active viewport camera
 		else:
 
-			# The field of view set by the camera
-			# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
-			# NOTE 2: - we take the angle directly from the projection matrix
-			fov = 2.0 * atan(1 / projectionMatrix[1][1])
-
-			# calculate cameraSize from its distance to the focal plane and the FOV
-			# NOTE: - we take an arbitrary distance of 5 m (TODO: IS THERE A SPECIFIC BETTER VALUE FOR THE VIEWPORT CAM?)
-			cameraDistance = self.settings.focalPlane
-			cameraSize = cameraDistance * tan(fov / 2)
-
-			# start at viewCone * 0.5 and go up to -viewCone * 0.5
-			offsetAngle = (0.5 - view / (self.qs[self.preset]["total_views"] - 1)) * radians(self.device.viewCone)
-
-			# calculate the offset that the camera should move
-			offset = cameraDistance * tan(offsetAngle)
-
-			# translate the view matrix (position) by the calculated offset in x-direction
-			viewMatrix = Matrix.Translation((offset, 0, cameraDistance)) @ viewMatrix
-
-			# modify the projection matrix, relative to the camera size and aspect ratio
-			projectionMatrix[0][2] += offset / (cameraSize * self.device.aspect)
+			LookingGlassAddonLogger.warnin("Could not calculate the matrices for the lightfield viewport. '%s' is not a valid camera." % camera)
 
 		# return the projection matrix
 		return viewMatrix, projectionMatrix
@@ -711,76 +694,72 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						scale_y = (self.qs[self.preset]["rows"] / self.qs[self.preset]["columns"]) / self.device.aspect,
 					)
 
-			# otherwise we take the (lightfield) viewport matrices
-			elif LookingGlassAddon.BlenderViewport:
-
-				# get viewports modelview matrix
-				camera_view_matrix = LookingGlassAddon.BlenderViewport.region_3d.view_matrix.copy()
-
-				# get the viewports projection matrix
-				camera_projection_matrix = LookingGlassAddon.BlenderViewport.region_3d.window_matrix.copy()
-
-			LookingGlassAddonLogger.debug(" [#] Geting view & projection matrices took %.6f s" % (time.time() - self.start_multi_view))
+				LookingGlassAddonLogger.debug(" [#] Geting view & projection matrices took %.6f s" % (time.time() - self.start_multi_view))
 
 
-			# RENDER THE VIEWS
-			# ++++++++++++++++++++++++++++++++++++++++++++++++
-
-			# loop through all required views
-			for view in range(0, self.qs[self.preset]["total_views"]):
-
-				start_test = time.time()
-				# calculate the offset-projection of the current view
-				view_matrix, projection_matrix = self.setupVirtualCameraForView(camera, view, camera_view_matrix.copy(), camera_projection_matrix.copy())
-
-				LookingGlassAddonLogger.debug(" [#] [%i] Settin up view camera took %.6f s" % (view, time.time() - start_test))
-				start_test = time.time()
-
-				# RENDER THE VIEW INTO THE OFFSCREEN
+				# RENDER THE VIEWS
 				# ++++++++++++++++++++++++++++++++++++++++++++++++
-				# NOTE: - the draw_view3d method does not apply the color management
-				# 		- files bug report (on 2020-12-28): https://developer.blender.org/T84227
 
-				with self.qs[self.preset]["viewOffscreen"].bind():
+				# loop through all required views
+				for view in range(0, self.qs[self.preset]["total_views"]):
 
-					# TODO: activate the "do_color_management=True" for Blender 3.0
-					#       to get the correct color space data
-					# draw the viewport rendering to the offscreen for the current view
-					self.qs[self.preset]["viewOffscreen"].draw_view3d(
-						# we use the "Scene" and the "View Layer" that is active in the Window
-						# the user currently works in
-						scene=context.scene,
-						view_layer=context.view_layer,
-						view3d=self.override['space_data'],
-						region=self.override['region'],
-						view_matrix=view_matrix,
-						projection_matrix=projection_matrix)
+					start_test = time.time()
+					# calculate the offset-projection of the current view
+					view_matrix, projection_matrix = self.setupVirtualCameraForView(camera, view, camera_view_matrix.copy(), camera_projection_matrix.copy())
 
-					LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.6f s" % (view, time.time() - start_test))
+					LookingGlassAddonLogger.debug(" [#] [%i] Settin up view camera took %.6f s" % (view, time.time() - start_test))
 					start_test = time.time()
 
-					# copy texture into LightfieldView array
-					self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
+					# RENDER THE VIEW INTO THE OFFSCREEN
+					# ++++++++++++++++++++++++++++++++++++++++++++++++
+					# NOTE: - the draw_view3d method does not apply the color management
+					# 		- files bug report (on 2020-12-28): https://developer.blender.org/T84227
 
-					# TODO: Decide if to remove?
-					# draw the lightfield mouse cursor if desired
-					if self.settings.viewport_show_cursor == True:
+					with self.qs[self.preset]["viewOffscreen"].bind():
 
-						# # calculate the position of the view in the quilt
-						# x = 2 * (view % self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"] - 1
-						# y = 2 * int(view / self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"] - 1
+						# TODO: activate the "do_color_management=True" for Blender 3.0
+						#       to get the correct color space data
+						# draw the viewport rendering to the offscreen for the current view
+						self.qs[self.preset]["viewOffscreen"].draw_view3d(
+							# we use the "Scene" and the "View Layer" that is active in the Window
+							# the user currently works in
+							scene=context.scene,
+							view_layer=context.view_layer,
+							view3d=self.override['space_data'],
+							region=self.override['region'],
+							view_matrix=view_matrix,
+							projection_matrix=projection_matrix)
 
-						self.drawCursor3D(context, view, view_matrix, projection_matrix, self.settings.viewport_cursor_size, 8)
+						LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.6f s" % (view, time.time() - start_test))
+						start_test = time.time()
+
+						# copy texture into LightfieldView array
+						self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
+
+						# TODO: Decide if to remove?
+						# draw the lightfield mouse cursor if desired
+						if self.settings.viewport_show_cursor == True:
+
+							# # calculate the position of the view in the quilt
+							# x = 2 * (view % self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"] - 1
+							# y = 2 * int(view / self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"] - 1
+
+							self.drawCursor3D(context, view, view_matrix, projection_matrix, self.settings.viewport_cursor_size, 8)
 
 
-					LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.6f" % (view, time.time() - start_test))
+						LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.6f" % (view, time.time() - start_test))
 
-			LookingGlassAddonLogger.debug("-----------------------------")
-			LookingGlassAddonLogger.debug("Rendering took in total %.3f s" % (time.time() - self.start_multi_view))
-			LookingGlassAddonLogger.debug("-----------------------------")
+				LookingGlassAddonLogger.debug("-----------------------------")
+				LookingGlassAddonLogger.debug("Rendering took in total %.3f s" % (time.time() - self.start_multi_view))
+				LookingGlassAddonLogger.debug("-----------------------------")
 
-			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), self.lightfield_image)
+				# update the lightfield displayed on the device
+				LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), self.lightfield_image)
+
+			else:
+
+				# update the lightfield displayed on the device: show the demo quilt
+				LookingGlassAddon.update_lightfield_window(-1, None)
 
 			# reset draw variable:
 			# This is here to prevent excessive redrawing

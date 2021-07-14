@@ -112,6 +112,7 @@ class LookingGlassAddon:
 	@staticmethod
 	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):
 		''' update the lightfield image that is displayed on the current device '''
+		''' render_mode = 0: Lightfield Viewport, render_mode = 1: Quilt Viewer, render_mode = -1: demo quilt '''
 
 		# update the variable for the current Looking Glass device
 		device = pylio.DeviceManager.get_active()
@@ -145,6 +146,12 @@ class LookingGlassAddon:
 
 					# let the device display the image
 					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+
+			# if the demo quilt was requested
+			elif lightfield_image == None and render_mode == -1:
+
+				# let the device display the demo quilt
+				device.display(None)
 
 			else:
 				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")
