@@ -5,12 +5,11 @@
 
   => check: if 'pip install' to defined path, are dependencies also installed there?
 
-- decide: move all panel / ui related things to an extra file 'ui.py' (?)
-
 ## BUGS / ENHANCEMENTS
 
-- None
+- BUG: Shading & Overlay settings - the "CUSTOM" setting also changes the current viewport
 
 ## DOCUMENTATION
 
 - document the custom preset functionality
+- add the doc_url property to the add-on as soon as the documentation is ready

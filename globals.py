@@ -19,6 +19,8 @@
 
 import bpy
 import sys, os, json
+from bpy.props import FloatProperty, PointerProperty
+from bpy.app.handlers import persistent
 
 # TODO: We have to set the path manually here so that we can import pylightio.
 #       This isn't ideal.
@@ -39,6 +41,11 @@ LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 # ------------ GLOBAL VARIABLES ---------------
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
+
+	# debugging variables
+	debugging_use_dummy_device = False
+	debugging_print_pylio_logger_all = False
+	debugging_print_internal_logger_all = False
 
 	# addon name
 	name = None

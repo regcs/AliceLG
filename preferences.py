@@ -24,7 +24,8 @@
 
 # -------------------- LOAD MODULES ----------------------
 import bpy
-from bpy.types import AddonPreferences
+from bpy.types import AddonPreferences, PropertyGroup
+from .globals import *
 
 # ---------------- GLOBAL ADDON LOGGER -------------------
 import logging
