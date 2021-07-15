@@ -254,6 +254,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# notify user
 				self.report({"INFO"},"Rendering view " + str(self.rendering_view + 1) + "/" + str(self.rendering_totalViews) + " of frame " + str(self.rendering_frame) +  " ...")
 
+			# set operator state to IDLE
+			if self.operator_state != "CANCEL_RENDER": self.operator_state = "IDLE"
 
 	# function that is called before rendering starts
 	def pre_render(self, Scene, depsgraph):
@@ -271,6 +273,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			print(" # current view: ", self.rendering_view)
 			print(" # current file: ", self.rendering_filepath)
 
+			# set operator state to IDLE
+			if self.operator_state != "CANCEL_RENDER": self.operator_state = "IDLE"
 
 	# function that is called after rendering finished
 	def post_render(self, Scene, depsgraph):
@@ -314,6 +318,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			else:
 				# delete the Blender image of this view
 				bpy.data.images.remove(self.viewImage)
+
+			# set operator state to IDLE
+			if self.operator_state != "CANCEL_RENDER": self.operator_state = "IDLE"
 
 	# function that is called when the renderjob is completed
 	def completed_render(self, Scene, depsgraph):
@@ -915,8 +922,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# HANDLER FOR EVENT TIMER
 		# ++++++++++++++++++++++++++++++++++
-		# Create timer event that runs every 50 ms to check the rendering process
-		self._handle_event_timer = context.window_manager.event_timer_add(0.050, window=context.window)
+		# Create timer event that runs every 1 ms to check the rendering process
+		self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
 
 		# START THE MODAL OPERATOR
 		# ++++++++++++++++++++++++++++++++++
@@ -943,6 +950,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			self.operator_state = "CANCEL_RENDER"
 			self.cancel_state = True
 
+			print("ESC")
+
 			# pass event through
 			return {'RUNNING_MODAL'}
 
@@ -952,6 +961,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# INVOKE NEW RENDER JOB
 			# ++++++++++++++++++++++++++++++++++
 			if self.operator_state == "INVOKE_RENDER":
+				print("[INFO] Operator state: ", self.operator_state)
 
 				# make sure the interface is not locked
 				# otherwise the renderjob won't be excecuted properly.
@@ -1051,8 +1061,14 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# start rendering
 				# NOTE: Not using write_still because we save the images manually
-				bpy.ops.render.render("INVOKE_DEFAULT", animation=False)#, write_still=True)
+				result = bpy.ops.render.render("INVOKE_DEFAULT", animation=False)#, write_still=True)
+				if result != {'CANCELLED'}:
 
+					# set operator state to IDLE
+					if self.operator_state != "CANCEL_RENDER": self.operator_state = "IDLE"
+
+				# pass event through
+				return {'RUNNING_MODAL'}
 
 
 
