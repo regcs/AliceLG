@@ -73,12 +73,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	modal_redraw = True
 	depsgraph_update_time = 0.000
 
-	# LIGHTFIELD CURSOR
-	mouse_x = 0
-	mouse_y = 0
-	cursor = Vector((0, 0, 0))
-	normal = Vector((0, 0, 1))
-
 	# DEBUGING VARIABLES
 	start_multi_view = 0
 
@@ -87,7 +81,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 	# HANDLER IDENTIFIERS
 	_handle_view_rendering = None
-	_handle_lightfield_cursor = None
 	_handle_trackDepsgraphUpdates = None
 	_handle_trackFrameChanges = None
 	_handle_trackActiveWindow = None
@@ -130,9 +123,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 		# remove the draw handlers for all quilt views
 		if self._handle_view_rendering: bpy.types.SpaceView3D.draw_handler_remove(self._handle_view_rendering, 'WINDOW')
-
-		# remove the draw handler for the lightfield cursor
-		if self._handle_lightfield_cursor: bpy.types.SpaceView3D.draw_handler_remove(self._handle_lightfield_cursor, 'WINDOW')
 
 		# log info
 		LookingGlassAddonLogger.info(" [#] Cancelled drawing handlers.")
@@ -326,68 +316,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# running modal
 				return {'RUNNING_MODAL'}
 
-
-
-		# TODO: Decide if to remove?
-		# handle lightfield cursor calculation in the viewport
-		################################################################
-
-		# if mouse was moved
-		if event.type == 'MOUSEMOVE':
-
-			# if the viewport is in camera view mode
-			if context.space_data and context.space_data.region_3d.view_perspective == 'CAMERA':
-
-				# save current mouse position
-				self.mouse_x = event.mouse_region_x
-				self.mouse_y = event.mouse_region_y
-
-				# calculate hit position
-				self.updateLightfieldCursor(context)
-
-				return {'RUNNING_MODAL'}
-
-			else:
-
-				# TODO: here should be code that resets the lightfield cursor
-				# pass event through
-				return {'PASS_THROUGH'}
-
-		else:
-
-			# pass event through
-			return {'PASS_THROUGH'}
-
-
-	# TODO: Decide if to remove?
-	# calculate hit position of a ray cast into the viewport to find the location
-	# for the lightfield cursor in the lightfield
-	def updateLightfieldCursor(self, context):
-
-		# lightfield cursor is drawn in the Looking Glass viewport
-		# because the standard cursor is too small and ... just 2D
-		view_direction = region_2d_to_vector_3d(context.region, context.space_data.region_3d, (self.mouse_x, self.mouse_y))
-		ray_start = region_2d_to_origin_3d(context.region, context.space_data.region_3d, (self.mouse_x, self.mouse_y))
-
-		# calculate the ray end point (10000 is just an arbitrary length)
-		ray_end = ray_start + (view_direction * 10000)
-
-		# cast the ray into the scene
-		# NOTE: The first parameter ray_cast expects was changed in Blender 2.91
-		if bpy.app.version < (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer, ray_start, ray_end)
-		if bpy.app.version >= (2, 91, 0): result, self.cursor, self.normal, index, object, matrix = context.scene.ray_cast(context.view_layer.depsgraph, ray_start, ray_end)
-
-		# if no object was under the mouse cursor
-		if self.cursor.length == 0:
-
-			# set normal in view direction
-			self.normal = view_direction.normalized()
-
-			# set cursor in onto the focal plane
-			self.cursor = ray_start + (view_direction * self.settings.focalPlane)
-
-
-
+		# pass event through
+		return {'PASS_THROUGH'}
 
 	# Application handler that continously checks for changes of the depsgraph
 	def trackDepsgraphUpdates(self, scene, depsgraph):
@@ -736,17 +666,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						# copy texture into LightfieldView array
 						self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
 
-						# TODO: Decide if to remove?
-						# draw the lightfield mouse cursor if desired
-						if self.settings.viewport_show_cursor == True:
-
-							# # calculate the position of the view in the quilt
-							# x = 2 * (view % self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"] - 1
-							# y = 2 * int(view / self.qs[self.preset]["columns"]) * self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"] - 1
-
-							self.drawCursor3D(context, view, view_matrix, projection_matrix, self.settings.viewport_cursor_size, 8)
-
-
 						LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.6f" % (view, time.time() - start_test))
 
 				LookingGlassAddonLogger.debug("-----------------------------")
@@ -764,72 +683,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			# reset draw variable:
 			# This is here to prevent excessive redrawing
 			self.modal_redraw = False
-
-
-
-	# TODO: Decide if to remove?
-	# draw the mouse cursor
-	def drawCursor3D(self, context, view, view_matrix, projection_matrix, radius, segments):
-
-		start_timer = time.time()
-
-		# Cursor geometry for the view
-		# ++++++++++++++++++++++++++++++++++++++
-		# location vector
-		rot_axis = Vector((0, 0, 1)).cross(self.normal)
-		rot_angle = acos(Vector((0, 0, 1)).dot(self.normal))
-
-		# create rotation matrix
-		rot_matrix = Matrix.Rotation(rot_angle, 4, rot_axis.normalized())
-
-		# calculate the coordinated of a circle with given radius and segments
-		cursor_geometry_coords = []
-		for n in range(segments):
-
-			# coordinates
-			p1 = cos((1.0 / (segments - 1)) * (2 * pi * n)) * radius
-			p2 = sin((1.0 / (segments - 1)) * (2 * pi * n)) * radius
-
-			# location Vector, rotated to lay on the current face
-			point = rot_matrix @ Vector((p1, p2, 0))
-
-			# translate to the position of the hit point
-			point = Matrix.Translation(self.cursor) @ point
-
-			# project point into camera space taking camera shift etc. into account
-			prj = projection_matrix @ view_matrix @ Vector((point[0], point[1], point[2], 1.0))
-
-			# if point is in front of camera
-			if prj.w > 0.0:
-
-				width_half = self.qs[self.preset]["view_width"] / self.qs[self.preset]["quilt_width"]
-				height_half = self.qs[self.preset]["view_height"] / self.qs[self.preset]["quilt_height"]
-
-				location = Vector((
-					width_half + width_half * (prj.x / prj.w),
-					height_half + height_half * (prj.y / prj.w),
-				))
-
-			else:
-
-				location = Vector((0, 0))
-
-			# add point to the list
-			cursor_geometry_coords.append((location[0], location[1]))
-
-
-		# Draw the custom 3D cursor
-		# ++++++++++++++++++++++++++++++++++++++
-		shader = gpu.shader.from_builtin('2D_UNIFORM_COLOR')
-		batch = batch_for_shader(shader, 'TRI_FAN', {"pos": cursor_geometry_coords})
-		shader.bind()
-		shader.uniform_float("color", (self.settings.viewport_cursor_color[0], self.settings.viewport_cursor_color[1], self.settings.viewport_cursor_color[2], 1.0))
-		batch.draw(shader)
-
-		#print("Cursor time: ", time.time() - start_timer)
-
-
-
 
 
 
