@@ -55,7 +55,7 @@ class LookingGlassAddonUI:
 		if pylio.DeviceManager.count() > 0 or LookingGlassAddon.debugging_use_dummy_device:
 
 			# then for each display in the device list
-			for idx, device in enumerate(pylio.DeviceManager.to_list()):
+			for idx, device in enumerate(sorted(pylio.DeviceManager.to_list(), key=lambda device_type: device_type.index)):
 
 				# if this device is a real one OR the debug mode is active
 				if (not device.emulated or LookingGlassAddon.debugging_use_dummy_device):
@@ -96,7 +96,7 @@ class LookingGlassAddonUI:
 		if pylio.DeviceManager.count(False, True) > 0:
 
 			# then for each display in the device list
-			for idx, device in enumerate(pylio.DeviceManager.to_list(False, True)):
+			for idx, device in enumerate(sorted(pylio.DeviceManager.to_list(False, True), key=lambda device_type: device_type.index, reverse=True)):
 
 				# if this device is a real one OR the debug mode is active
 				if device.emulated:
