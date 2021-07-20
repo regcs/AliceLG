@@ -230,6 +230,19 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	# # invoke the mouse position tracking operator
 	# bpy.ops.wm.mouse_tracker('INVOKE_DEFAULT')
 
+	# check if lockfile exists and set status variable
+	LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
+
+	# load the panel variables
+	bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
+
+	# if the loaded file has a lockfile
+	if LookingGlassAddon.has_lockfile:
+
+		# initialize the RenderSettings
+		# NOTE: This automatically loads the last render settings from the lockfile
+		RenderSettings(bpy.context.scene, LookingGlassAddon.has_lockfile)
+
 	# invoke the camera frustum rendering operator
 	bpy.ops.render.frustum('INVOKE_DEFAULT')
 
@@ -237,24 +250,20 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	LookingGlassAddon.BlenderWindow = bpy.context.window
 
 	# if the lightfield window was active
-	if bpy.context.scene.settings.ShowLightfieldWindow == True:
+	if bpy.context.scene.addon_settings.ShowLightfieldWindow == True:
 
 		# for each scene in the file
 		for scene in bpy.context.blend_data.scenes:
 
 			# set the lightfield window button state to 'deactivated'
-		    scene.settings.ShowLightfieldWindow = False
+		    scene.addon_settings.ShowLightfieldWindow = False
 
 	# if no Looking Glass was detected AND debug mode is not activated
 	if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
 
 		# set the "use device" checkbox in quilt setup to False
 		# (because there is no device we could take the settings from)
-		bpy.context.scene.settings.render_use_device = False
-
-
-	# check if lockfile exists and set status variable
-	LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + "/" + os.path.basename(bpy.data.filepath) + ".lock"))
+		bpy.context.scene.addon_settings.render_use_device = False
 
 
 
@@ -288,11 +297,6 @@ def register():
 
 	# log info
 	LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
-
-
-
-	# load the panel variables
-	bpy.types.Scene.settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
 
 	# setup the quilt presets
 	LookingGlassAddon.setupQuiltPresets()
@@ -399,4 +403,4 @@ def unregister():
 	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
 	# delete all variables
-	del bpy.types.Scene.settings
+	del bpy.types.Scene.addon_settings

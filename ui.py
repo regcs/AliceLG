@@ -23,8 +23,11 @@ from .globals import *
 # ------------------- EXTERNAL MODULES -------------------
 import bpy
 import sys, os, json
+import time
 from bpy.props import FloatProperty, PointerProperty
 from bpy.types import PropertyGroup
+
+import numpy as np
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))))
@@ -102,7 +105,7 @@ class LookingGlassAddonUI:
 				if device.emulated:
 
 					# add an entry in the item list
-					items.append((device.type, device.name, 'Use this Looking Glass type for lightfield rendering.'))
+					items.append((str(device.index), device.name, 'Use this Looking Glass type for lightfield rendering.'))
 
 		else:
 
@@ -144,18 +147,18 @@ class LookingGlassAddonUI:
 		if context != None:
 
 			# if the settings shall be taken from the current viewport
-			if context.scene.settings.viewportMode == 'BLENDER':
+			if context.scene.addon_settings.viewportMode == 'BLENDER':
 
 				# status variable
 				success = False
 
 				# find the correct SpaceView3D object
-				for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
+				for screen in bpy.data.workspaces[context.scene.addon_settings.blender_workspace].screens:
 					for area in screen.areas:
 						for space in area.spaces:
 
 							# if this is the correct space
-							if str(space) == str(context.scene.settings.blender_view3d):
+							if str(space) == str(context.scene.addon_settings.blender_view3d):
 
 								# save the space object in the global variable
 								LookingGlassAddon.BlenderViewport = space
@@ -166,7 +169,7 @@ class LookingGlassAddonUI:
 				if success == False:
 
 					# find and use the first SpaceView3D object of the workspace
-					for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
+					for screen in bpy.data.workspaces[context.scene.addon_settings.blender_workspace].screens:
 						for area in screen.areas:
 							for space in area.spaces:
 								if space.type == 'VIEW_3D':
@@ -180,7 +183,7 @@ class LookingGlassAddonUI:
 				if success == False:
 
 					# update the viewport selection
-					context.scene.settings.blender_view3d = "None"
+					context.scene.addon_settings.blender_view3d = "None"
 
 					# fall back to the use of the custom settings
 					LookingGlassAddon.BlenderViewport = None
@@ -194,18 +197,18 @@ class LookingGlassAddonUI:
 		if context != None:
 
 			# if the settings shall be taken from the current viewport
-			if context.scene.settings.viewportMode == 'BLENDER':
+			if context.scene.addon_settings.viewportMode == 'BLENDER':
 
 				# if a viewport is chosen
-				if str(context.scene.settings.blender_view3d) != "None":
+				if str(context.scene.addon_settings.blender_view3d) != "None":
 
 					# find the correct SpaceView3D object
-					for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
+					for screen in bpy.data.workspaces[context.scene.addon_settings.blender_workspace].screens:
 						for area in screen.areas:
 							for space in area.spaces:
 
 								# if this is the correct space
-								if str(space) == str(context.scene.settings.blender_view3d):
+								if str(space) == str(context.scene.addon_settings.blender_view3d):
 
 									# save the space object in the global variable
 									LookingGlassAddon.BlenderViewport = space
@@ -230,51 +233,27 @@ class LookingGlassAddonUI:
 		device = None
 
 		# if a camera is selected
-		if context.scene.settings.lookingglassCamera != None:
+		if context.scene.addon_settings.lookingglassCamera != None:
 
 			# GET DEVICE INFORMATION
 			# +++++++++++++++++++++++++++++++++++++++++++++++++++++
-			# if the settings are to be taken from device selection
-			if context.scene.settings.render_use_device == True:
+			# if the settings are to be taken from device selection AND a device is active
+			if context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
 
 				# currently selected device
 				device = pylio.DeviceManager.get_active()
 
 			else:
 
-				# TODO: At the moment this is hardcoded.
-				#		Should integrate something that gets the class from identifier string in pylio
-				# if for Looking Glass Portrait
-				if context.scene.settings.render_device_type == 'portrait':
-
-					# try to find tan emulated device of this type
-					device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassPortrait)
-
-				# if for Looking Glass 8.9''
-				elif context.scene.settings.render_device_type == 'standard':
-
-					# try to find tan emulated device of this type
-					device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassStandard)
-
-				# if for Looking Glass 15.6'' or 8k
-				elif context.scene.settings.render_device_type == 'large' or context.scene.settings.render_device_type == 'pro' or context.scene.settings.render_device_type == '8k':
-
-					# try to find tan emulated device of the selected type
-					if context.scene.settings.render_device_type == 'large': device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassLarge)
-					if context.scene.settings.render_device_type == 'pro': device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlassLargePro)
-					if context.scene.settings.render_device_type == '8k': device = pylio.DeviceManager.to_list(False, True, pylio.LookingGlass8k)
-
 				# make the emulated device the active device, if one was found
-				if device:
-					device = device[0]
-					pylio.DeviceManager.set_active(device.id)
+				device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.render_device_type))
 
 
 			# APPLY RENDER SETTINGS
 			# +++++++++++++++++++++++++++++++++++++++++++++++++++++
 			# apply render settings for the scene to get the correct rendering frustum
-			context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_width"]
-			context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.settings.render_quilt_preset)]["view_height"]
+			context.scene.render.resolution_x = pylio.LookingGlassQuilt.formats.get()[int(context.scene.addon_settings.render_quilt_preset)]["view_width"]
+			context.scene.render.resolution_y = pylio.LookingGlassQuilt.formats.get()[int(context.scene.addon_settings.render_quilt_preset)]["view_height"]
 
 			# for landscape formatted devices
 			if (context.scene.render.resolution_x / context.scene.render.resolution_y) / device.aspect > 1:
@@ -301,35 +280,35 @@ class LookingGlassAddonUI:
 
 			# set the checkbox to False (because there is no device we
 			# could take the settings from)
-			context.scene.settings.render_use_device = False
+			context.scene.addon_settings.render_use_device = False
 
 		# if a camera was selected
-		if context.scene.settings.lookingglassCamera != None:
+		if context.scene.addon_settings.lookingglassCamera != None:
 
 			# if the frustum drawing operator is not invoked, but should be
-			if LookingGlassAddon.FrustumInitialized == False and context.scene.settings.showFrustum == True: bpy.ops.render.frustum('INVOKE_DEFAULT')
+			if LookingGlassAddon.FrustumInitialized == False and context.scene.addon_settings.showFrustum == True: bpy.ops.render.frustum('INVOKE_DEFAULT')
 
 			# apply the settings to the selected camera object
-			camera = context.scene.settings.lookingglassCamera
+			camera = context.scene.addon_settings.lookingglassCamera
 
 			# TODO: Check if this is really helpful. Maybe remove later or refine.
 			# keep clip end behind the clip start
-			if context.scene.settings.clip_end < context.scene.settings.clip_start:
-				context.scene.settings.clip_end = context.scene.settings.clip_start
+			if context.scene.addon_settings.clip_end < context.scene.addon_settings.clip_start:
+				context.scene.addon_settings.clip_end = context.scene.addon_settings.clip_start
 
 			# keep clip start in front of the clip end
-			if context.scene.settings.clip_start > context.scene.settings.clip_end:
-				context.scene.settings.clip_start = context.scene.settings.clip_end
+			if context.scene.addon_settings.clip_start > context.scene.addon_settings.clip_end:
+				context.scene.addon_settings.clip_start = context.scene.addon_settings.clip_end
 
 			# keep focal plane within the clipping volume
-			if context.scene.settings.focalPlane < context.scene.settings.clip_start:
-				context.scene.settings.focalPlane = context.scene.settings.clip_start
-			elif context.scene.settings.focalPlane > context.scene.settings.clip_end:
-				context.scene.settings.focalPlane = context.scene.settings.clip_end
+			if context.scene.addon_settings.focalPlane < context.scene.addon_settings.clip_start:
+				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_start
+			elif context.scene.addon_settings.focalPlane > context.scene.addon_settings.clip_end:
+				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_end
 
 			# apply the clipping values to the selected camera
-			camera.data.clip_start = context.scene.settings.clip_start
-			camera.data.clip_end = context.scene.settings.clip_end
+			camera.data.clip_start = context.scene.addon_settings.clip_start
+			camera.data.clip_end = context.scene.addon_settings.clip_end
 
 			# update render settings
 			LookingGlassAddonUI.update_render_setting(self, context)
@@ -341,32 +320,32 @@ class LookingGlassAddonUI:
 	def update_camera_setting(self, context):
 
 		# if a camera was selected
-		if context.scene.settings.lookingglassCamera != None:
+		if context.scene.addon_settings.lookingglassCamera != None:
 
 			# apply the settings to the selected camera object
-			camera = context.scene.settings.lookingglassCamera
+			camera = context.scene.addon_settings.lookingglassCamera
 
 
 			# TODO: Check if this is really helpful. Maybe remove later or refine.
 			# keep clip end behind the clip start
-			if context.scene.settings.clip_end < context.scene.settings.clip_start:
-				context.scene.settings.clip_end = context.scene.settings.clip_start
+			if context.scene.addon_settings.clip_end < context.scene.addon_settings.clip_start:
+				context.scene.addon_settings.clip_end = context.scene.addon_settings.clip_start
 
 			# keep clip start in front of the clip end
-			if context.scene.settings.clip_start > context.scene.settings.clip_end:
-				context.scene.settings.clip_start = context.scene.settings.clip_end
+			if context.scene.addon_settings.clip_start > context.scene.addon_settings.clip_end:
+				context.scene.addon_settings.clip_start = context.scene.addon_settings.clip_end
 
 			# keep focal plane within the clipping volume
-			if context.scene.settings.focalPlane < context.scene.settings.clip_start:
-				context.scene.settings.focalPlane = context.scene.settings.clip_start
-			elif context.scene.settings.focalPlane > context.scene.settings.clip_end:
-				context.scene.settings.focalPlane = context.scene.settings.clip_end
+			if context.scene.addon_settings.focalPlane < context.scene.addon_settings.clip_start:
+				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_start
+			elif context.scene.addon_settings.focalPlane > context.scene.addon_settings.clip_end:
+				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_end
 
 
 
 			# apply the clipping values to the selected camera
-			camera.data.clip_start = context.scene.settings.clip_start
-			camera.data.clip_end = context.scene.settings.clip_end
+			camera.data.clip_start = context.scene.addon_settings.clip_start
+			camera.data.clip_end = context.scene.addon_settings.clip_end
 
 		return None
 
@@ -396,10 +375,10 @@ class LookingGlassAddonUI:
 		items = []
 
 		# check if the space still exists
-		if context.scene.settings.blender_workspace in bpy.data.workspaces:
+		if context.scene.addon_settings.blender_workspace in bpy.data.workspaces:
 
 			# find all 3D Views in the selected Workspace
-			for screen in bpy.data.workspaces[context.scene.settings.blender_workspace].screens:
+			for screen in bpy.data.workspaces[context.scene.addon_settings.blender_workspace].screens:
 				for area in screen.areas:
 					for space in area.spaces:
 						# TODO: the check "space != LookingGlassAddon.lightfieldSpace" is somewhat hacky. But without it, an additional element is created in the list. Need to clarify later, why ...
@@ -423,32 +402,32 @@ class LookingGlassAddonUI:
 	def update_lightfield_window_settings(self, context):
 
 		# if the lightfield viewport is in quilt viewer mode
-		if context.scene.settings.renderMode == '1':
+		if context.scene.addon_settings.renderMode == '1':
 
 			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 
 	# update function for property updates concerning quilt image selection
 	def update_quilt_selection(self, context):
 
 		# if a quilt was selected
-		if context.scene.settings.quiltImage != None:
+		if context.scene.addon_settings.quiltImage != None:
 
 			# update the setting observers
-			LookingGlassAddon.quiltViewAsRender = context.scene.settings.quiltImage.use_view_as_render
-			LookingGlassAddon.quiltImageColorSpaceSetting = context.scene.settings.quiltImage.colorspace_settings
+			LookingGlassAddon.quiltViewAsRender = context.scene.addon_settings.quiltImage.use_view_as_render
+			LookingGlassAddon.quiltImageColorSpaceSetting = context.scene.addon_settings.quiltImage.colorspace_settings
 
 			# if no pixel array exists
 			if LookingGlassAddon.quiltPixels is None:
 
 				# create a numpy array for the pixel data
-				LookingGlassAddon.quiltPixels = np.empty(len(context.scene.settings.quiltImage.pixels), dtype=np.float32)
+				LookingGlassAddon.quiltPixels = np.empty(len(context.scene.addon_settings.quiltImage.pixels), dtype=np.float32)
 
 			else:
 
 				# resize the numpy array
-				LookingGlassAddon.quiltPixels.resize(len(context.scene.settings.quiltImage.pixels), refcheck=False)
+				LookingGlassAddon.quiltPixels.resize(len(context.scene.addon_settings.quiltImage.pixels), refcheck=False)
 
 			# 	# delete the texture, if it is existing
 			# 	# NOTE: Unclear why glIsTexture expects integer and DeleteTexture a Buffer object
@@ -473,7 +452,7 @@ class LookingGlassAddonUI:
 			#
 
 			# if the image has the "view as render" option inactive
-			if context.scene.settings.quiltImage.use_view_as_render == False:
+			if context.scene.addon_settings.quiltImage.use_view_as_render == False:
 
 				# save the original settings
 				tempViewTransform = context.scene.view_settings.view_transform
@@ -504,7 +483,7 @@ class LookingGlassAddonUI:
 			context.scene.render.image_settings.color_mode = 'RGBA'
 
 			# save the image to the temporary directory
-			context.scene.settings.quiltImage.save_render(filepath=tempFilepath, scene=context.scene)
+			context.scene.addon_settings.quiltImage.save_render(filepath=tempFilepath, scene=context.scene)
 
 			# restore output render settings
 			context.scene.render.use_render_cache = tempUseRenderCache
@@ -513,7 +492,7 @@ class LookingGlassAddonUI:
 			context.scene.render.image_settings.color_mode = tempColorMode
 
 			# if the image has the "view as render" option inactive
-			if context.scene.settings.quiltImage.use_view_as_render == False:
+			if context.scene.addon_settings.quiltImage.use_view_as_render == False:
 
 				# restore the original settings
 				context.scene.view_settings.view_transform = tempViewTransform
@@ -537,8 +516,8 @@ class LookingGlassAddonUI:
 			#		for later
 			#
 			# # copy pixel data to the array and a BGL Buffer
-			# context.scene.settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
-			# LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
+			# context.scene.addon_settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
+			# LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.addon_settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
 
 
 
@@ -550,7 +529,7 @@ class LookingGlassAddonUI:
 			# 	# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
 			# 	#		see: https://developer.blender.org/T79788#1034183
 			# 	bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
-			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
+			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
 			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
 			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
 
@@ -558,7 +537,7 @@ class LookingGlassAddonUI:
 			# 	print("# USING GL_RGBA")
 			# 	# use linear color space
 			# 	bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
-			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
+			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
 			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
 			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
 
@@ -581,10 +560,10 @@ class LookingGlassAddonUI:
 				pass
 
 			# create a LightfieldImage from the selected quilt
-			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.settings.quiltImage.size[0], context.scene.settings.quiltImage.size[1], context.scene.settings.quiltImage.channels)
+			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], context.scene.addon_settings.quiltImage.channels)
 
 			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(context.scene.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 		# if the quilt selection was deleted
 		else:
@@ -940,8 +919,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 
-
-
 # ----------------- PANEL FOR GENERAL SETTINGS --------------------
 # an operator that refreshes the list of connected Looking Glasses
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
@@ -975,7 +952,7 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 
 			# set the checkbox to False (because there is no device we
 			# could take the settings from)
-			context.scene.settings.render_use_device = False
+			context.scene.addon_settings.render_use_device = False
 
 		# if a Looking Glass was detected, but non was previously selected
 		elif pylio.DeviceManager.count():
@@ -993,7 +970,7 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 				pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
 
 				# set the checkbox to True (because now we want to use the device settings)
-				context.scene.settings.render_use_device = True
+				context.scene.addon_settings.render_use_device = True
 
 		return {'FINISHED'}
 
@@ -1010,10 +987,10 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 	def execute(self, context):
 
 		# set the property to the correct value
-		context.scene.settings.ShowLightfieldWindow = (not context.scene.settings.ShowLightfieldWindow)
+		context.scene.addon_settings.ShowLightfieldWindow = (not context.scene.addon_settings.ShowLightfieldWindow)
 
 		# if the bool property was set to True
-		if context.scene.settings.ShowLightfieldWindow == True:
+		if context.scene.addon_settings.ShowLightfieldWindow == True:
 
 			# assign the current viewport for the shading & overlay settings
 			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
@@ -1042,22 +1019,22 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		row_orientation = column.row(align = True)
 		column_1 = row_orientation.column(align=True)
 		row_orientationa = column_1.row(align = True)
-		row_orientationa.prop(context.scene.settings, "activeDisplay", text="")
+		row_orientationa.prop(context.scene.addon_settings, "activeDisplay", text="")
 		row_orientationa.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
 		row_orientation.separator()
 
 		# Lightfield window & debug button
 		column_2 = row_orientation.column(align=True)
 		row_orientationb = column_2.row(align = True)
-		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.settings.ShowLightfieldWindow)
+		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.addon_settings.ShowLightfieldWindow)
 
 		# Resolution selection of the quilt views
 		row_preset = column.row()
-		row_preset.prop(context.scene.settings, "quiltPreset", text="")
+		row_preset.prop(context.scene.addon_settings, "quiltPreset", text="")
 		#column.separator()
 
-		# if no Looking Glass was detected AND debug mode is not activated
-		if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
+		# if no Looking Glass was detected AND debug mode is not activated OR the active device is an emulated one
+		if (not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device) or pylio.DeviceManager.get_active().emulated == True:
 
 			# deactivate quilt preset and debug buttons
 			row_preset.enabled = False
@@ -1073,7 +1050,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# TODO: Blender doesn't allow creating a new window from a fullscreen area.
 		# 		Can we still handle this by using override contexts? Until this is clarified
 		#		the button will be disabled in fullscreen areas.
-		if int(context.scene.settings.activeDisplay) == -1 or context.screen.show_fullscreen == True:
+		if int(context.scene.addon_settings.activeDisplay) == -1 or context.screen.show_fullscreen == True:
 
 			# deactivate the lightfield window button and debug button
 			row_orientationb.enabled = False
@@ -1096,19 +1073,19 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 		bpy.context.scene.collection.objects.link(camera)
 
 		# set the camera position
-		camera.location.z = context.scene.settings.focalPlane
+		camera.location.z = context.scene.addon_settings.focalPlane
 
 		# then we apply all the default settings to the camera
 		camera.data.sensor_fit = 'VERTICAL'
 		camera.data.angle_y = radians(14)
-		camera.data.clip_start = context.scene.settings.clip_start
-		camera.data.clip_end = context.scene.settings.clip_end
+		camera.data.clip_start = context.scene.addon_settings.clip_start
+		camera.data.clip_end = context.scene.addon_settings.clip_end
 
 		# if currently no camera is selected
-		if context.scene.settings.lookingglassCamera == None:
+		if context.scene.addon_settings.lookingglassCamera == None:
 
 			# use the new camera as the Looking Glass Camera
-			context.scene.settings.lookingglassCamera = camera
+			context.scene.addon_settings.lookingglassCamera = camera
 
 		return {'FINISHED'}
 
@@ -1137,24 +1114,24 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		column = layout.column(align = True)
 
 		row_orientation = column.row(align = True)
-		row_orientation.prop(context.scene.settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
+		row_orientation.prop(context.scene.addon_settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
 		row_orientation.operator("object.add_lookingglass_camera", text="", icon='ADD')
 		row_orientation.separator()
-		row_orientation.prop(context.scene.settings, "showFrustum", text="", icon='MESH_CUBE')
-		row_orientation.prop(context.scene.settings, "showFocalPlane", text="", icon='MESH_PLANE')
+		row_orientation.prop(context.scene.addon_settings, "showFrustum", text="", icon='MESH_CUBE')
+		row_orientation.prop(context.scene.addon_settings, "showFocalPlane", text="", icon='MESH_PLANE')
 
 		column.separator()
 
 		# display the clipping settings
 		row_preset = column.row(align = True)
-		row_preset.prop(context.scene.settings, "clip_start")
+		row_preset.prop(context.scene.addon_settings, "clip_start")
 		row_output = column.row(align = True)
-		row_output.prop(context.scene.settings, "clip_end")
+		row_output.prop(context.scene.addon_settings, "clip_end")
 		row_render_still = column.row(align = True)
-		row_render_still.prop(context.scene.settings, "focalPlane")
+		row_render_still.prop(context.scene.addon_settings, "focalPlane")
 
 		# if no camera is Selected
-		if context.scene.settings.lookingglassCamera == None:
+		if context.scene.addon_settings.lookingglassCamera == None:
 
 			# disable clipping and focal plane modifieres
 			row_preset.enabled = False
@@ -1186,11 +1163,11 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		# Chose the settings from the device or use a preset?
 		row_general_options = layout.column(align = True)
 		row_use_device = row_general_options.row(align = True)
-		render_use_device = row_use_device.prop(context.scene.settings, "render_use_device")
+		render_use_device = row_use_device.prop(context.scene.addon_settings, "render_use_device")
 
 		# Metadata handling
 		row_metadata = row_general_options.row(align = True)
-		render_add_suffix = row_metadata.prop(context.scene.settings, "render_add_suffix")
+		render_add_suffix = row_metadata.prop(context.scene.addon_settings, "render_add_suffix")
 
 		# Render orientation
 		row_orientation = layout.row(align = True)
@@ -1198,7 +1175,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_1.label(text="Device:")
 		column_1.scale_x = 0.3
 		column_2 = row_orientation.row(align = True)
-		column_2.prop(context.scene.settings, "render_device_type", text="")
+		column_2.prop(context.scene.addon_settings, "render_device_type", text="")
 		column_2.scale_x = 0.7
 
 		# Quilt preset
@@ -1207,7 +1184,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_1.label(text="Quilt:")
 		column_1.scale_x = 0.3
 		column_2 = row_preset.row(align = True)
-		column_2.prop(context.scene.settings, "render_quilt_preset", text="")
+		column_2.prop(context.scene.addon_settings, "render_quilt_preset", text="")
 		column_2.scale_x = 0.7
 
 		# Output file handling
@@ -1216,7 +1193,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_1.label(text="Output:")
 		column_1.scale_x = 0.3
 		column_2 = row_output.row(align = True)
-		column_2.prop(context.scene.settings, "render_output", text="")
+		column_2.prop(context.scene.addon_settings, "render_output", text="")
 		column_2.scale_x = 0.7
 
 		# if no lockfile was detected on start-up OR the render job is running
@@ -1226,7 +1203,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:
 				# Show the corresponding progress bar for the rendering process
 				row_render_still = layout.row(align = True)
-				row_render_still.prop(context.scene.settings, "render_progress", text="", slider=True)
+				row_render_still.prop(context.scene.addon_settings, "render_progress", text="", slider=True)
 			else:
 				# Button to start rendering a single quilt using the current render settings
 				row_render_still = layout.row(align = True)
@@ -1236,7 +1213,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
 				# Show the corresponding progress bar for the rendering process
 				row_render_animation = layout.row(align = True)
-				row_render_animation.prop(context.scene.settings, "render_progress", text="", slider=True)
+				row_render_animation.prop(context.scene.addon_settings, "render_progress", text="", slider=True)
 			else:
 				# Button to start rendering a animation quilt using the current render settings
 				row_render_animation = layout.row(align = True)
@@ -1248,7 +1225,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		else:
 
 			# disable the UI
-			row_metadata = False
+			row_metadata.enabled = False
 			row_use_device.enabled = False
 			row_orientation.enabled = False
 			row_preset.enabled = False
@@ -1280,7 +1257,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			if LookingGlassAddon.RenderAnimation == False: row_render_animation.enabled = False
 
 		# if no camera is selected
-		if context.scene.settings.lookingglassCamera == None:
+		if context.scene.addon_settings.lookingglassCamera == None:
 
 			# disable all elements
 			row_metadata.enabled = False
@@ -1292,7 +1269,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_render_animation.enabled = False
 
 		# if the settings are to be taken from device selection
-		elif context.scene.settings.render_use_device == True:
+		elif context.scene.addon_settings.render_use_device == True:
 
 			# disable all elements
 			row_orientation.enabled = False
@@ -1316,7 +1293,7 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 	def execute(self, context):
 
 		# refresh the Looking Glass
-		context.scene.settings.viewport_manual_refresh = True
+		context.scene.addon_settings.viewport_manual_refresh = True
 
 		return {'FINISHED'}
 
@@ -1333,7 +1310,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.scene.settings.activeDisplay) == -1 or context.scene.settings.ShowLightfieldWindow == False:
+		if int(context.scene.addon_settings.activeDisplay) == -1 or context.scene.addon_settings.ShowLightfieldWindow == False:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1352,45 +1329,45 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 		# TABS to swap between "live preview" and a "loaded quilt image"
 		row = layout.row()
-		row.prop(context.scene.settings, "renderMode", expand=True)
+		row.prop(context.scene.addon_settings, "renderMode", expand=True)
 
 		# define a column of UI elements
 		column = layout.column(align = True)
 		column.separator()
 
 		# If no LookingGlass is selected
-		if int(context.scene.settings.activeDisplay) == -1:
+		if int(context.scene.addon_settings.activeDisplay) == -1:
 
 			# ... then disable all UI elements except for the drop down menu and the refresh button
 			column.enabled = False
 			row.enabled = False
 
 		# if the lightfield window is in viewport mode
-		if context.scene.settings.renderMode == '0':
+		if context.scene.addon_settings.renderMode == '0':
 
 			# Lightfield rendering mode & refresh button
 			row_orientation = column.row()
 			row_orientation.label(text="Lightfield Window Mode:")
 			row_preset = column.row()
-			row_preset.prop(context.scene.settings, "lightfieldMode", text="")
+			row_preset.prop(context.scene.addon_settings, "lightfieldMode", text="")
 			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
 
 			# Preview settings
 			row_output = column.row(align = True)
-			row_output.prop(context.scene.settings, "lightfield_preview_resolution", text="")
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_resolution", text="")
 			row_output.separator()
-			row_output.prop(context.scene.settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
+			row_output.prop(context.scene.addon_settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
 
 
 		# if the lightfield window is in quilt viewer mode
-		elif context.scene.settings.renderMode == '1':
+		elif context.scene.addon_settings.renderMode == '1':
 
 			# display all settings for the quilt view mode
 			row = column.row(align = True)
 			row.label(text="Select a Quilt Image to Display:")
 
 			row = column.row(align = True)
-			row.template_ID(context.scene.settings, "quiltImage", open="image.open")
+			row.template_ID(context.scene.addon_settings, "quiltImage", open="image.open")
 
 
 
@@ -1406,13 +1383,13 @@ class LOOKINGGLASS_OT_blender_viewport_assign(bpy.types.Operator):
 
 		# if the user activated the option to
 		# use the shading and overlay settings of the currently used Blender 3D viewport
-		if context.scene.settings.viewportMode == 'BLENDER':
+		if context.scene.addon_settings.viewportMode == 'BLENDER':
 
 			# set the Workspace list to the current workspace
-			context.scene.settings.blender_workspace = context.workspace.name
+			context.scene.addon_settings.blender_workspace = context.workspace.name
 
 			# set the 3D View list to the current 3D view
-			context.scene.settings.blender_view3d = str(context.space_data)
+			context.scene.addon_settings.blender_view3d = str(context.space_data)
 
 		return {'FINISHED'}
 
@@ -1431,7 +1408,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.scene.settings.activeDisplay) == -1 or context.scene.settings.ShowLightfieldWindow == False:
+		if int(context.scene.addon_settings.activeDisplay) == -1 or context.scene.addon_settings.ShowLightfieldWindow == False:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1440,14 +1417,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 		else:
 
 			# if the render mode is "Live View"
-			if int(context.scene.settings.renderMode) == 0:
+			if int(context.scene.addon_settings.renderMode) == 0:
 
 				# this panel is  needed, so return True:
 				# the panel will be drawn
 				return True
 
 			# else, if the render mode is "Quilt view"
-			elif int(context.scene.settings.renderMode) == 1:
+			elif int(context.scene.addon_settings.renderMode) == 1:
 
 				# this panel is not needed, so return False:
 				# the panel will NOT be drawn
@@ -1462,14 +1439,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 		column = layout.column(align = True)
 
 		# if the automatic render mode is active
-		if int(context.scene.settings.renderMode) == 0:
+		if int(context.scene.addon_settings.renderMode) == 0:
 
 			# TABS to swap between "Custom Viewport" and a "Blender Viewport"
 			row = column.row(align = True)
-			row.prop(context.scene.settings, "viewportMode", expand=True)
+			row.prop(context.scene.addon_settings, "viewportMode", expand=True)
 
 			# if the current mode is "BLENDER"
-			if context.scene.settings.viewportMode == "BLENDER":
+			if context.scene.addon_settings.viewportMode == "BLENDER":
 
 				#column.separator()
 
@@ -1478,9 +1455,9 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				row = column.row(align = True)
 				row.label(text="Mirror Settings From:")
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "blender_workspace")
+				row.prop(context.scene.addon_settings, "blender_workspace")
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "blender_view3d")
+				row.prop(context.scene.addon_settings, "blender_view3d")
 
 				column.separator()
 
@@ -1488,45 +1465,45 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				row.operator("lookingglass.blender_viewport_assign")
 
 				# if the chosen workspace has no 3D View
-				if context.scene.settings.blender_view3d == "None":
+				if context.scene.addon_settings.blender_view3d == "None":
 
 					# disable the manual selection options
 					row.enabled = False
 
 			# if the current mode is "CUSTOM"
-			elif context.scene.settings.viewportMode == "CUSTOM":
+			elif context.scene.addon_settings.viewportMode == "CUSTOM":
 
 				column.separator()
 
 				row = column.row(align = True)
 				row.label(text="Shading")
 				#column.separator()
-				row.prop(context.scene.settings, "shadingMode", expand=True)
+				row.prop(context.scene.addon_settings, "shadingMode", expand=True)
 				column.separator()
 				row = column.row(align = True)
 				column_1 = row.column(align=True)
-				column_1.prop(context.scene.settings, "viewport_show_xray")
+				column_1.prop(context.scene.addon_settings, "viewport_show_xray")
 				column_2 = row.column(align=True)
-				column_2.prop(context.scene.settings, "viewport_xray_alpha", slider=True)
+				column_2.prop(context.scene.addon_settings, "viewport_xray_alpha", slider=True)
 
 				# if x-ray is deactivated
-				if context.scene.settings.viewport_show_xray == False:
+				if context.scene.addon_settings.viewport_show_xray == False:
 					# disable the slider
 					column_2.enabled = False
 
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "viewport_use_dof")
+				row.prop(context.scene.addon_settings, "viewport_use_dof")
 
 				column.separator()
 
 				row = column.row(align = True)
 				row.label(text="Guides")
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "viewport_show_floor")
-				row.prop(context.scene.settings, "viewport_show_axes", toggle=1)
+				row.prop(context.scene.addon_settings, "viewport_show_floor")
+				row.prop(context.scene.addon_settings, "viewport_show_axes", toggle=1)
 				column.separator()
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "viewport_grid_scale")
+				row.prop(context.scene.addon_settings, "viewport_grid_scale")
 
 				column.separator()
 
@@ -1534,15 +1511,15 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				row.label(text="Objects")
 				row = column.row(align = True)
 				column_1 = row.column(align = True)
-				column_1.prop(context.scene.settings, "viewport_show_extras")
-				column_1.prop(context.scene.settings, "viewport_show_relationship_lines")
-				column_1.prop(context.scene.settings, "viewport_show_outline_selected")
+				column_1.prop(context.scene.addon_settings, "viewport_show_extras")
+				column_1.prop(context.scene.addon_settings, "viewport_show_relationship_lines")
+				column_1.prop(context.scene.addon_settings, "viewport_show_outline_selected")
 
 				column_2 = row.column(align = True)
-				column_2.prop(context.scene.settings, "viewport_show_bones")
-				column_2.prop(context.scene.settings, "viewport_show_motion_paths")
-				column_2.prop(context.scene.settings, "viewport_show_origins")
-				column_2.prop(context.scene.settings, "viewport_show_origins_all")
+				column_2.prop(context.scene.addon_settings, "viewport_show_bones")
+				column_2.prop(context.scene.addon_settings, "viewport_show_motion_paths")
+				column_2.prop(context.scene.addon_settings, "viewport_show_origins")
+				column_2.prop(context.scene.addon_settings, "viewport_show_origins_all")
 
 				column.separator()
 
@@ -1550,13 +1527,13 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 				row = row.label(text="Geometry")
 				row = column.row(align = True)
 				column_1 = row.column(align=True)
-				column_1.prop(context.scene.settings, "viewport_show_wireframes")
+				column_1.prop(context.scene.addon_settings, "viewport_show_wireframes")
 				column_2 = row.column(align=True)
-				column_2.prop(context.scene.settings, "viewport_wireframe_threshold", slider=True)
+				column_2.prop(context.scene.addon_settings, "viewport_wireframe_threshold", slider=True)
 				row = column.row(align = True)
-				row.prop(context.scene.settings, "viewport_show_face_orientation")
+				row.prop(context.scene.addon_settings, "viewport_show_face_orientation")
 
 				# if no wireframes shall be displayed
-				if context.scene.settings.viewport_show_wireframes == False:
+				if context.scene.addon_settings.viewport_show_wireframes == False:
 					# disable the slider
 					column_2.enabled = False

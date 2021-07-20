@@ -3,11 +3,17 @@
 - handle installation of pyLightIO and its dependencies from preference pane or
   install automatic on startup (?)
 
-  => check: if 'pip install' to defined path, are dependencies also installed there?
+
+- handle multiview camera support
+
+  => separate functions for camera setup, (view) rendering, and quilt assembly
+  => maybe hand the quilt assembly to pyLightIO via the planned save() methods?
 
 ## BUGS / ENHANCEMENTS
 
 - BUG: Shading & Overlay settings - the "CUSTOM" setting also changes the current viewport
+
+- select the default quilt based on the device type automatically when selecting a device
 
 ## DOCUMENTATION
 

@@ -141,7 +141,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		LookingGlassAddon.BlenderViewport = None
 
 		# set the button controls for the lightfield window to False
-		self.settings.ShowLightfieldWindow = False
+		self.addon_settings.ShowLightfieldWindow = False
 
 		# SCENE UPDATES
 		# ++++++++++++++++++++++++++
@@ -149,10 +149,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 			# iterate through all scenes
 			for scene in bpy.data.scenes:
-				if scene != None and scene.settings != None:
+				if scene != None and scene.addon_settings != None:
 
 					# update the status variables
-					scene.settings.ShowLightfieldWindow = False
+					scene.addon_settings.ShowLightfieldWindow = False
 
 		# clear the quilt
 		self.device.clear()
@@ -174,10 +174,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		LookingGlassAddonLogger.info("Invoking lightfield viewport ...")
 
 		# get the current settings of this scene
-		self.settings = context.scene.settings
+		self.addon_settings = context.scene.addon_settings
 
 		# update the variable for the current Looking Glass device
-		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+		if int(self.addon_settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 
 
@@ -185,7 +185,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		################################################################
 
 		# set to the currently chosen quality
-		self.preset = self.last_preset = int(context.scene.settings.quiltPreset)
+		self.preset = self.last_preset = int(context.scene.addon_settings.quiltPreset)
 
 		# get all quilt presets from pylio
 		self.qs = pylio.LookingGlassQuilt.formats.get()
@@ -261,29 +261,29 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def modal(self, context, event):
 
 		# if the active scene was changed
-		if context.scene.settings != self.settings:
+		if context.scene.addon_settings != self.addon_settings:
 
 			# make sure the "lightfield window" button is set correctly
-			context.scene.settings.ShowLightfieldWindow = self.settings.ShowLightfieldWindow
+			context.scene.addon_settings.ShowLightfieldWindow = self.addon_settings.ShowLightfieldWindow
 
 			# update the internal variable for the settings
-			self.settings = context.scene.settings
+			self.addon_settings = context.scene.addon_settings
 
 			# update the lightfield window
 			# Lightfield Viewport
-			if int(self.settings.renderMode) == 0:
-				context.scene.settings.viewport_manual_refresh = True
+			if int(self.addon_settings.renderMode) == 0:
+				context.scene.addon_settings.viewport_manual_refresh = True
 			# Quilt Viewer
-			elif int(self.settings.renderMode) == 1:
-				LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			elif int(self.addon_settings.renderMode) == 1:
+				LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 		# cancel the operator, if the lightfield viewport was deactivated
-		if not self.settings.ShowLightfieldWindow:
+		if not self.addon_settings.ShowLightfieldWindow:
 			self.cancel(context)
 			return {'FINISHED'}
 
 		# update the variable for the current Looking Glass device
-		if int(self.settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+		if int(self.addon_settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 
 
@@ -294,15 +294,15 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		if event.type == 'TIMER':
 
 			# if something has changed OR the user requested a manual redrawing
-			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.settings.viewport_manual_refresh == True):
+			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.addon_settings.viewport_manual_refresh == True):
 
 				# update the viewport settings
 				self.updateViewportSettings(context)
 
-				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.settings.viewport_manual_refresh == True):
+				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.addon_settings.viewport_manual_refresh == True):
 
 					# set to the currently chosen quality
-					self.preset = int(context.scene.settings.quiltPreset)
+					self.preset = int(context.scene.addon_settings.quiltPreset)
 
  					# set to redraw
 					self.modal_redraw = True
@@ -311,7 +311,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					self.depsgraph_update_time = 0.000
 
 					# reset status variable for manual refreshes
-					context.scene.settings.viewport_manual_refresh = False
+					context.scene.addon_settings.viewport_manual_refresh = False
 
 				# running modal
 				return {'RUNNING_MODAL'}
@@ -326,7 +326,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		if LookingGlassAddon.RenderInvoked == False:
 
 			# if automatic live view is activated AND something in the scene has changed
-			if (int(self.settings.renderMode) == 0 and int(self.settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
+			if (int(self.addon_settings.renderMode) == 0 and int(self.addon_settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
 				#print("DEPSGRAPH UPDATE: ", depsgraph.updates.values())
 
 				# invoke an update of the Looking Glass viewport
@@ -336,13 +336,13 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				self.depsgraph_update_time = time.time()
 
 				# if the low quality quilt settings are inactive, but should be active
-				if self.preset < 3 and self.settings.viewport_use_lowres_preview == True:
+				if self.preset < 3 and self.addon_settings.viewport_use_lowres_preview == True:
 
 					# activate them
 					self.preset = 3
 
 			# if quilt viewer is active AND an image is selected
-			elif int(self.settings.renderMode) == 1 and scene.settings.quiltImage != None:
+			elif int(self.addon_settings.renderMode) == 1 and scene.addon_settings.quiltImage != None:
 
 				# set status variable
 				changed = False
@@ -360,13 +360,13 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						break
 
 				# are there any changes in the image or color management settings?
-				if LookingGlassAddon.quiltViewAsRender != scene.settings.quiltImage.use_view_as_render or LookingGlassAddon.quiltImageColorSpaceSetting.name != scene.settings.quiltImage.colorspace_settings.name:
+				if LookingGlassAddon.quiltViewAsRender != scene.addon_settings.quiltImage.use_view_as_render or LookingGlassAddon.quiltImageColorSpaceSetting.name != scene.addon_settings.quiltImage.colorspace_settings.name:
 
 					# update status variable
 					changed = True
 
 				# update the quilt image, if something had changed
-				if changed == True: scene.settings.quiltImage = scene.settings.quiltImage
+				if changed == True: scene.addon_settings.quiltImage = scene.addon_settings.quiltImage
 
 
 	# this function is called as a draw handler to enable the Looking Glass Addon
@@ -395,7 +395,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 			# calculate cameraSize from its distance to the focal plane and the FOV
 			# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-			cameraDistance = self.settings.focalPlane
+			cameraDistance = self.addon_settings.focalPlane
 			cameraSize = cameraDistance * tan(fov / 2)
 
 			# start at viewCone * 0.5 and go up to -viewCone * 0.5
@@ -426,7 +426,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		######################################################
 
 		# if the settings shall be taken from a Blender viewport
-		if self.settings.viewportMode == 'BLENDER':
+		if self.addon_settings.viewportMode == 'BLENDER':
 
 			# check if the space still exists
 			found = False
@@ -481,35 +481,35 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				LookingGlassAddon.BlenderViewport = None
 
 		# if the custom settings shall be used OR the chosen Blender Viewport is invalid
-		if self.settings.viewportMode == 'CUSTOM' or LookingGlassAddon.BlenderViewport == None:
+		if self.addon_settings.viewportMode == 'CUSTOM' or LookingGlassAddon.BlenderViewport == None:
 
 			# APPLY THE CURRENT USER SETTINGS FOR THE LIGHTFIELD RENDERING
 			# SHADING ATTRIBUTES
-			self.override['space_data'].shading.type = self.settings.shadingMode
-			self.override['space_data'].shading.show_xray = bool(self.settings.viewport_show_xray)
-			self.override['space_data'].shading.xray_alpha = float(self.settings.viewport_xray_alpha)
-			self.override['space_data'].shading.use_dof = bool(int(self.settings.viewport_use_dof))
+			self.override['space_data'].shading.type = self.addon_settings.shadingMode
+			self.override['space_data'].shading.show_xray = bool(self.addon_settings.viewport_show_xray)
+			self.override['space_data'].shading.xray_alpha = float(self.addon_settings.viewport_xray_alpha)
+			self.override['space_data'].shading.use_dof = bool(int(self.addon_settings.viewport_use_dof))
 
 			# OVERLAY ATTRIBUTES: Guides
-			self.override['space_data'].overlay.show_floor = bool(int(self.settings.viewport_show_floor))
-			self.override['space_data'].overlay.show_axis_x = bool(int(self.settings.viewport_show_axes[0]))
-			self.override['space_data'].overlay.show_axis_y = bool(int(self.settings.viewport_show_axes[1]))
-			self.override['space_data'].overlay.show_axis_z = bool(int(self.settings.viewport_show_axes[2]))
-			self.override['space_data'].overlay.grid_scale = float(self.settings.viewport_grid_scale)
+			self.override['space_data'].overlay.show_floor = bool(int(self.addon_settings.viewport_show_floor))
+			self.override['space_data'].overlay.show_axis_x = bool(int(self.addon_settings.viewport_show_axes[0]))
+			self.override['space_data'].overlay.show_axis_y = bool(int(self.addon_settings.viewport_show_axes[1]))
+			self.override['space_data'].overlay.show_axis_z = bool(int(self.addon_settings.viewport_show_axes[2]))
+			self.override['space_data'].overlay.grid_scale = float(self.addon_settings.viewport_grid_scale)
 			# OVERLAY ATTRIBUTES: Objects
-			self.override['space_data'].overlay.show_extras = bool(int(self.settings.viewport_show_extras))
-			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.settings.viewport_show_relationship_lines))
-			self.override['space_data'].overlay.show_outline_selected = bool(int(self.settings.viewport_show_outline_selected))
-			self.override['space_data'].overlay.show_bones = bool(int(self.settings.viewport_show_bones))
-			self.override['space_data'].overlay.show_motion_paths = bool(int(self.settings.viewport_show_motion_paths))
-			self.override['space_data'].overlay.show_object_origins = bool(int(self.settings.viewport_show_origins))
-			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.settings.viewport_show_origins_all))
+			self.override['space_data'].overlay.show_extras = bool(int(self.addon_settings.viewport_show_extras))
+			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.addon_settings.viewport_show_relationship_lines))
+			self.override['space_data'].overlay.show_outline_selected = bool(int(self.addon_settings.viewport_show_outline_selected))
+			self.override['space_data'].overlay.show_bones = bool(int(self.addon_settings.viewport_show_bones))
+			self.override['space_data'].overlay.show_motion_paths = bool(int(self.addon_settings.viewport_show_motion_paths))
+			self.override['space_data'].overlay.show_object_origins = bool(int(self.addon_settings.viewport_show_origins))
+			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.addon_settings.viewport_show_origins_all))
 			# OVERLAY ATTRIBUTES: Geometry
-			self.override['space_data'].overlay.show_wireframes = bool(int(self.settings.viewport_show_wireframes))
-			self.override['space_data'].overlay.show_face_orientation = bool(int(self.settings.viewport_show_face_orientation))
+			self.override['space_data'].overlay.show_wireframes = bool(int(self.addon_settings.viewport_show_wireframes))
+			self.override['space_data'].overlay.show_face_orientation = bool(int(self.addon_settings.viewport_show_face_orientation))
 
 		# if the settings rely on a specific viewport / SpaceView3D
-		elif self.settings.viewportMode != 'CUSTOM' and LookingGlassAddon.BlenderViewport != None:
+		elif self.addon_settings.viewportMode != 'CUSTOM' and LookingGlassAddon.BlenderViewport != None:
 
 			# if CYCLES is activated in the current viewport
 			if LookingGlassAddon.BlenderViewport.shading.type == 'RENDERED' and context.engine == 'CYCLES':
@@ -563,7 +563,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def render_view(self, context):
 
 		# if the quilt must be redrawn
-		if self.modal_redraw == True and (self.settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
+		if self.modal_redraw == True and (self.addon_settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
 
 			# UPDATE QUILT SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -598,7 +598,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 			# select camera that belongs to the view
-			camera = self.settings.lookingglassCamera
+			camera = self.addon_settings.lookingglassCamera
 
 			# PREPARE THE MODELVIEW AND PROJECTION MATRICES
 			# if a camera is selected
@@ -673,7 +673,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				LookingGlassAddonLogger.debug("-----------------------------")
 
 				# update the lightfield displayed on the device
-				LookingGlassAddon.update_lightfield_window(int(self.settings.renderMode), self.lightfield_image)
+				LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), self.lightfield_image)
 
 			else:
 
@@ -839,11 +839,11 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		# if a camera is selected AND the space is not in camera mode
 		if self and context:
-			if context.scene.settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
+			if context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
 				if (context.space_data != None and context.space_data.region_3d != None) and context.space_data.region_3d.view_perspective != 'CAMERA':
 
 					# currently selected camera
-					camera = context.scene.settings.lookingglassCamera
+					camera = context.scene.addon_settings.lookingglassCamera
 
 					# if the camera is visible
 					if camera.hide_get() == False:
@@ -868,7 +868,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 						# get the clipping settings
 						clipStart = camera.data.clip_start
 						clipEnd = camera.data.clip_end
-						focalPlane = context.scene.settings.focalPlane
+						focalPlane = context.scene.addon_settings.focalPlane
 
 						# TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
 						# define the vertices of the camera frustum in camera coordinates
@@ -886,12 +886,12 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 										]
 
 						# if the camera fustum shall be drawn
-						if context.scene.settings.showFrustum == True:
+						if context.scene.addon_settings.showFrustum == True:
 							batch_lines = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_lines)
 							batch_faces = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_faces)
 
 						# if the focal plane shall be drawn
-						if context.scene.settings.showFocalPlane == True:
+						if context.scene.addon_settings.showFocalPlane == True:
 							batch_focalplane_outline = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_focalplane_outline)
 							batch_focalplane_face = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_focalplane_face)
 
@@ -912,13 +912,13 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 						bgl.glDepthMask(bgl.GL_TRUE)
 
 						# if the camera fustum shall be drawn
-						if context.scene.settings.showFrustum == True:
+						if context.scene.addon_settings.showFrustum == True:
 							# draw outline
 							self.frustum_shader.uniform_float("color", (0.3, 0, 0, 1))
 							batch_lines.draw(self.frustum_shader)
 
 						# if the focal plane shall be drawn
-						if context.scene.settings.showFocalPlane == True:
+						if context.scene.addon_settings.showFocalPlane == True:
 							# draw focal plane outline
 							self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
 							batch_focalplane_outline.draw(self.frustum_shader)
@@ -927,13 +927,13 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 						bgl.glEnable(bgl.GL_BLEND)
 
 						# if the camera fustum shall be drawn
-						if context.scene.settings.showFrustum == True:
+						if context.scene.addon_settings.showFrustum == True:
 							# fill faces
 							self.frustum_shader.uniform_float("color", (0.5, 0.5, 0.5, 0.05))
 							batch_faces.draw(self.frustum_shader)
 
 						# if the focal plane shall be drawn
-						if context.scene.settings.showFocalPlane == True:
+						if context.scene.addon_settings.showFocalPlane == True:
 							# draw focal plane face
 							self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
 							batch_focalplane_face.draw(self.frustum_shader)
