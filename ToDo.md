@@ -12,6 +12,7 @@
 ## BUGS / ENHANCEMENTS
 
 - BUG: Shading & Overlay settings - the "CUSTOM" setting also changes the current viewport
+- BUG: Low-res preview for Lightfield Window is not working
 
 - select the default quilt based on the device type automatically when selecting a device
 

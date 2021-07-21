@@ -1204,7 +1204,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_2.scale_x = 0.7
 
 		# if no lockfile was detected on start-up OR the render job is running
-		if LookingGlassAddon.has_lockfile == False or LookingGlassAddon.RenderInvoked == True:
+		if not LookingGlassAddon.has_lockfile or LookingGlassAddon.RenderInvoked:
 
 			# Buttons and progress bars
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == False:

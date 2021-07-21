@@ -241,7 +241,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 		# initialize the RenderSettings
 		# NOTE: This automatically loads the last render settings from the lockfile
-		RenderSettings(bpy.context.scene, LookingGlassAddon.has_lockfile)
+		RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile)
 
 	# invoke the camera frustum rendering operator
 	bpy.ops.render.frustum('INVOKE_DEFAULT')
