@@ -703,6 +703,13 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										description = "Total quilt rendering progress",
 										)
 
+	# Cancel button
+	render_cancel: bpy.props.BoolProperty(
+										name="Cancel render job",
+										description="Press this button or the 'ESC' key to stop the quilt rendering.",
+										default = False,
+										)
+
 
 	# PANEL: LIGHTFIELD WINDOW SETTINGS
 	# UI elements for user control
@@ -1204,16 +1211,19 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 				# Show the corresponding progress bar for the rendering process
 				row_render_still = layout.row(align = True)
 				row_render_still.prop(context.scene.addon_settings, "render_progress", text="", slider=True)
+				row_render_still.prop(context.scene.addon_settings, "render_cancel", text="", icon='CANCEL')
 			else:
 				# Button to start rendering a single quilt using the current render settings
 				row_render_still = layout.row(align = True)
 				render_quilt = row_render_still.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
 				render_quilt.animation = False
+				#render_quilt.use_multiview = True
 
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
 				# Show the corresponding progress bar for the rendering process
 				row_render_animation = layout.row(align = True)
 				row_render_animation.prop(context.scene.addon_settings, "render_progress", text="", slider=True)
+				row_render_animation.prop(context.scene.addon_settings, "render_cancel", text="", icon='CANCEL')
 			else:
 				# Button to start rendering a animation quilt using the current render settings
 				row_render_animation = layout.row(align = True)

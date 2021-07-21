@@ -7,7 +7,7 @@
 - handle multiview camera support
 
   => separate functions for camera setup, (view) rendering, and quilt assembly
-  => maybe hand the quilt assembly to pyLightIO via the planned save() methods?
+  => use write_still in multiview only if output filename is specificed
 
 ## BUGS / ENHANCEMENTS
 
