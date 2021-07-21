@@ -631,6 +631,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 				# loop through all required views
+				#for view in range(int((self.qs[self.preset]["total_views"] + 1) / 3), self.qs[self.preset]["total_views"] - int((self.qs[self.preset]["total_views"] + 1) / 3)):
 				for view in range(0, self.qs[self.preset]["total_views"]):
 
 					start_test = time.time()

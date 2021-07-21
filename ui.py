@@ -721,12 +721,12 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
 
-	# Lightfield Window Mode
+	# Lightfield Viewport Modes
 	lightfieldMode: bpy.props.EnumProperty(
 										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the lightfield viewport'),
 												 ('1', 'Refresh Mode: Manual', 'Refresh the lightfield viewport manually')],
 										default='0',
-										name="Lightfield Window Mode",
+										name="Lightfield Viewport Modes",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
 
@@ -1357,7 +1357,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			# Lightfield rendering mode & refresh button
 			row_orientation = column.row()
-			row_orientation.label(text="Lightfield Window Mode:")
+			row_orientation.label(text="Lightfield Viewport Modes:")
 			row_preset = column.row()
 			row_preset.prop(context.scene.addon_settings, "lightfieldMode", text="")
 			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
