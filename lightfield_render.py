@@ -17,6 +17,15 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# MODULE DESCRIPTION:
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# This includes everything that is related the quilt rendering
+
+# ------------------ INTERNAL MODULES --------------------
+from .globals import *
+from .ui import LookingGlassAddonSettings
+
+# ------------------- EXTERNAL MODULES -------------------
 import bpy
 import time
 import sys, os, platform, shutil, json
@@ -24,10 +33,6 @@ import numpy as np
 from math import *
 from mathutils import *
 from pprint import pprint
-
-# TODO: Is there a better way to share global variables between all addon files and operators?
-from .globals import *
-from .ui import LookingGlassAddonSettings
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(LookingGlassAddon.path)
@@ -42,7 +47,7 @@ import pylightio as pylio
 import logging
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 
-# ------------ QUILT RENDERING -------------
+# ------------------ QUILT RENDERING --------------------
 # a class whose instances will store the variables required to control the
 # internal rendering jobs
 class RenderJob:

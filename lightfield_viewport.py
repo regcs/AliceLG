@@ -17,6 +17,14 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# MODULE DESCRIPTION:
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# This includes everything that is related the "live view"
+
+# ------------------ INTERNAL MODULES --------------------
+from .globals import *
+
+# ------------------- EXTERNAL MODULES -------------------
 import sys, platform
 import bpy, bgl
 import gpu
@@ -27,9 +35,6 @@ from gpu_extras.batch import batch_for_shader
 from gpu_extras.presets import draw_texture_2d
 from bpy_extras.view3d_utils import location_3d_to_region_2d, region_2d_to_origin_3d, region_2d_to_vector_3d
 import numpy as np
-
-# TODO: Is there a better way to share global variables between all addon files and operators?
-from .globals import *
 
 # append the add-on's path to Blender's python PATH
 sys.path.append(LookingGlassAddon.path)

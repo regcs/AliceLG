@@ -22,6 +22,11 @@
 # This includes everything that is related to the add-on preferences,
 # installation of requirements, etc.
 
+# ------------------ INTERNAL MODULES --------------------
+from .globals import *
+
+# ------------------- EXTERNAL MODULES -------------------
+
 # -------------------- LOAD MODULES ----------------------
 import bpy
 from bpy.types import AddonPreferences, PropertyGroup

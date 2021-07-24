@@ -17,21 +17,18 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# MODULE DESCRIPTION:
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# This includes all global variables that need to be accessable from all files
+
+# ------------------ INTERNAL MODULES --------------------
+from .globals import *
+
+# ------------------- EXTERNAL MODULES -------------------
 import bpy
 import sys, os, json
 from bpy.props import FloatProperty, PointerProperty
 from bpy.app.handlers import persistent
-
-# TODO: We have to set the path manually here so that we can import pylightio.
-#       This isn't ideal.
-# append the add-on's path to Blender's python PATH
-sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))) + "/lib/")
-
-# TODO: Would be better, if from .lib import pylightio could be called,
-#		but for some reason that does not import all modules and throws
-#		"AliceLG.lib.pylio has no attribute 'lookingglass"
-import pylightio as pylio
 
 # ---------------- GLOBAL ADDON LOGGER -------------------
 import logging
@@ -86,12 +83,12 @@ class LookingGlassAddon:
 	def setupQuiltPresets(cls):
 
 		# append the add-on's path to Blender's python PATH
-		sys.path.append(cls.path)
-		sys.path.append(cls.libpath)
+		sys.path.append(LookingGlassAddon.path)
+		sys.path.append(LookingGlassAddon.libpath)
 
 		# TODO: Would be better, if from .lib import pylightio could be called,
 		#		but for some reason that does not import all modules and throws
-		#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
+		#		"AliceLG.lib.pylio has no attribute 'lookingglass"
 		import pylightio as pylio
 
 		# read the user-defined quilt presets from the add-on directory
@@ -120,6 +117,15 @@ class LookingGlassAddon:
 	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):
 		''' update the lightfield image that is displayed on the current device '''
 		''' render_mode = 0: Lightfield Viewport, render_mode = 1: Quilt Viewer, render_mode = -1: demo quilt '''
+
+		# append the add-on's path to Blender's python PATH
+		sys.path.append(LookingGlassAddon.path)
+		sys.path.append(LookingGlassAddon.libpath)
+
+		# TODO: Would be better, if from .lib import pylightio could be called,
+		#		but for some reason that does not import all modules and throws
+		#		"AliceLG.lib.pylio has no attribute 'lookingglass"
+		import pylightio as pylio
 
 		# update the variable for the current Looking Glass device
 		device = pylio.DeviceManager.get_active()

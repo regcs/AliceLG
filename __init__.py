@@ -37,7 +37,7 @@ bl_info = {
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # required for proper reloading of the addon by using F8
-if "bpy" in locals():
+try:
 
 	import importlib
 
@@ -54,7 +54,7 @@ if "bpy" in locals():
 	# reload all ui related code
 	importlib.reload(ui)
 
-else:
+except:
 
 	# import the modal operators for the viewport & quilt rendering
 	from .lightfield_viewport import *
@@ -217,8 +217,6 @@ except:
 	LookingGlassAddon.show_preferences = True
 
 	pass
-
-
 
 
 

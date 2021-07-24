@@ -17,6 +17,10 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+# MODULE DESCRIPTION:
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+# This includes everything that is related the user interface
+
 # ------------------ INTERNAL MODULES --------------------
 from .globals import *
 
@@ -30,8 +34,8 @@ from bpy.types import PropertyGroup
 import numpy as np
 
 # append the add-on's path to Blender's python PATH
-sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(bpy.path.abspath(os.path.dirname(os.path.realpath(__file__))) + "/lib/")
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
 
 # TODO: Would be better, if from .lib import pylightio could be called,
 #		but for some reason that does not import all modules and throws
