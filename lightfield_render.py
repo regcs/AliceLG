@@ -973,17 +973,17 @@ class RenderSettings:
 				else:
 
 					# log warning
-					LookingGlassAddon.warning("Could not create lockfile. Quilt render continuation is turned off for this rendering process.")
+					LookingGlassAddonLogger.warning("Could not create lockfile. Quilt render continuation is turned off for this rendering process.")
 
 			else:
 
 				# log warning
-				LookingGlassAddon.warning("Could not find/create temporary folder in add-on directory. Quilt render continuation is turned off for this rendering process.")
+				LookingGlassAddonLogger.warning("Could not find/create temporary folder in add-on directory. Quilt render continuation is turned off for this rendering process.")
 
 		else:
 
 			# log warning
-			LookingGlassAddon.warning("No blender file exists. Quilt render continuation is turned off for this rendering process.")
+			LookingGlassAddonLogger.warning("No blender file exists. Quilt render continuation is turned off for this rendering process.")
 
 
 	# read the render settings from the lockfile
