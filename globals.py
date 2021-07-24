@@ -21,9 +21,6 @@
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # This includes all global variables that need to be accessable from all files
 
-# ------------------ INTERNAL MODULES --------------------
-from .globals import *
-
 # ------------------- EXTERNAL MODULES -------------------
 import bpy
 import sys, os, json
@@ -39,8 +36,12 @@ LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 # CLASS USED FOR THE IMPORTANT GLOBAL VARIABLES AND LISTS IN THIS ADDON
 class LookingGlassAddon:
 
-	# debugging variables
+	# this is only for debugging purposes
 	debugging_use_dummy_device = False
+
+	# console output: if set to true, the Alice/LG and pyLightIO logger messages
+	# of all levels are printed to the console. If set to falls, only warnings and
+	# errors are printed to console.
 	debugging_print_pylio_logger_all = False
 	debugging_print_internal_logger_all = False
 
@@ -54,9 +55,13 @@ class LookingGlassAddon:
 	logpath = bpy.path.abspath(path + "/logs/")
 	presetpath = bpy.path.abspath(path + "/presets/")
 
-	# python dependencies of the add-on present?
-	python_dependecies = False
-	show_preferences = True
+	# external python dependencies of the add-on
+	external_dependecies = [
+							('pynng', 'pynng'),
+							('cbor', 'cbor'),
+							('PIL', 'pillow'),
+							('pylightio', 'pylightio')
+							]
 
 	# the pyLightIO service for display communication
 	service = None
@@ -76,15 +81,53 @@ class LookingGlassAddon:
 	RenderInvoked = False
 	RenderAnimation = None
 
+
+	# EXTEND PATH
+	# +++++++++++++++++++++++++++++++++++++++
+
+	# append the add-on's path to Blender's python PATH
+	sys.path.append(libpath)
+
+
+
+	# ADDON CHECKS
+	# +++++++++++++++++++++++++++++++++++++++
+	# check if the specified module can be found in the "lib" directory
+	@classmethod
+	def is_installed(cls, module_name, debug=False):
+		import importlib.machinery
+
+		# try to find the module in the "lib" directory
+		module_spec = (importlib.machinery.PathFinder().find_spec(module_name, [cls.libpath]))
+		if module_spec:
+			if debug: LookingGlassAddonLogger.info(" [#] Found module '%s'." % module_name)
+
+			return True
+
+		if debug: LookingGlassAddonLogger.info(" [#] Could not find module '%s'." % module_name)
+		return False
+
+	# check if all defined dependencies can be found in the "lib" directory
+	@classmethod
+	def check_dependecies(cls, debug=False):
+
+		# status
+		found_all = True
+
+		# are all modules in the packages list available in the "lib" directory?
+		for import_name, install_name in cls.external_dependecies:
+			if not cls.is_installed(import_name, debug):
+				found_all = False
+
+		return found_all
+
+
+
 	# LOOKING GLASS QUILT PRESETS
 	# +++++++++++++++++++++++++++++++++++++++
 	# set up quilt settings
 	@classmethod
 	def setupQuiltPresets(cls):
-
-		# append the add-on's path to Blender's python PATH
-		sys.path.append(LookingGlassAddon.path)
-		sys.path.append(LookingGlassAddon.libpath)
 
 		# TODO: Would be better, if from .lib import pylightio could be called,
 		#		but for some reason that does not import all modules and throws

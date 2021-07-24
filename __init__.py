@@ -32,50 +32,29 @@ bl_info = {
 }
 
 
+########################################################
+#              Prepare Add-on Initialization
+########################################################
+
+# Load System Modules
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+import importlib
+import sys, platform
 
 
-
-# ------------- LOAD INTERNAL MODULES ----------------
+# Load Globals
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # required for proper reloading of the addon by using F8
 try:
 
-	import importlib
-
-	# reload the modal operators for the viewport & quilt rendering
-	importlib.reload(lightfield_viewport)
-	importlib.reload(lightfield_render)
-
-	# TODO: Is there a better way to share global variables between all addon files and operators?
 	importlib.reload(globals)
-
-	# reload all preferences related code
-	importlib.reload(preferences)
-
-	# reload all ui related code
-	importlib.reload(ui)
 
 except:
 
-	# import the modal operators for the viewport & quilt rendering
-	from .lightfield_viewport import *
-	from .lightfield_render import *
-
-	# TODO: Is there a better way to share global variables between all addon files and operators?
 	from .globals import *
 
-	# import all preferences related code
-	from .preferences import *
-
-	# import all UI related code
-	from .ui import *
-
-# append the add-on's path to Blender's python PATH
-sys.path.append(LookingGlassAddon.path)
-sys.path.append(LookingGlassAddon.libpath)
-
-
-
-# ---------------- DEBUGGING -------------------
+# Debugging Settings
+# ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # this is only for debugging purposes
 LookingGlassAddon.debugging_use_dummy_device = False
 
@@ -87,10 +66,25 @@ LookingGlassAddon.debugging_print_internal_logger_all = True
 
 
 
-
 # --------------------- LOGGER -----------------------
 import logging, logging.handlers
 
+# log uncaught exceptions
+# +++++++++++++++++++++++++++++++++++++++++++++
+# define system exception hook for logging
+def log_exhook(exc_type, exc_value, exc_traceback):
+	if issubclass(type, KeyboardInterrupt):
+		sys.__excepthook__(exc_type, exc_value, exc_traceback)
+		return
+
+	# log that an unhandled exception occured
+	LookingGlassAddonLogger.critical("An unhandled error occured. Here is the traceback:\n", exc_info=(exc_type, exc_value, exc_traceback))
+
+# overwrite the excepthook
+sys.excepthook = log_exhook
+
+# log file names
+# +++++++++++++++++++++++++++++++++++++++++++++
 # this function is by @ranrande from stackoverflow:
 # https://stackoverflow.com/a/67213458
 def logfile_namer(default_name):
@@ -158,35 +152,24 @@ LookingGlassAddonLogger.addHandler(logfile_handler)
 
 
 
-# ------------- LOAD EXTERNAL MODULES ----------------
-# NOTE: This needs to be called after loading the internal modules,
-# 		because we need to check if "bpy" was already loaded for reload
+# ------------- LOAD INTERNAL MODULES ----------------
+# append the add-on's path to Blender's python PATH
+sys.path.append(LookingGlassAddon.path)
+sys.path.append(LookingGlassAddon.libpath)
+
+
+
+
+
+
+########################################################
+#                  Add-on Initialization
+########################################################
 import bpy
-import sys, platform
+from bpy.types import AddonPreferences
 from bpy.app.handlers import persistent
 
-# log uncaught exceptions
-# +++++++++++++++++++++++++++++++++++++++++++++
-# define system exception hook for logging
-def log_exhook(exc_type, exc_value, exc_traceback):
-	if issubclass(type, KeyboardInterrupt):
-		sys.__excepthook__(exc_type, exc_value, exc_traceback)
-		return
-
-	# log that an unhandled exception occured
-	LookingGlassAddonLogger.critical("An unhandled error occured. Here is the traceback:\n", exc_info=(exc_type, exc_value, exc_traceback))
-
-# overwrite the excepthook
-sys.excepthook = log_exhook
-
-# check Blender version and addon dependencies
-# +++++++++++++++++++++++++++++++++++++++++++++
-# check, if a supported version of Blender is executed
-if bpy.app.version < bl_info['blender']:
-	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
-
-
-# define name for registration
+# define add-on name for display purposes
 LookingGlassAddon.name = bl_info['name'] + " v" + '.'.join(str(v) for v in bl_info['version'])
 
 # log a info message
@@ -194,29 +177,55 @@ LookingGlassAddonLogger.info("----------------------------------------------")
 LookingGlassAddonLogger.info("Initializing '%s' ..." % LookingGlassAddon.name)
 LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
 
-try:
+# Check Blender Version
+# +++++++++++++++++++++++++++++++++++++++++++++
+# check, if a supported version of Blender is executed
+if bpy.app.version < bl_info['blender']:
+	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
 
-	# # TODO: Let pylightio handle dependencies to PIL, pynng, cbor, sniffio, etc.
-	# from .lib import PIL
-	# LookingGlassAddonLogger.info(" [#] Imported pillow v.%s" % PIL.__version__)
+# Check Add-on Dependencies
+# +++++++++++++++++++++++++++++++++++++++++++++
+# this to priduce log messages
+LookingGlassAddon.check_dependecies(debug=True)
 
-	# TODO: Would be better, if from .lib import pylightio could be called,
-	#		but for some reason that does not import all modules and throws
-	#		"AliceLG.lib.pylio has no attribute 'lookingglass'"
-	import pylightio as pylio
-	LookingGlassAddonLogger.info(" [#] Imported pyLightIO v.%s" % pylio.__version__)
+# Load Internal Modules
+# +++++++++++++++++++++++++++++++++++++++++++++
+# if NOT all the dependenceis are satisfied
+if not LookingGlassAddon.check_dependecies():
 
-	# all python dependencies are fulfilled
-	LookingGlassAddon.python_dependecies = True
-	LookingGlassAddon.show_preferences = False
+	# reload/import all preferences' related code
+	try:
 
-except:
+		importlib.reload(preferences)
 
-	# not all python dependencies are fulfilled
-	LookingGlassAddon.python_dependecies = False
-	LookingGlassAddon.show_preferences = True
+	except:
 
-	pass
+		from .preferences import *
+
+else:
+
+	try:
+		# reload all preferences' related code
+		importlib.reload(preferences)
+
+		# reload the modal operators for the viewport & quilt rendering
+		importlib.reload(lightfield_viewport)
+		importlib.reload(lightfield_render)
+
+		# reload all UI related code
+		importlib.reload(ui)
+
+	except:
+
+		# import all preferences' related code
+		from .preferences import *
+
+		# import the modal operators for the viewport & quilt rendering
+		from .lightfield_viewport import *
+		from .lightfield_render import *
+
+		# import all UI related code
+		from .ui import *
 
 
 
@@ -225,180 +234,211 @@ except:
 @persistent
 def LookingGlassAddonInitHandler(dummy1, dummy2):
 
-	# # invoke the mouse position tracking operator
-	# bpy.ops.wm.mouse_tracker('INVOKE_DEFAULT')
+	# if NOT all dependencies are satisfied
+	if not LookingGlassAddon.check_dependecies():
 
-	# check if lockfile exists and set status variable
-	LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
+		#
+		bpy.ops.preferences.addon_show(module=__package__)
 
-	# load the panel variables
-	bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
+	else:
 
-	# if the loaded file has a lockfile
-	if LookingGlassAddon.has_lockfile:
+		# check if lockfile exists and set status variable
+		LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
 
-		# initialize the RenderSettings
-		# NOTE: This automatically loads the last render settings from the lockfile
-		RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile)
+		# load the panel variables
+		bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
 
-	# invoke the camera frustum rendering operator
-	bpy.ops.render.frustum('INVOKE_DEFAULT')
+		# if the loaded file has a lockfile
+		if LookingGlassAddon.has_lockfile:
 
-	# get the active window
-	LookingGlassAddon.BlenderWindow = bpy.context.window
+			# initialize the RenderSettings
+			# NOTE: This automatically loads the last render settings from the lockfile
+			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile)
 
-	# if the lightfield window was active
-	if bpy.context.scene.addon_settings.ShowLightfieldWindow == True:
+		# invoke the camera frustum rendering operator
+		bpy.ops.render.frustum('INVOKE_DEFAULT')
 
-		# for each scene in the file
-		for scene in bpy.context.blend_data.scenes:
+		# get the active window
+		LookingGlassAddon.BlenderWindow = bpy.context.window
 
-			# set the lightfield window button state to 'deactivated'
-		    scene.addon_settings.ShowLightfieldWindow = False
+		# if the lightfield window was active
+		if bpy.context.scene.addon_settings.ShowLightfieldWindow == True:
 
-	# if no Looking Glass was detected AND debug mode is not activated
-	if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
+			# for each scene in the file
+			for scene in bpy.context.blend_data.scenes:
 
-		# set the "use device" checkbox in quilt setup to False
-		# (because there is no device we could take the settings from)
-		bpy.context.scene.addon_settings.render_use_device = False
+				# set the lightfield window button state to 'deactivated'
+			    scene.addon_settings.ShowLightfieldWindow = False
+
+		# if no Looking Glass was detected AND debug mode is not activated
+		if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
+
+			# set the "use device" checkbox in quilt setup to False
+			# (because there is no device we could take the settings from)
+			bpy.context.scene.addon_settings.render_use_device = False
 
 
 
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
 
-	# register all classes of the addon
-	# Preferences & Settings
-	if LookingGlassAddon.show_preferences == True: bpy.utils.register_class(LookingGlassAddonPreferences)
-	bpy.utils.register_class(LookingGlassAddonSettings)
-	bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
-	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
-	bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
-	bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
-	bpy.utils.register_class(LOOKINGGLASS_OT_blender_viewport_assign)
-	bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
+	# if all dependencies are satisfied
+	if LookingGlassAddon.check_dependecies() == False:
 
-	# Looking Glass quilt rendering
-	bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
-
-	# Looking Glass viewport & camera frustum
-	bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
-	bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
-
-	# UI elements
-	bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
-	bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
-	bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
-	bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
-	bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
-
-	# log info
-	LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
-
-	# setup the quilt presets
-	LookingGlassAddon.setupQuiltPresets()
-
-	# run initialization helper function as app handler
-	# NOTE: this is needed to run certain modal operators of the addon on startup
-	#		or when a new file is loaded
-	bpy.app.handlers.load_post.append(LookingGlassAddonInitHandler)
-
-	# log info
-	LookingGlassAddonLogger.info(" [#] Done.")
-
-	# log info
-	LookingGlassAddonLogger.info("Connecting to HoloPlay Service ...")
-
-	# create a service using "HoloPlay Service" backend
-	LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService)
-
-	# TODO: ERROR HANDLING
-	# if no errors were detected
-	if LookingGlassAddon.service or LookingGlassAddon.debugging_use_dummy_device == True:
+		# register the preferences
+		bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
+		bpy.utils.register_class(LookingGlassAddonPreferences)
 
 		# log info
-		LookingGlassAddonLogger.info(" [#] HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+		LookingGlassAddonLogger.info(" [#] Missing dependencies. Please install them in the preference pane.")
 
-		# make the device manager use the created service instance
-		pylio.DeviceManager.set_service(LookingGlassAddon.service)
-
-		# create a set of emulated devices
-		# NOTE: This automatically creates an emulated device for each device
-		#		that is defined in pyLightIO
-		pylio.DeviceManager.add_emulated()
-
-		# refresh the list of connected devices using the active pylio service
-		pylio.DeviceManager.refresh()
-
-		# if device are connected, make the first one the active one
-		if LookingGlassAddon.debugging_use_dummy_device: pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
-		if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+		# run initialization helper function as app handler
+		# NOTE: this is needed to run certain modal operators of the addon on startup
+		#		or when a new file is loaded
+		bpy.app.handlers.load_post.append(LookingGlassAddonInitHandler)
 
 	else:
 
-		# log info
-		LookingGlassAddonLogger.info(" [#] Connection failed.")
+		# register all classes of the addon
+		bpy.utils.register_class(LookingGlassAddonPreferences)
+		bpy.utils.register_class(LookingGlassAddonSettings)
+		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
+		bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
+		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
+		bpy.utils.register_class(LOOKINGGLASS_OT_blender_viewport_assign)
+		bpy.utils.register_class(LOOKINGGLASS_OT_add_camera)
 
-		# # prepare the error string from the error code
-		# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
-		# 	errstr = "HoloPlay Service not running"
-		#
-		# elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
-		# 	errstr = "Client message could not be serialized"
-		#
-		# elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
-		# 	errstr = "Incompatible version of HoloPlay Service";
-		#
-		# elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
-		# 	errstr = "Interprocess pipe broken"
-		#
-		# elif (errco == hpc.client_error.CLIERR_SENDTIMEOUT.value):
-		# 	errstr = "Interprocess pipe send timeout"
-		#
-		# elif (errco == hpc.client_error.CLIERR_RECVTIMEOUT.value):
-		# 	errstr = "Interprocess pipe receive timeout"
-		#
-		# else:
-		# 	errstr = "Unknown error";
+		# Looking Glass quilt rendering
+		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
+
+		# Looking Glass viewport & camera frustum
+		bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
+		bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
+
+		# UI elements
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
+
+		# log info
+		LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
+
+		# setup the quilt presets
+		LookingGlassAddon.setupQuiltPresets()
+
+		# run initialization helper function as app handler
+		# NOTE: this is needed to run certain modal operators of the addon on startup
+		#		or when a new file is loaded
+		bpy.app.handlers.load_post.append(LookingGlassAddonInitHandler)
+
+		# log info
+		LookingGlassAddonLogger.info(" [#] Done.")
+
+		# log info
+		LookingGlassAddonLogger.info("Connecting to HoloPlay Service ...")
+
+		# create a service using "HoloPlay Service" backend
+		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService)
+
+		# TODO: ERROR HANDLING
+		# if no errors were detected
+		if LookingGlassAddon.service or LookingGlassAddon.debugging_use_dummy_device == True:
+
+			# log info
+			LookingGlassAddonLogger.info(" [#] HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+
+			# make the device manager use the created service instance
+			pylio.DeviceManager.set_service(LookingGlassAddon.service)
+
+			# create a set of emulated devices
+			# NOTE: This automatically creates an emulated device for each device
+			#		that is defined in pyLightIO
+			pylio.DeviceManager.add_emulated()
+
+			# refresh the list of connected devices using the active pylio service
+			pylio.DeviceManager.refresh()
+
+			# if device are connected, make the first one the active one
+			if LookingGlassAddon.debugging_use_dummy_device: pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
+			if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+
+		else:
+
+			# log info
+			LookingGlassAddonLogger.info(" [#] Connection failed.")
+
+			# # prepare the error string from the error code
+			# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
+			# 	errstr = "HoloPlay Service not running"
+			#
+			# elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
+			# 	errstr = "Client message could not be serialized"
+			#
+			# elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
+			# 	errstr = "Incompatible version of HoloPlay Service";
+			#
+			# elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
+			# 	errstr = "Interprocess pipe broken"
+			#
+			# elif (errco == hpc.client_error.CLIERR_SENDTIMEOUT.value):
+			# 	errstr = "Interprocess pipe send timeout"
+			#
+			# elif (errco == hpc.client_error.CLIERR_RECVTIMEOUT.value):
+			# 	errstr = "Interprocess pipe receive timeout"
+			#
+			# else:
+			# 	errstr = "Unknown error";
 
 
 def unregister():
 
-	# if the a service for display communication is active
-	if LookingGlassAddon.service:
+	# if not all dependencies are satisfied
+	if LookingGlassAddon.check_dependecies() == False:
 
-		# Unregister at the Holoplay Service
-		pylio.ServiceManager.remove(LookingGlassAddon.service)
+		# unregister only the preferences
+		if hasattr(bpy.types, "LookingGlassAddonPreferences"): bpy.utils.unregister_class(LookingGlassAddonPreferences)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
 
-	# remove initialization helper app handler
-	bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
+		# remove initialization helper app handler
+		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
 
-	# register all classes of the addon
-	# Preferences & Settings
-	if LookingGlassAddon.show_preferences == True: bpy.utils.unregister_class(LookingGlassAddonPreferences)
-	bpy.utils.unregister_class(LookingGlassAddonSettings)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
+	else:
 
-	# Looking Glass quilt rendering
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
+		# if the a service for display communication is active
+		if LookingGlassAddon.service:
 
-	# Looking Glass viewport & camera frustum
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
-	bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
+			# Unregister at the Holoplay Service
+			pylio.ServiceManager.remove(LookingGlassAddon.service)
+
+		# remove initialization helper app handler
+		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
+
+		# unregister all classes of the addon
+		if hasattr(bpy.types, "LookingGlassAddonPreferences"): bpy.utils.unregister_class(LookingGlassAddonPreferences)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
+		if hasattr(bpy.types, "LookingGlassAddonSettings"): bpy.utils.unregister_class(LookingGlassAddonSettings)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_display_list"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_lightfield_window"): bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_blender_viewport_assign"): bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_add_camera"): bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
+
+		# Looking Glass quilt rendering
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_render_quilt"): bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
+
+		# Looking Glass viewport & camera frustum
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_render_viewport"): bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
+		if hasattr(bpy.types, "LOOKINGGLASS_OT_render_frustum"): bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 
 
-	# UI elements
-	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
-	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
-	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
-	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
-	bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
+		# UI elements
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_general"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_camera"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_render"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_overlays_shading"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
 
-	# delete all variables
-	del bpy.types.Scene.addon_settings
+		# delete all variables
+		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings

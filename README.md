@@ -1,28 +1,20 @@
-# Alice/LG (beta) - A Blender Add-on for Looking Glass Displays
+# Alice/LG 2.0 (beta) - The Blender Add-on for Looking Glass Displays
 
 **Author:** Christian Stolze
 
-### Let [Alice/LG](https://github.com/regcs/AliceLG/releases/download/v1.1.5-beta/AliceLG-beta7.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
+### Let [Alice/LG](https://github.com/regcs/AliceLG/releases/download/v1.1.6-beta/AliceLG-beta7.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## About the Add-on
-This add-on was created for the use of Blender with the Looking Glass holographic displays. I am not associated with the Looking Glass Factory and devoloped this add-on privately in my freetime because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/).
+This add-on was created for the use of Blender with the Looking Glass holographic displays. I initially developed this add-on privately in my free time because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). The version 2.0 of Alice/LG was developed in collaboration with the Looking Glass Factory.
 
 If you like this add-on and want to do a private donation, thank you for your support! I will most-likely invest it into new hardware, since rendering with an Quad-Core Intel Core i7 increases my coffee consumption way too much ...
 
 [![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
 
-## About the Repository
-This repository is to provide a beta version of the add-on to anyone who would like to test it. The source code will be uploaded as repository files soon to enable cloning and editing on GitHub. However, it is already included in [the zip file for download](https://github.com/regcs/AliceLG-beta/releases/download/v1.1-beta/AliceLG-beta6.zip), which is used for installation of the add-on in Blender.
-
-Please keep in mind that this beta version of the add-on might contain errors that cause Blender to crash. If you find a bug or have any idea for a missing feature, please open an issue in this repository with a detailed description. Thank you for your help and have fun blendering your holograms! :)
-
 ## Main Features
 - integration into the common Blender workflow
 - an optional view frustum representing the Looking Glass volume in the scene
-- lightfield viewport in the Looking Glass with:
-   - automatic and manual refresh modes
-   - a holographic mouse cursor
-   - most of the features of a native Blender viewport
+- lightfield viewport in the Looking Glass with automatic and manual refresh modes
 - render any camera view as single quilt image or animation
 - decide if you want to keep the separate view files or just the final quilt
 - support for multiple scenes and view layers
@@ -32,14 +24,14 @@ Please keep in mind that this beta version of the add-on might contain errors th
 
 ## System Requirements
 - Windows, Linux, or macOS
-- Blender 2.83 or later
-- _Optional but recommended:_ Holoplay Service App
+- [Blender 2.83 or later](https://www.blender.org/download/)
+- [Holoplay Service App](https://lookingglassfactory.com/software)
 
 ## Installation
 
-1. _Optional:_ Install the Holoplay Service App on your PC or Mac (recommended for maximum compatability).
+1. [Download](https://www.blender.org/download/) and install the Holoplay Service App on your PC or Mac.
 
-2. Download the [zip file](https://github.com/regcs/AliceLG/releases/download/v1.1.5-beta/AliceLG-beta7.zip) of this addon.
+2. Download the [zip file of the latest release](https://github.com/regcs/AliceLG/releases/download/v1.1.6-beta/AliceLG-beta7.zip) of this add-on.
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
@@ -47,7 +39,7 @@ Please keep in mind that this beta version of the add-on might contain errors th
    - Select the downloaded zip file and click "Install"
    - Enable the add-on by activating the check box on the left
    - Expand the preferences of the add-on by clicking on the small arrow next to the checkbox
-   - Click the "Install" button to install additional Python modules in the add-on directory for an optimized add-on experience
+   - Click the "Install" button to install required Python modules to the add-on directory
    - Restart Blender
 
 ## How to Use
@@ -62,26 +54,24 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
    - **Quilt Setup & Rendering.** Controls for starting a quilt render.
 
-- **Lightfield Window.** The lightfield / hologram is rendered to a separate window, which needs to be placed inside your Looking Glass display. In this category you find options to switch between two different modes for the lightfield Window: _Viewport_ and _Quilt Viewer_. It has two subpanels:
+- **Lightfield Window.** The lightfield / hologram is displayed on your Looking Glass display via the HoloPlay Service App in a separate window. In this category you find options to switch between two different modes for the lightfield Window: _Viewport_ and _Quilt Viewer_. It has the following sub-panel:
 
-   - **Lightfield Cursor.** In _Viewport_ mode you have the option to display a lightfield mouse cursor in the lightfield window. Only works if the lightfield window is the active window.
-
-   - **Shading & Overlay Settings.** If the lightfield window is in _Viewport_ mode, it basically acts like a native Blender viewport - except that it's a holographic viewport. The settings for this (lightfield) viewport are defined here.
+   - **Shading & Overlay Settings.** If the lightfield window is in _Viewport_ mode, it acts as your holographic Blender viewport. The settings for this (lightfield) viewport are defined here.
 
 ### Lightfield Window & Viewport
 
-The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → Lightfield Window_, if you have a Looking Glass connected and HoloPlay Service is running. After the window was opened, move it to your Looking Glass screen and click the _Looking Glass → Toggle Fullscreen Mode_ button, which appeared in the add-on controls after the lightfield window was opened. (_NOTE: On Windows this should happen automatically_) Only in fullscreen mode the hologram will be displayed correctly in your Looking Glass. The lightfield window can operate in two modes:
+The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → Lightfield Window_, if you have a Looking Glass connected and HoloPlay Service is running. The lightfield window can operate in two modes:
 
-- **Viewport.** In viewport mode, it basically acts like a normal Blender viewport in the Looking Glass - except that it is holographic. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode, the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to the restrictions in the rendering pipeline Blender currently has for add-on developers, this mode can be quite slow. Hopefully, their will be a solution for that provided in future versions of Blender._
+- **Viewport.** In viewport mode, it basically acts like a normal Blender viewport in the Looking Glass - except that it is holographic. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode, the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to some limitations of the rendering pipeline of Blender, this mode can be quite slow (< 5 fps). We are working on improving Blender with regard to this and, hopefully, future versions of Blender will increase the live view performance of Alice/LG._
 
-- **Quilt Viewer.** In the quilt viewer mode, you can load or select a rendered quilt image and display it as a hologram in the Looking Glass. So, this mode is basically here to enjoy the fruits of your work. Playing animations is not supported yet. _NOTE: To display the quilt correctly, the correct quilt preset must be selected under _Looking Glass → Resolution__
+- **Quilt Viewer.** In the quilt viewer mode, you can load or select a rendered quilt image and display it as a hologram in the Looking Glass. So, this mode is basically here to enjoy the fruits of your work. Playing animations is not supported yet. _NOTE: To display the quilt correctly, the correct quilt preset must be selected under _Looking Glass → Resolution_
 
 ### Camera Setup & Quilt Rendering
 
 You can render still scenes and animation frames as complete quilt images. You can render for your currently connected device or for any other Looking Glass:
 
 **(1) Rendering for your currently connected device**
-- select your connected Looking Glass (if not aleady selected) and a quilt resolution under _Looking Glass → Resolution_
+- select your connected Looking Glass (if not already selected) and a quilt resolution under _Looking Glass → Resolution_
 - select an existing camera in _Looking Glass → Camera Setup → Camera_ or create a new camera by clicking "+" in the same panel
 - check the _Looking Glass → Quilt Setup & Rendering → Use Device Settings_ checkbox
 - locate the camera to the specific view you would like to render
@@ -106,7 +96,7 @@ _NOTE: Option (2) can be used even if no Looking Glass is connected._
 The add-on attempts to detect Blender crashes during quilt rendering as well as quilt animation rendering and prompts you with an option to continue or to discard an incomplete render job the next time you open the crashed file. The successful detection of an incomplete render job and its continuation requires that:
 
 - the filename of the .blend-file did not change
-- the file was saved before starting the render job **OR** no significant changes happended to the setup (e.g., camera position, render settings, etc.)
+- the file was saved before starting the render job **OR** no significant changes happened to the setup (e.g., camera position, render settings, etc.)
 - the (temporary) view files of the incomplete render job are still on disk and not corrupted
 
 While the add-on tries to check some basic settings, the user is highly recommended to check if the current render settings fit to the settings used for the incomplete render job before clicking the "Continue" button.
@@ -120,4 +110,5 @@ _NOTE: This feature is considered to be 'experimental'. It might not detect cras
 The Blender add-on part of this project is licensed under the [GNU GPL v3 License](LICENSE).
 
 This Blender add-on partially relies on the following GPL-compatible open-source libraries / modules and their dependencies:
+
 - [pyLightIO](https://github.com/regcs/pyLightIO) licensed under [Apache Software License 2.0](https://github.com/regcs/pyLightIO/blob/master/LICENSE)

@@ -26,11 +26,8 @@
 from .globals import *
 
 # ------------------- EXTERNAL MODULES -------------------
-
-# -------------------- LOAD MODULES ----------------------
 import bpy
-from bpy.types import AddonPreferences, PropertyGroup
-from .globals import *
+from bpy.types import AddonPreferences
 
 # ---------------- GLOBAL ADDON LOGGER -------------------
 import logging
@@ -40,14 +37,14 @@ LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 # an operator that installs the python dependencies
 class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 	bl_idname = "lookingglass.install_dependencies"
-	bl_label = "Install (This may take a few minutes)"
+	bl_label = "Install Dependencies"
 	bl_description = "Install all Python dependencies required by this add-on to the add-on directory."
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 	def execute(self, context):
 
 		# if dependencies are missing
-		if LookingGlassAddon.python_dependecies == False:
+		if not LookingGlassAddon.check_dependecies():
 
 			# NOTE: - pip should be preinstalled for Blender 2.81+
 			#		  therefore we don't check for it anymore
@@ -63,12 +60,15 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			LookingGlassAddonLogger.info("Installing missing side-packages. See '%s' for details." % (LookingGlassAddon.logpath + 'side-packages-install.log',))
 
 			# install the dependencies to the add-on's library path
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			subprocess.call([python_path, '-m', 'pip', 'install', 'pillow', '--target', LookingGlassAddon.libpath], stdout=logfile)
-			if platform.system() == "Windows": subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
+			for import_name, install_name in LookingGlassAddon.external_dependecies:
+				if not LookingGlassAddon.is_installed(import_name):
+					subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', install_name, '--target', LookingGlassAddon.libpath], stdout=logfile)
+				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
+				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
+				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
+				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pillow', '--target', LookingGlassAddon.libpath], stdout=logfile)
+				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
 			logfile.write("Installed: " + str(datetime.datetime.now()) + '\n')
@@ -77,42 +77,45 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			# close logfile
 			logfile.close()
 
-			try:
-
-				from .lib import pynng
-				from .lib import cbor
-
-				# all python dependencies are fulfilled
-				LookingGlassAddon.python_dependecies = True
-
-			except:
-
-				# not all python dependencies are fulfilled
-				LookingGlassAddon.python_dependecies = False
-				pass
-
 		return {'FINISHED'}
 
 # Preferences pane for this Addon in the Blender preferences
 class LookingGlassAddonPreferences(AddonPreferences):
-	bl_idname = __name__
+	bl_idname = __package__
 
 	# draw function
 	def draw(self, context):
 
 		# Notify the user and provide an option to install
 		layout = self.layout
-		row = layout.row()
+		layout.alert = True
 
 		# draw an Button for Installation of python dependencies
-		if LookingGlassAddon.python_dependecies == False:
+		if not LookingGlassAddon.check_dependecies():
 
-			row.label(text="Some Python modules are missing for AliceLG to work. Install them to the add-on path?")
 			row = layout.row()
+			row.alignment = 'EXPAND'
+			row.scale_y = 0.5
+			row.label(text="Some Python dependencies are missing for Alice/LG to work. These modules are")
+			row = layout.row(align=True)
+			row.alignment = 'EXPAND'
+			row.scale_y = 0.5
+			row.label(text="required to communicate with HoloPlay Service. If you click the button below,")
+			row = layout.row(align=True)
+			row.alignment = 'EXPAND'
+			row.scale_y = 0.5
+			row.label(text="the required modules will be installed to the addon's path. This may take a few")
+			row = layout.row(align=True)
+			row.alignment = 'EXPAND'
+			row.scale_y = 0.5
+			row.label(text="minutes, during which the Blender user interface will be unresponsive.")
+			row = layout.row(align=True)
+			row.alignment = 'EXPAND'
 			row.operator("lookingglass.install_dependencies", icon='PLUS')
 
 		else:
 
+			row = layout.row()
 			row.label(text="All required Python modules were installed.")
 			row = layout.row()
 			row.label(text="Please restart Blender to activate the changes!", icon='ERROR')
