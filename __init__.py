@@ -196,9 +196,9 @@ LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
 
 try:
 
-	# TODO: Let pylightio handle dependencies to PIL, pynng, cbor, sniffio, etc.
-	from .lib import PIL
-	LookingGlassAddonLogger.info(" [#] Imported pillow v.%s" % PIL.__version__)
+	# # TODO: Let pylightio handle dependencies to PIL, pynng, cbor, sniffio, etc.
+	# from .lib import PIL
+	# LookingGlassAddonLogger.info(" [#] Imported pillow v.%s" % PIL.__version__)
 
 	# TODO: Would be better, if from .lib import pylightio could be called,
 	#		but for some reason that does not import all modules and throws
