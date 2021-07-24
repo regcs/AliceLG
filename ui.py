@@ -735,10 +735,10 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 	# Lightfield Preview Resolution in Auto lightfield mode
-	lightfield_preview_resolution: bpy.props.EnumProperty(
-										items = [('0', 'Preview: 512 x 512', '32 views'),],
+	lightfield_preview_mode: bpy.props.EnumProperty(
+										items = [('0', 'Low-res Preview', '32 views'),],
 										default='0',
-										name="Lightfield Preview Resolution",
+										name="Lightfield Preview Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
 
@@ -751,9 +751,9 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 
-	viewport_use_lowres_preview: bpy.props.BoolProperty(
-										name="Low-resolution Preview",
-										description="If enabled, a low-resolution lightfield is rendered during scene changes (for higher render speed)",
+	viewport_use_preview_mode: bpy.props.BoolProperty(
+										name="Use Preview Mode",
+										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed)",
 										default = False,
 										)
 
@@ -1368,9 +1368,9 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			# Preview settings
 			row_output = column.row(align = True)
-			row_output.prop(context.scene.addon_settings, "lightfield_preview_resolution", text="")
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode", text="")
 			row_output.separator()
-			row_output.prop(context.scene.addon_settings, "viewport_use_lowres_preview", text="", icon='IMAGE_ZDEPTH')
+			row_output.prop(context.scene.addon_settings, "viewport_use_preview_mode", text="", icon='IMAGE_ZDEPTH')
 
 
 		# if the lightfield window is in quilt viewer mode

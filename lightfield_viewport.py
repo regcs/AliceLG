@@ -306,9 +306,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.addon_settings.viewport_manual_refresh == True):
 
-					# set to the currently chosen quality
-					self.preset = int(context.scene.addon_settings.quiltPreset)
-
  					# set to redraw
 					self.modal_redraw = True
 
@@ -341,16 +338,24 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				self.depsgraph_update_time = time.time()
 
 				# if the low quality quilt settings are inactive, but should be active
-				if self.preset < 3 and self.addon_settings.viewport_use_lowres_preview == True:
+				if self.preset < 3 and self.addon_settings.viewport_use_preview_mode == True:
 
 					# activate them
 					self.preset = 3
+
+				else:
+
+					# set to the currently chosen quality
+					self.preset = int(scene.addon_settings.quiltPreset)
 
 			# if quilt viewer is active AND an image is selected
 			elif int(self.addon_settings.renderMode) == 1 and scene.addon_settings.quiltImage != None:
 
 				# set status variable
 				changed = False
+
+				# set to the currently chosen quality
+				self.preset = int(scene.addon_settings.quiltPreset)
 
 				# go through the updates
 				for DepsgraphUpdate in depsgraph.updates.values():
