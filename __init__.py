@@ -154,8 +154,8 @@ LookingGlassAddonLogger.addHandler(logfile_handler)
 
 # ------------- LOAD INTERNAL MODULES ----------------
 # append the add-on's path to Blender's python PATH
-sys.path.append(LookingGlassAddon.path)
-sys.path.append(LookingGlassAddon.libpath)
+sys.path.insert(0, LookingGlassAddon.path)
+sys.path.insert(0, LookingGlassAddon.libpath)
 
 
 
@@ -185,7 +185,7 @@ if bpy.app.version < bl_info['blender']:
 
 # Check Add-on Dependencies
 # +++++++++++++++++++++++++++++++++++++++++++++
-# this to priduce log messages
+# this to produce log messages
 LookingGlassAddon.check_dependecies(debug=True)
 
 # Load Internal Modules

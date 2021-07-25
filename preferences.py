@@ -60,9 +60,10 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			LookingGlassAddonLogger.info("Installing missing side-packages. See '%s' for details." % (LookingGlassAddon.logpath + 'side-packages-install.log',))
 
 			# install the dependencies to the add-on's library path
-			for import_name, install_name in LookingGlassAddon.external_dependecies:
-				if not LookingGlassAddon.is_installed(import_name):
-					subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', install_name, '--target', LookingGlassAddon.libpath], stdout=logfile)
+			for module in LookingGlassAddon.external_dependecies:
+				if not LookingGlassAddon.is_installed(module):
+
+					subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', module[1], '--target', LookingGlassAddon.libpath], stdout=logfile)
 				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
 				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
 				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)

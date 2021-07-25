@@ -34,8 +34,8 @@ from bpy.types import PropertyGroup
 import numpy as np
 
 # append the add-on's path to Blender's python PATH
-sys.path.append(LookingGlassAddon.path)
-sys.path.append(LookingGlassAddon.libpath)
+sys.path.insert(0, LookingGlassAddon.path)
+sys.path.insert(0, LookingGlassAddon.libpath)
 
 # TODO: Would be better, if from .lib import pylightio could be called,
 #		but for some reason that does not import all modules and throws

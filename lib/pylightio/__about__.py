@@ -16,25 +16,17 @@
 #
 # ####################### END LICENSE BLOCK ############################
 
-# import metadata
-from .__about__ import (
-    __author__, __copyright__, __email__, __license__, __summary__, __title__,
-    __uri__, __version__
-)
-
+# package metadata
 __all__ = [
     "__title__", "__summary__", "__uri__", "__version__", "__author__",
     "__email__", "__license__", "__copyright__",
 ]
 
-# import submodules
-from pylightio.formats import *
-from pylightio.managers import *
-from pylightio.lookingglass import *
-
-# logging module
-import logging
-
-# THIS CAN BE USED TOO MUTE LIBRARY LOGGER
-# OTHERWUSE BY DEFAULT EVENTS WITH LEVEL "WARNING" AND HIGHER WILL BE PRINTED
-logging.getLogger('pyLightIO').addHandler(logging.NullHandler())
+__title__ = "pylightio"
+__summary__ = "My package is something."
+__uri__ = "https://github.com/regcs/pyLightIO"
+__version__ = "1.0.0"
+__author__ = u"Christian Stolze / regcs"
+__email__ = "-"
+__license__ = "Apache License 2.0"
+__copyright__ = "Copyright 2021 %s" % __author__

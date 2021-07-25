@@ -56,11 +56,12 @@ class LookingGlassAddon:
 	presetpath = bpy.path.abspath(path + "/presets/")
 
 	# external python dependencies of the add-on
+	# NOTE: The tuple has the form (import name, install name, install version)
 	external_dependecies = [
-							('pynng', 'pynng'),
-							('cbor', 'cbor'),
-							('PIL', 'pillow'),
-							('pylightio', 'pylightio')
+							('pynng', 'pynng', ''),
+							('cbor', 'cbor', ''),
+							('PIL', 'pillow', ''),
+							('pylightio', 'pylightio', ''),
 							]
 
 	# the pyLightIO service for display communication
@@ -86,7 +87,7 @@ class LookingGlassAddon:
 	# +++++++++++++++++++++++++++++++++++++++
 
 	# append the add-on's path to Blender's python PATH
-	sys.path.append(libpath)
+	sys.path.insert(0, libpath)
 
 
 
@@ -94,15 +95,35 @@ class LookingGlassAddon:
 	# +++++++++++++++++++++++++++++++++++++++
 	# check if the specified module can be found in the "lib" directory
 	@classmethod
-	def is_installed(cls, module_name, debug=False):
+	def is_installed(cls, module, debug=False):
 		import importlib.machinery
+		import sys
+		if sys.version_info >= (3, 8):
+		    from importlib.metadata import version
+		else:
+		    from importlib_metadata import version
+
+		# extract info
+		module_name, install_name, install_version = module
 
 		# try to find the module in the "lib" directory
 		module_spec = (importlib.machinery.PathFinder().find_spec(module_name, [cls.libpath]))
 		if module_spec:
-			if debug: LookingGlassAddonLogger.info(" [#] Found module '%s'." % module_name)
+			if install_version:
 
-			return True
+				# check if the installed module version fits
+				version_comparison = [ a >= b for a,b in zip(list(map(int, version(install_name).split('.'))), list(map(int, install_version.split('.'))))]
+
+				if all(version_comparison):
+					if debug: LookingGlassAddonLogger.info(" [#] Found module '%s'." % module_name)
+					return True
+
+				else:
+					if debug: LookingGlassAddonLogger.info(" [#] Found module '%s', but has the wrong version." % module_name)
+					return False
+			else:
+				if debug: LookingGlassAddonLogger.info(" [#] Found module '%s'." % module_name)
+				return True
 
 		if debug: LookingGlassAddonLogger.info(" [#] Could not find module '%s'." % module_name)
 		return False
@@ -115,8 +136,8 @@ class LookingGlassAddon:
 		found_all = True
 
 		# are all modules in the packages list available in the "lib" directory?
-		for import_name, install_name in cls.external_dependecies:
-			if not cls.is_installed(import_name, debug):
+		for module in cls.external_dependecies:
+			if not cls.is_installed(module, debug):
 				found_all = False
 
 		return found_all
@@ -162,8 +183,8 @@ class LookingGlassAddon:
 		''' render_mode = 0: Lightfield Viewport, render_mode = 1: Quilt Viewer, render_mode = -1: demo quilt '''
 
 		# append the add-on's path to Blender's python PATH
-		sys.path.append(LookingGlassAddon.path)
-		sys.path.append(LookingGlassAddon.libpath)
+		sys.path.insert(0, LookingGlassAddon.path)
+		sys.path.insert(0, LookingGlassAddon.libpath)
 
 		# TODO: Would be better, if from .lib import pylightio could be called,
 		#		but for some reason that does not import all modules and throws
