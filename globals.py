@@ -113,16 +113,15 @@ class LookingGlassAddon:
 
 				# check if the installed module version fits
 				version_comparison = [ a >= b for a,b in zip(list(map(int, version(install_name).split('.'))), list(map(int, install_version.split('.'))))]
-
 				if all(version_comparison):
-					if debug: LookingGlassAddonLogger.info(" [#] Found module '%s'." % module_name)
+					if debug: LookingGlassAddonLogger.info(" [#] Found module '%s' v.%s." % (module_name, version(install_name)))
 					return True
 
 				else:
-					if debug: LookingGlassAddonLogger.info(" [#] Found module '%s', but has the wrong version." % module_name)
+					if debug: LookingGlassAddonLogger.info(" [#] Found module '%s' v.%s, but require version %s." % (module_name, version(install_name), install_version))
 					return False
 			else:
-				if debug: LookingGlassAddonLogger.info(" [#] Found module '%s'." % module_name)
+				if debug: LookingGlassAddonLogger.info(" [#] Found module '%s' v.%s." % (module_name, version(install_name)))
 				return True
 
 		if debug: LookingGlassAddonLogger.info(" [#] Could not find module '%s'." % module_name)
