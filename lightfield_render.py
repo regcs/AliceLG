@@ -226,6 +226,20 @@ class RenderJob:
 				# increment the seed value only with the view number
 				self.scene.cycles.seed = self.seed + self.view
 
+		# FILEPATH
+		# ++++++++++++++++++++++
+
+		# SINGLE-CAMERA RENDERING
+		if not self.use_multiview:
+
+			# set the current quilt filepath
+			bpy.context.scene.render.filepath = self.view_filepath()
+		# SINGLE-CAMERA RENDERING
+		elif self.use_multiview:
+
+			# set the current quilt filepath
+			bpy.context.scene.render.filepath = self.quilt_filepath()
+
 	# setup the camera (system) for rendering
 	def setup_camera(self):
 
@@ -263,11 +277,6 @@ class RenderJob:
 				# originals camera data
 				self._camera_temp.append(bpy.data.objects.new(self._camera_temp_basename, self._camera_active.data.copy()))
 
-				# NOTE: It seems not to be required. Rendering still works,
-				#		which is nice, because the camera remains invisible
-				# # add this camera to the master collection of the scene
-				# self.scene.collection.objects.link(self._camera_temp)
-
 				# use this new camera for rendering
 				self._camera_active = self._camera_temp[-1]
 
@@ -276,6 +285,11 @@ class RenderJob:
 
 				# set the scenes active camera to this temporary camera
 				self.scene.camera = self._camera_active
+
+				# NOTE: It seems not to be required. Rendering still works,
+				#		which is nice, because the camera remains invisible
+				# # add this camera to the master collection of the scene
+				# self.scene.collection.objects.link(self._camera_active)
 
 
 			# CAMERA SETTINGS: APPLY POSITION AND SHIFT
@@ -310,11 +324,18 @@ class RenderJob:
 		# TODO: Needs to be implemented
 		elif self.use_multiview:
 
+			# set to view format to
+			self.scene.render.views_format = 'MULTIVIEW'
+
+			# deactivate 'left' and 'right' view
+			self.scene.render.views['left'].use = False
+			self.scene.render.views['right'].use = False
+
 			# use the camera selected by the user for the Looking Glass
 			self._camera_active = self.scene.addon_settings.lookingglassCamera
 
 			# remember the origingally active camera of the scene
-			self._camera_original = self.scene.camera
+			self._camera_original = self._camera_active
 
 			# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
 			# +++++++++++++++++++++++++++++++++++++++++++++++
@@ -344,17 +365,19 @@ class RenderJob:
 				render_view.camera_suffix = '_v' + str(view).zfill(len(str(self.total_views - 1)))
 				render_view.use = True
 
-				# NOTE: It seems not to be required. Rendering still works,
-				#		which is nice, because the camera remains invisible
-				# add this camera to the master collection of the scene
-				self.scene.collection.objects.link(self._camera_temp[-1])
-
 				# use this camera for rendering
 				self._camera_active = self._camera_temp[-1]
 
 				# apply same location and perspective like the original camera
 				self._camera_active.matrix_world = self._view_matrix.copy()
 
+				# set the scenes active camera to this temporary camera
+				self.scene.camera = self._camera_active
+
+				# NOTE: It seems not to be required. Rendering still works,
+				#		which is nice, because the camera remains invisible
+				# add this camera to the master collection of the scene
+				self.scene.collection.objects.link(self._camera_active)
 
 				# CAMERA SETTINGS: APPLY POSITION AND SHIFT
 				# +++++++++++++++++++++++++++++++++++++++++++++++
@@ -381,21 +404,59 @@ class RenderJob:
 				# modify the projection matrix, relative to the camera size
 				self._camera_active.data.shift_x = self._camera_original.data.shift_x + 0.5 * offset / cameraSize
 
-			# set the scenes active camera to this temporary camera
-			self.scene.camera = self._camera_temp[0]
 
 	# assemble quilt
 	def assemble_quilt(self):
 
-		LookingGlassAddonLogger.info("Assembling the quilt from the rendered views ...")
+		LookingGlassAddonLogger.info("Assembling the quilt from the rendered views:")
 
+		# GET THE PIXEL DATA OF THE RENDERED VIEWS
+		# ++++++++++++++++++++++++++++++++++++++++++++
+		# iterate through all views
+		for view in range(0, self.total_views):
+
+			# if the file exists
+			if os.path.exists(self.view_filepath(view)):
+
+				LookingGlassAddonLogger.debug(" [#] Loading file for view %i: %s" % (view, self.view_filepath(view)))
+
+				# load the view image
+				self._view_image = bpy.data.images.load(self.view_filepath(view))
+
+				# store the pixel data in an numpy array
+				# NOTE: we use foreach_get, since this is significantly faster
+				tmp_pixels = np.empty(len(self._view_image.pixels), np.float32)
+				self._view_image.pixels.foreach_get(tmp_pixels)
+
+				# append the pixel data to the list of views
+				self._view_images_pixels.append(tmp_pixels)
+
+				# delete the Blender image of this view
+				bpy.data.images.remove(self._view_image)
+
+			# if the file does not exist
+			else:
+
+				LookingGlassAddonLogger.debug(" [#] Could not find file for view %i: %s" % (view, self.view_filepath(view)))
+				LookingGlassAddonLogger.debug(" [#] Cancel render job continuation.")
+
+				# cancel the operator
+				self._state = "CANCEL_RENDER"
+
+				return None
+
+		LookingGlassAddonLogger.info(" [#] Loaded all views into memory.")
+
+
+		# ASSEMBLE THE QUILT
+		# ++++++++++++++++++++++++++++++++++++++++++++
 		# TODO: Would be good to implement the quilt assembly via pyLightIO
 		#
 		# then assemble the quilt from the views
 		verticalStack = []
 		horizontalStack = []
-		for row in range(0, self.rows, 1):
-			for column in range(0, self.columns, 1):
+		for row in range(0, self.rows):
+			for column in range(0, self.columns):
 
 				# get pixel data and reshape into a reasonable format for stacking
 				viewPixels = self._view_images_pixels[row * self.columns + column]
@@ -416,6 +477,9 @@ class RenderJob:
 		# reshape the pixel data of all images into the quilt shape
 		quiltPixels = np.vstack(verticalStack.copy())
 		quiltPixels = np.reshape(quiltPixels, (self.columns * self.rows * (self.scene.render.resolution_x * self.scene.render.resolution_y * 4)))
+
+		# log info
+		LookingGlassAddonLogger.info(" [#] Assembled quilt in memory.")
 
 		# copy the viewfile
 		shutil.copy(self.view_filepath(), self.quilt_filepath())
@@ -457,6 +521,11 @@ class RenderJob:
 		# give the result image the temporary quilt file name
 		self._quilt_image.name = self.file_temp_name
 
+		# log info
+		LookingGlassAddonLogger.info(" [#] Done.")
+
+		# return the quilt image
+		return self._quilt_image
 
 
 	# delete the files
@@ -492,52 +561,54 @@ class RenderJob:
 		# ++++++++++++++++++++++++++++++++++
 		if not self.use_multiview:
 
+			# restore the original active camera
+			self.scene.camera = self._camera_original
+
 			# delete the temporarily created camera data block
 			if bpy.data.objects.find(self._camera_temp_basename) != -1:
 
 				LookingGlassAddonLogger.info(" [#] Delete temporary camera: %s" % (bpy.data.objects[self._camera_temp_basename]))
 
-				# clear the list
-				self._camera_temp.clear()
-
 				# remove the data blocks
 				bpy.data.cameras.remove(bpy.data.objects[self._camera_temp_basename].data, do_unlink=True, do_id_user=True, do_ui_user=True)
 
-			LookingGlassAddonLogger.info(" [#] Setting scene camera to the original camera: %s" % (self._camera_original))
+				# clear the list
+				self._camera_temp.clear()
 
-			# restore the original active camera
-			self.scene.camera = self._camera_original
+			LookingGlassAddonLogger.info(" [#] Setting scene camera to the original camera: %s" % (self._camera_original))
 
 		# MULTIVIEW CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
 		# TODO: Needs to be implemented
 		elif self.use_multiview:
 
-			# set to view format to
-			self.scene.render.views_format = 'MULTIVIEW'
-
-			# deactivate 'left' and 'right' view
-			self.scene.render.views['left'].use = True
-			self.scene.render.views['right'].use = True
+			# restore the original active camera
+			self.scene.camera = self._camera_original
 
 			# loop through all views
 			for view, camera in enumerate(self._camera_temp):
 
 				# delete the temporarily created camera data block
-				if bpy.data.objects.find(camera.name) != -1:
-					LookingGlassAddonLogger.info(" [#] Delete temporary camera: %s" % (bpy.data.objects[camera.name]))
-					bpy.data.cameras.remove(camera.data, do_unlink=True, do_id_user=True, do_ui_user=True)
+				LookingGlassAddonLogger.info(" [#] Delete temporary camera: %s" % (camera))
+				bpy.data.cameras.remove(camera.data, do_unlink=True, do_id_user=True, do_ui_user=True)
 
 				# remove the corresponding temporary multiview data block
 				if self.scene.render.views.find(self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1)))) != -1:
 					LookingGlassAddonLogger.info(" [#] Delete render view: %s" % (self.scene.render.views[self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1)))]))
 					self.scene.render.views.remove(self.scene.render.views[self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1)))])
 
+			# clear the list
+			self._camera_temp.clear()
+
 			LookingGlassAddonLogger.info(" [#] Setting scene camera to the original camera: %s" % (self._camera_original))
+			LookingGlassAddonLogger.info(" [#] Remaining Cameras: %i" % len(self._camera_temp))
 
-			# restore the original active camera
-			self.scene.camera = self._camera_original
+			# set to view format to
+			self.scene.render.views_format = 'STEREO_3D'
 
+			# deactivate 'left' and 'right' view
+			self.scene.render.views['left'].use = True
+			self.scene.render.views['right'].use = True
 
 	# CALLBACK FUNCTIONS / APPLICATION HANDLERS
 	# +++++++++++++++++++++++++++++++++++++++++++++++
@@ -550,69 +621,6 @@ class RenderJob:
 			self._state = "INIT_RENDER"
 
 			LookingGlassAddonLogger.info("Rendering job initialized. (lockfile: %s, init: %s)" % (self._use_lockfile, self.init))
-
-			# GET THE PIXEL DATA OF THE RENDERED VIEWS
-			# ++++++++++++++++++++++++++++++++++++++++++++
-			# if the lockfile shall be used AND this is the first render
-			if (self._use_lockfile and self.init):
-
-				# set current frame
-				frame = self.frame
-
-				LookingGlassAddonLogger.info("Checking view files for job continuation after crash ...")
-
-				# iterate through all views
-				for view in range(0, self.view):
-
-					# if the file exists
-					if os.path.exists(self.view_filepath(view)):
-
-						LookingGlassAddonLogger.info(" [#] Found file for view %i: %s" % (view, self.view_filepath(view)))
-
-						# load the view image
-						self._view_image = bpy.data.images.load(self.view_filepath(view))
-
-						# store the pixel data in an numpy array
-						# NOTE: we use foreach_get, since this is significantly faster
-						tmp_pixels = np.empty(len(self._view_image.pixels), np.float32)
-						self._view_image.pixels.foreach_get(tmp_pixels)
-
-						# append the pixel data to the list of views
-						self._view_images_pixels.append(tmp_pixels)
-
-						# if this was the last view
-						if self.view == (self.total_views - 1):
-
-							# NOTE: Creating a new image via the dedicated operators and methods
-							# 		didn't apply the correct image formats and settings
-							#		and therefore, we use the created image
-							self._view_image.scale(self.scene.render.resolution_x * self.columns, self.scene.render.resolution_y * self.rows)
-
-						else:
-
-							# delete the Blender image of this view
-							bpy.data.images.remove(self._view_image)
-
-					# if the file does not exist
-					else:
-
-						LookingGlassAddonLogger.info(" [#] Could not find file for view %i: %s" % (view, self.view_filepath(view)))
-						LookingGlassAddonLogger.info(" [#] Cancel render job continuation.")
-
-						# cancel the operator
-						self._state = "CANCEL_RENDER"
-
-						# force the operator to keep the view Files
-						self.file_force_keep = True
-
-						# notify user
-						self.cancel_sign = "ERROR"
-						self.cancel_message = "Render job can not be continued. Missing view file(s) of the previously failed render job."
-
-						return
-
-				# reset status variable
-				self._use_lockfile = False
 
 
 	# function that is called before rendering starts
@@ -646,26 +654,9 @@ class RenderJob:
 
 			LookingGlassAddonLogger.info("Saving view file: %s" % self.view_filepath())
 
-			# STORE THE PIXEL DATA OF THE RENDERED IMAGE
-			# ++++++++++++++++++++++++++++++++++++++++++++
 			# save the rendered image in a file
-			bpy.data.images["Render Result"].save_render(filepath=self.view_filepath(), scene=self.scene)
+			#bpy.data.images["Render Result"].save_render(filepath=self.view_filepath(), scene=self.scene)
 
-			# load the view image
-			self._view_image = bpy.data.images.load(filepath=self.view_filepath())
-
-			# TODO: Would be good to implement the quilt assembly via pyLightIO
-			#
-			# store the pixel data in an numpy array
-			# NOTE: we use foreach_get, since this is significantly faster
-			tmp_pixels = np.empty(len(self._view_image.pixels), np.float32)
-			self._view_image.pixels.foreach_get(tmp_pixels)
-
-			# append the pixel data to the list of views
-			self._view_images_pixels.append(tmp_pixels)
-
-			# delete the Blender image of this view
-			bpy.data.images.remove(self._view_image)
 
 	# function that is called when the renderjob is completed
 	def completed_render(self, Scene, depsgraph):
@@ -1360,67 +1351,37 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# set the multiview mode of the scene
 		self.render_settings.job.scene.render.use_multiview = self.use_multiview
-		if self.use_multiview:
 
-			# set to view format to
-			self.render_settings.job.scene.render.views_format = 'MULTIVIEW'
-
-			# deactivate 'left' and 'right' view
-			self.render_settings.job.scene.render.views['left'].use = False
-			self.render_settings.job.scene.render.views['right'].use = False
-
-		# SINGLE CAMERA RENDERING
+		# HANDLERS FOR THE RENDERING PROCESS
 		# +++++++++++++++++++++++++++++++++++
-		if not self.use_multiview:
+		bpy.app.handlers.render_init.append(self.render_settings.job.init_render)
+		bpy.app.handlers.render_pre.append(self.render_settings.job.pre_render)
+		bpy.app.handlers.render_post.append(self.render_settings.job.post_render)
+		bpy.app.handlers.render_cancel.append(self.render_settings.job.cancel_render)
+		bpy.app.handlers.render_complete.append(self.render_settings.job.completed_render)
 
-			# HANDLERS FOR THE RENDERING PROCESS
-			# +++++++++++++++++++++++++++++++++++
-			bpy.app.handlers.render_init.append(self.render_settings.job.init_render)
-			bpy.app.handlers.render_pre.append(self.render_settings.job.pre_render)
-			bpy.app.handlers.render_post.append(self.render_settings.job.post_render)
-			bpy.app.handlers.render_cancel.append(self.render_settings.job.cancel_render)
-			bpy.app.handlers.render_complete.append(self.render_settings.job.completed_render)
+		# HANDLER FOR EVENT TIMER
+		# ++++++++++++++++++++++++++++++++++
+		# Create timer event that runs every 1 ms to check the rendering process
+		self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
 
-			# HANDLER FOR EVENT TIMER
-			# ++++++++++++++++++++++++++++++++++
-			# Create timer event that runs every 1 ms to check the rendering process
-			self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
+		# START THE MODAL OPERATOR
+		# ++++++++++++++++++++++++++++++++++
+		# add the modal operator handler
+		context.window_manager.modal_handler_add(self)
 
-			# START THE MODAL OPERATOR
-			# ++++++++++++++++++++++++++++++++++
-			# add the modal operator handler
-			context.window_manager.modal_handler_add(self)
+		# SET STATUS VARIABLES FOR PROGRESSBAR
+		# ++++++++++++++++++++++++++++++++++
+		LookingGlassAddon.RenderInvoked = True
+		LookingGlassAddon.RenderAnimation = self.render_settings.job.animation
 
-			# SET STATUS VARIABLES FOR PROGRESSBAR
-			# ++++++++++++++++++++++++++++++++++
-			LookingGlassAddon.RenderInvoked = True
-			LookingGlassAddon.RenderAnimation = self.render_settings.job.animation
-
-			# keep the modal operator running
-			return {'RUNNING_MODAL'}
-
-		# MULTIVIEW CAMERA RENDERING
-		# +++++++++++++++++++++++++++++++++++
-		elif self.use_multiview:
-
-			# setup camera for rendering
-			self.render_settings.job.setup_camera()
-
-			# start rendering
-			# NOTE: write_still is only 'true', if a filename is specified in the
-			#		outpur path by the user
-			bpy.ops.render.render(animation=self.render_settings.job.animation, write_still = (not self.render_settings.job.file_use_temp))
-
-			# clean up the cameras
-			self.render_settings.job.clean_up()
-
-			# finish the operator
-			return {'FINISHED'}
+		# keep the modal operator running
+		return {'RUNNING_MODAL'}
 
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		LookingGlassAddonLogger.debug("Current render job state: %s" % self.render_settings.job._state)
+		#LookingGlassAddonLogger.debug("Current render job state: %s" % self.render_settings.job._state)
 
 		# if the ESC key was pressed
 		if event.type == 'ESC':
@@ -1449,29 +1410,32 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# invoke the new render job
 				self.render_settings.job.invoke()
 
-				# setup camera for rendering
-				self.render_settings.job.setup_camera()
-
 				# start rendering
  				# NOTE: Not using write_still because we save the images manually
-				result = bpy.ops.render.render("INVOKE_DEFAULT", animation=False)
+				result = bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True)
 				if result != {'CANCELLED'}:
 
  					# set render job state to IDLE
-					if self.render_settings.job._state != "CANCEL_RENDER": self.render_settings.job._state = "IDLE"
+					if self.render_settings.job._state != "CANCEL_RENDER":
+						self.render_settings.job._state = "IDLE"
 
-					# Some status infos for the user
-					# if a single frame shall be rendered
-					if self.render_settings.job.animation == False:
+						# setup camera for rendering
+						self.render_settings.job.setup_camera()
 
-						# notify user
-						self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " ..")
+						# Some status infos for the user if this is not a multiview render:
+						if not self.use_multiview:
 
-					# if an animation shall be rendered
-					elif self.render_settings.job.animation == True:
+							# if a single frame shall be rendered
+							if self.render_settings.job.animation == False:
 
-						# notify user
-						self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " of frame " + str(self.render_settings.job.frame) +  " ..")
+								# notify user
+								self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " ..")
+
+							# if an animation shall be rendered
+							elif self.render_settings.job.animation == True:
+
+								# notify user
+								self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " of frame " + str(self.render_settings.job.frame) +  " ..")
 
 				# pass event through
 				return {'PASS_THROUGH'}
@@ -1486,12 +1450,23 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
-				# if this was the last view
-				if self.render_settings.job.view == (self.render_settings.job.total_views - 1):
+				# if this was the last view OR a multiview render
+				if self.render_settings.job.view == (self.render_settings.job.total_views - 1) or self.use_multiview:
 					start = time.time()
 
 					# assemble the quilt from the view data
-					self.render_settings.job.assemble_quilt()
+					if not self.render_settings.job.assemble_quilt():
+
+						# cancel the operator
+						self._state = "CANCEL_RENDER"
+
+						# force the operator to keep the view Files
+						self.file_force_keep = True
+
+						# notify user
+						self.cancel_sign = "ERROR"
+						self.cancel_message = "Render job can not be continued. Missing view file(s) of the previously failed render job."
+
 
 					# # QUILT DISPLAY AS RENDER RESULT
 					# # ++++++++++++++++++++++++++++++++++++++++++++
@@ -1541,8 +1516,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# if a single frame shall be rendered
 				if self.render_settings.job.animation == False:
 
-					# if this was not the last view
-					if self.render_settings.job.view < (self.render_settings.job.total_views - 1):
+					# if this was not the last view AND the multiview mechanism is NOT used
+					if self.render_settings.job.view < (self.render_settings.job.total_views - 1) and not self.use_multiview:
 
 						# increase view count
 						self.render_settings.job.view += 1
@@ -1560,11 +1535,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.cancel_sign = "INFO"
 						self.cancel_message = "Complete quilt rendered."
 
+
 				# if an animation shall be rendered
 				elif self.render_settings.job.animation == True:
 
-					# if this was not the last view
-					if self.render_settings.job.view < (self.render_settings.job.total_views - 1):
+					# if this was not the last view AND the multiview mechanism is NOT used
+					if self.render_settings.job.view < (self.render_settings.job.total_views - 1) and not self.use_multiview:
 
 						# increase view count
 						self.render_settings.job.view += 1
@@ -1572,8 +1548,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						# reset the render job state to IDLE
 						self.render_settings.job._state = "INVOKE_RENDER"
 
-					# if this was the last view
-					elif self.render_settings.job.view == (self.render_settings.job.total_views - 1):
+					# if this was the last view OR the multiview mechanism is used
+					elif self.render_settings.job.view == (self.render_settings.job.total_views - 1) or self.use_multiview:
 
 						# but if this was not the last frame
 						if self.render_settings.job.frame < self.render_settings.job.scene.frame_end:
