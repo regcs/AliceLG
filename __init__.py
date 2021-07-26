@@ -285,9 +285,11 @@ def register():
 	# if all dependencies are satisfied
 	if LookingGlassAddon.check_dependecies() == False:
 
-		# register the preferences
+		# register the preferences operators
 		bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
-		bpy.utils.register_class(LookingGlassAddonPreferences)
+
+		# register the preferences panels
+		bpy.utils.register_class(LOOKINGGLASS_PT_install_dependencies)
 
 		# log info
 		LookingGlassAddonLogger.info(" [#] Missing dependencies. Please install them in the preference pane.")
@@ -299,8 +301,7 @@ def register():
 
 	else:
 
-		# register all classes of the addon
-		bpy.utils.register_class(LookingGlassAddonPreferences)
+		# register all basic operators of the addon
 		bpy.utils.register_class(LookingGlassAddonSettings)
 		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
 		bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
@@ -316,6 +317,10 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
 
 		# UI elements
+		# add-on preferences
+		bpy.utils.register_class(LOOKINGGLASS_PT_install_dependencies)
+		bpy.utils.register_class(LOOKINGGLASS_PT_render_settings)
+		# add-on panels
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
@@ -398,7 +403,7 @@ def unregister():
 	if LookingGlassAddon.check_dependecies() == False:
 
 		# unregister only the preferences
-		if hasattr(bpy.types, "LookingGlassAddonPreferences"): bpy.utils.unregister_class(LookingGlassAddonPreferences)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
 
 		# remove initialization helper app handler
@@ -416,7 +421,7 @@ def unregister():
 		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
 
 		# unregister all classes of the addon
-		if hasattr(bpy.types, "LookingGlassAddonPreferences"): bpy.utils.unregister_class(LookingGlassAddonPreferences)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
 		if hasattr(bpy.types, "LookingGlassAddonSettings"): bpy.utils.unregister_class(LookingGlassAddonSettings)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_display_list"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)

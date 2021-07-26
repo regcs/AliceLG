@@ -525,7 +525,7 @@ class RenderJob:
 
 				# delete the temporarily created camera data block
 				if bpy.data.objects.find(camera.name) != -1:
-					LookingGlassAddonLogger.info(" [#] Delete temporary camera: %s" % (bpy.data.objects[self._camera_temp_basename]))
+					LookingGlassAddonLogger.info(" [#] Delete temporary camera: %s" % (bpy.data.objects[camera.name]))
 					bpy.data.cameras.remove(camera.data, do_unlink=True, do_id_user=True, do_ui_user=True)
 
 				# remove the corresponding temporary multiview data block

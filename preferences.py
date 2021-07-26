@@ -81,7 +81,7 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 		return {'FINISHED'}
 
 # Preferences pane for this Addon in the Blender preferences
-class LookingGlassAddonPreferences(AddonPreferences):
+class LOOKINGGLASS_PT_install_dependencies(AddonPreferences):
 	bl_idname = __package__
 
 	# draw function
@@ -120,3 +120,23 @@ class LookingGlassAddonPreferences(AddonPreferences):
 			row.label(text="All required Python modules were installed.")
 			row = layout.row()
 			row.label(text="Please restart Blender to activate the changes!", icon='ERROR')
+
+
+# Preferences pane for this Addon in the Blender preferences
+class LOOKINGGLASS_PT_render_settings(AddonPreferences):
+	bl_idname = __package__
+	bl_label = "Render Settings" # display name in the interface.
+
+	# render mode
+	render_mode: bpy.props.EnumProperty(
+									items = [('0', 'Single Camera Mode', 'The quilt is rendered using a single moving camera.'),
+											 ('1', 'Multiview Camera Mode', 'The quilt is rendered using Blenders multiview mechanism.')],
+									default='0',
+									name="Render Mode",
+									)
+	# draw function
+	def draw(self, context):
+
+		layout = self.layout
+		row_render_mode = layout.row()
+		row_render_mode.prop(self, "render_mode")
