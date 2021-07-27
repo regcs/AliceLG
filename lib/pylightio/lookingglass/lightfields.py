@@ -52,12 +52,12 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
         __dict = {
 
             # first gen devices
-            1: {'description': "2k Quilt, 32 Views", 'quilt_width': 2048, 'quilt_height': 2048, 'view_width': 512, 'view_height': 256, 'columns': 4, 'rows': 8, 'total_views': 32 },
-            2: {'description': "4k Quilt, 45 Views", 'quilt_width': 4096, 'quilt_height': 4096, 'view_width': 819, 'view_height': 455, 'columns': 5, 'rows': 9, 'total_views': 45 },
-            3: {'description': "8k Quilt, 45 Views", 'quilt_width': 8192, 'quilt_height': 8192, 'view_width': 1638, 'view_height': 910, 'columns': 5, 'rows': 9, 'total_views': 45 },
+            1: {'description': "2k Quilt, 32 Views", 'quilt_width': 2048, 'quilt_height': 2048, 'view_width': 512, 'view_height': 256, 'columns': 4, 'rows': 8, 'total_views': 32, 'hidden': False },
+            2: {'description': "4k Quilt, 45 Views", 'quilt_width': 4096, 'quilt_height': 4096, 'view_width': 819, 'view_height': 455, 'columns': 5, 'rows': 9, 'total_views': 45, 'hidden': False },
+            3: {'description': "8k Quilt, 45 Views", 'quilt_width': 8192, 'quilt_height': 8192, 'view_width': 1638, 'view_height': 910, 'columns': 5, 'rows': 9, 'total_views': 45, 'hidden': False },
 
             #Looking Glass Portrait
-            4: {'description': "Portrait, 48 Views", 'quilt_width': 3360, 'quilt_height': 3360, 'view_width': 420, 'view_height': 560, 'columns': 8, 'rows': 6, 'total_views': 48 },
+            4: {'description': "Portrait, 48 Views", 'quilt_width': 3360, 'quilt_height': 3360, 'view_width': 420, 'view_height': 560, 'columns': 8, 'rows': 6, 'total_views': 48, 'hidden': False },
 
         }
 
@@ -82,6 +82,23 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
         def set(cls, id, values):
             ''' modify an existing format by passing a dict '''
             if id in cls.__dict.keys(): cls.__dict[id] = values
+
+        @classmethod
+        def count(cls):
+            ''' get number of formats '''
+            if id in cls.__dict.keys(): return len(cls.__dict)
+
+        # NOTE: the following is useful for applications where the formats are
+        #       exposed in an UI to the user, but if not all formats shall be exposed
+        @classmethod
+        def hide(cls, id, value):
+            ''' set the 'hidden' flag on this format '''
+            if id in cls.__dict.keys(): cls.__dict[id]['hidden'] = value
+
+        @classmethod
+        def is_hidden(cls, id):
+            ''' returns True if the quilt format is a private one '''
+            if id in cls.__dict.keys(): return cls.__dict[id]['hidden']
 
 
     # INSTANCE METHODS - IMPLEMENTED BY SUBCLASS

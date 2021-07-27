@@ -130,8 +130,11 @@ class LookingGlassAddonUI:
 		# then for each display in the device list
 		for idx, preset in pylio.LookingGlassQuilt.formats.get().items():
 
-			# add an entry in the item list
-			items.append((str(idx), preset['description'], 'Use this Looking Glass for lightfield rendering.'))
+			# if this preset is not marked as hidden
+			if not pylio.LookingGlassQuilt.formats.is_hidden(id=idx):
+
+				# add an entry in the item list
+				items.append((str(idx), preset['description'], 'Use this Looking Glass for lightfield rendering.'))
 
 
 		# return the item list
@@ -736,7 +739,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	# Lightfield Preview Resolution in Auto lightfield mode
 	lightfield_preview_mode: bpy.props.EnumProperty(
-										items = [('0', 'Low-res Preview', '32 views'),],
+										items = [('0', 'Low-resolution Preview', '32 views'),],
 										default='0',
 										name="Lightfield Preview Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,

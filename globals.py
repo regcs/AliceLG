@@ -161,6 +161,17 @@ class LookingGlassAddon:
 				with open(cls.presetpath + file_name) as preset_file:
 					pylio.LookingGlassQuilt.formats.add(json.load(preset_file))
 
+		# Low-resolution preview for faster live-view rendering
+		# NOTE: Some code parts assume, that this is the last preset in the list.
+		pylio.LookingGlassQuilt.formats.add({'description': "Low-resolution Preview", 'quilt_width': 1024, 'quilt_height': 1024, 'view_width': 256, 'view_height': 128, 'columns': 4, 'rows': 8, 'total_views': 32, 'hidden': True})
+
+
+	# GLOBAL LIGHTFIELD VIEWPORT DATA
+	# +++++++++++++++++++++++++++++++++++++++
+	# the timeout value that determines when after the last depsgraph update
+	# the lightfield window is updated with the selected higher resolution
+	# quilt preset
+	low_resolution_preview_timout = 0.4
 
 
 	# GLOBAL QUILT VIEWER DATA

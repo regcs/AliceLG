@@ -6,5 +6,6 @@
   "quilt_height": 4095,
   "columns": 13,
   "rows": 7,
-  "total_views": 91
+  "total_views": 91,
+  "hidden": false
 }

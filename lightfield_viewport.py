@@ -76,7 +76,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 	# DRAWING OPERATION VARIABLES
 	modal_redraw = True
-	depsgraph_update_time = 0.000
+	depsgraph_update_time = 0
 
 	# DEBUGING VARIABLES
 	start_multi_view = 0
@@ -299,21 +299,24 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		if event.type == 'TIMER':
 
 			# if something has changed OR the user requested a manual redrawing
-			if self.modal_redraw == True or (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.addon_settings.viewport_manual_refresh == True):
+			if self.modal_redraw or (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.scene.addon_settings.viewport_manual_refresh == True)):
 
 				# update the viewport settings
 				self.updateViewportSettings(context)
 
-				if (self.depsgraph_update_time != 0.000 and time.time() - self.depsgraph_update_time > 0.5) or (context.scene.addon_settings.viewport_manual_refresh == True):
+				if (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.scene.addon_settings.viewport_manual_refresh == True)):
 
- 					# set to redraw
-					self.modal_redraw = True
-
-					# reset time variable
-					self.depsgraph_update_time = 0.000
+					# reset time of last depsgraph update
+					self.depsgraph_update_time = 0
 
 					# reset status variable for manual refreshes
 					context.scene.addon_settings.viewport_manual_refresh = False
+
+					# set to the currently chosen quality
+					self.preset = int(context.scene.addon_settings.quiltPreset)
+
+ 					# set to redraw
+					self.modal_redraw = True
 
 				# running modal
 				return {'RUNNING_MODAL'}
@@ -329,7 +332,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 			# if automatic live view is activated AND something in the scene has changed
 			if (int(self.addon_settings.renderMode) == 0 and int(self.addon_settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
-				#print("DEPSGRAPH UPDATE: ", depsgraph.updates.values())
+				# print("DEPSGRAPH UPDATE: ", depsgraph.updates.values())
 
 				# invoke an update of the Looking Glass viewport
 				self.modal_redraw = True
@@ -337,11 +340,11 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# remember time of last depsgraph update
 				self.depsgraph_update_time = time.time()
 
-				# if the low quality quilt settings are inactive, but should be active
-				if self.preset < 3 and self.addon_settings.viewport_use_preview_mode == True:
+				# if the low quality quilt settings are activated
+				if self.addon_settings.viewport_use_preview_mode == True:
 
 					# activate them
-					self.preset = 3
+					self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
 
 				else:
 
@@ -422,7 +425,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 		else:
 
-			LookingGlassAddonLogger.warnin("Could not calculate the matrices for the lightfield viewport. '%s' is not a valid camera." % camera)
+			LookingGlassAddonLogger.warning("Could not calculate the matrices for the lightfield viewport. '%s' is not a valid camera." % camera)
 
 		# return the projection matrix
 		return viewMatrix, projectionMatrix
@@ -573,7 +576,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def render_view(self, context):
 
 		# if the quilt must be redrawn
-		if self.modal_redraw == True and (self.addon_settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
+		if self.modal_redraw and (self.addon_settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
 
 			# UPDATE QUILT SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
