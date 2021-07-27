@@ -32,7 +32,6 @@ import sys, os, platform, shutil, json
 import numpy as np
 from math import *
 from mathutils import *
-from pprint import pprint
 
 # append the add-on's path to Blender's python PATH
 sys.path.insert(0, LookingGlassAddon.path)
@@ -52,7 +51,7 @@ LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 # internal rendering jobs
 class RenderJob:
 
-	def __init__(self, scene, animation, use_lockfile, use_multiview = False):
+	def __init__(self, scene, animation, use_lockfile, use_multiview):
 
 		# INITIALIZE ATTRIBUTES
 		# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -190,16 +189,20 @@ class RenderJob:
 	# invoke a new render job
 	def invoke(self):
 
-		# log debug info
-		LookingGlassAddonLogger.debug("Invoking new render job.")
+		# if this is the first view of this render job
+		# NOTE: - we do it this way in case the camera is animated and its position changes each frame
+		if self.init:
 
-		# FRAME AND VIEW
-		# ++++++++++++++++++++++
-		# set the current frame to be rendered
-		self.scene.frame_set(self.frame, subframe=self.subframe)
+			# log debug info
+			LookingGlassAddonLogger.debug("Invoking new render job.")
 
-		# get the subframe, that will be rendered
-		self.subframe = self.scene.frame_subframe
+			# FRAME AND VIEW
+			# ++++++++++++++++++++++
+			# set the current frame to be rendered
+			self.scene.frame_set(self.frame, subframe=self.subframe)
+
+			# get the subframe, that will be rendered
+			self.subframe = self.scene.frame_subframe
 
 		# CYCLES: RANDOMIZE SEED
 		# ++++++++++++++++++++++
@@ -234,11 +237,20 @@ class RenderJob:
 
 			# set the current quilt filepath
 			bpy.context.scene.render.filepath = self.view_filepath()
+
 		# SINGLE-CAMERA RENDERING
 		elif self.use_multiview:
 
 			# set the current quilt filepath
 			bpy.context.scene.render.filepath = self.quilt_filepath()
+
+
+		# CAMERA SETUP
+		# ++++++++++++++++++++++
+		self.setup_camera()
+
+		# update status variable
+		self.init = False
 
 	# setup the camera (system) for rendering
 	def setup_camera(self):
@@ -274,8 +286,8 @@ class RenderJob:
 				# COPY CAMERA
 				# +++++++++++++++++++++++++++++++++++++++++++++++
 				# create a new, temporary camera using a copy of the
-				# originals camera data
-				self._camera_temp.append(bpy.data.objects.new(self._camera_temp_basename, self._camera_active.data.copy()))
+				# originals camera data, if it not already exists
+				if not self._camera_temp: self._camera_temp.append(bpy.data.objects.new(self._camera_temp_basename, self._camera_active.data.copy()))
 
 				# use this new camera for rendering
 				self._camera_active = self._camera_temp[-1]
@@ -321,89 +333,95 @@ class RenderJob:
 
 		# MULTIVIEW CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
-		# TODO: Needs to be implemented
 		elif self.use_multiview:
 
-			# set to view format to
-			self.scene.render.views_format = 'MULTIVIEW'
+			# if this is the first view of this render job
+			# NOTE: - we do it this way in case the camera is animated and its position changes each frame
+			if self.init:
 
-			# deactivate 'left' and 'right' view
-			self.scene.render.views['left'].use = False
-			self.scene.render.views['right'].use = False
+				# set to view format to
+				self.scene.render.views_format = 'MULTIVIEW'
 
-			# use the camera selected by the user for the Looking Glass
-			self._camera_active = self.scene.addon_settings.lookingglassCamera
+				# deactivate 'left' and 'right' view
+				self.scene.render.views['left'].use = False
+				self.scene.render.views['right'].use = False
 
-			# remember the origingally active camera of the scene
-			self._camera_original = self._camera_active
+				# use the camera selected by the user for the Looking Glass
+				self._camera_active = self.scene.addon_settings.lookingglassCamera
 
-			# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
-			# +++++++++++++++++++++++++++++++++++++++++++++++
+				# remember the origingally active camera of the scene
+				self._camera_original = self._camera_active
 
-			# get camera's modelview matrix
-			self._view_matrix = self._camera_active.matrix_world.copy()
-
-			# correct for the camera scaling
-			self._view_matrix = self._view_matrix @ Matrix.Scale(1/self._camera_active.scale.x, 4, (1, 0, 0))
-			self._view_matrix = self._view_matrix @ Matrix.Scale(1/self._camera_active.scale.y, 4, (0, 1, 0))
-			self._view_matrix = self._view_matrix @ Matrix.Scale(1/self._camera_active.scale.z, 4, (0, 0, 1))
-
-			# calculate the inverted view matrix because this is what the draw_view_3D function requires
-			self._view_matrix_inv = self._view_matrix.inverted_safe()
-
-			# loop through all views
-			for view in range(0, self.total_views):
-
-				# COPY CAMERA
+				# CAMERA SETTINGS: GET VIEW & PROJECTION MATRICES
 				# +++++++++++++++++++++++++++++++++++++++++++++++
-				# create a new, temporary camera using a copy of the
-				# original camera
-				self._camera_temp.append(bpy.data.objects.new(self._camera_temp_basename + "_v" + str(view).zfill(len(str(self.total_views - 1))), self._camera_active.data.copy()))
 
-				#* set up view
-				render_view = self.scene.render.views.new(self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1))))
-				render_view.camera_suffix = '_v' + str(view).zfill(len(str(self.total_views - 1)))
-				render_view.use = True
+				# get camera's modelview matrix
+				self._view_matrix = self._camera_active.matrix_world.copy()
 
-				# use this camera for rendering
-				self._camera_active = self._camera_temp[-1]
+				# correct for the camera scaling
+				self._view_matrix = self._view_matrix @ Matrix.Scale(1/self._camera_active.scale.x, 4, (1, 0, 0))
+				self._view_matrix = self._view_matrix @ Matrix.Scale(1/self._camera_active.scale.y, 4, (0, 1, 0))
+				self._view_matrix = self._view_matrix @ Matrix.Scale(1/self._camera_active.scale.z, 4, (0, 0, 1))
 
-				# apply same location and perspective like the original camera
-				self._camera_active.matrix_world = self._view_matrix.copy()
+				# calculate the inverted view matrix because this is what the draw_view_3D function requires
+				self._view_matrix_inv = self._view_matrix.inverted_safe()
 
-				# set the scenes active camera to this temporary camera
-				self.scene.camera = self._camera_active
+				# loop through all views
+				for view in range(0, self.total_views):
 
-				# NOTE: It seems not to be required. Rendering still works,
-				#		which is nice, because the camera remains invisible
-				# add this camera to the master collection of the scene
-				self.scene.collection.objects.link(self._camera_active)
+					# COPY CAMERA
+					# +++++++++++++++++++++++++++++++++++++++++++++++
 
-				# CAMERA SETTINGS: APPLY POSITION AND SHIFT
-				# +++++++++++++++++++++++++++++++++++++++++++++++
-				# adjust the camera settings to the correct view point
-				# The field of view set by the camera
-				# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
-				fov = self._camera_active.data.angle
+					# if the cameras not already exist
+					if not len(self._camera_temp) == self.total_views:
 
-				# calculate cameraSize from its distance to the focal plane and the FOV
-				cameraDistance = self.scene.addon_settings.focalPlane
-				cameraSize = cameraDistance * tan(fov / 2)
+						# create a new, temporary camera using a copy of the original camera
+						self._camera_temp.append(bpy.data.objects.new(self._camera_temp_basename + "_v" + str(view).zfill(len(str(self.total_views - 1))), self._camera_active.data.copy()))
 
-				# start at view_cone * 0.5 and go up to -view_cone * 0.5
-				offsetAngle = (0.5 - view / (self.total_views - 1)) * radians(self.view_cone)
+						# set up view
+						render_view = self.scene.render.views.new(self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1))))
+						render_view.camera_suffix = '_v' + str(view).zfill(len(str(self.total_views - 1)))
+						render_view.use = True
 
-				# calculate the offset that the camera should move
-				offset = cameraDistance * tan(offsetAngle)
+						# NOTE: It seems not to be required. Rendering still works,
+						#		which is nice, because the camera remains invisible
+						# add this camera to the master collection of the scene
+						self.scene.collection.objects.link(self._camera_temp[view])
 
-				# translate the camera by the calculated offset in x-direction
-				# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
-				#		then we apply the offset and transform back to world coordinates
-				self._camera_active.location = self._view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self._view_matrix_inv @ self._camera_original.location.copy()))
 
-				# modify the projection matrix, relative to the camera size
-				self._camera_active.data.shift_x = self._camera_original.data.shift_x + 0.5 * offset / cameraSize
+					# use this camera for rendering
+					self._camera_active = self._camera_temp[view]
 
+					# apply same location and perspective like the original camera
+					self._camera_active.matrix_world = self._view_matrix.copy()
+
+					# set the scenes active camera to this temporary camera
+					self.scene.camera = self._camera_active
+
+					# CAMERA SETTINGS: APPLY POSITION AND SHIFT
+					# +++++++++++++++++++++++++++++++++++++++++++++++
+					# adjust the camera settings to the correct view point
+					# The field of view set by the camera
+					# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
+					fov = self._camera_active.data.angle
+
+					# calculate cameraSize from its distance to the focal plane and the FOV
+					cameraDistance = self.scene.addon_settings.focalPlane
+					cameraSize = cameraDistance * tan(fov / 2)
+
+					# start at view_cone * 0.5 and go up to -view_cone * 0.5
+					offsetAngle = (0.5 - view / (self.total_views - 1)) * radians(self.view_cone)
+
+					# calculate the offset that the camera should move
+					offset = cameraDistance * tan(offsetAngle)
+
+					# translate the camera by the calculated offset in x-direction
+					# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
+					#		then we apply the offset and transform back to world coordinates
+					self._camera_active.location = self._view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self._view_matrix_inv @ self._camera_original.location.copy()))
+
+					# modify the projection matrix, relative to the camera size
+					self._camera_active.data.shift_x = self._camera_original.data.shift_x + 0.5 * offset / cameraSize
 
 	# assemble quilt
 	def assemble_quilt(self):
@@ -527,7 +545,6 @@ class RenderJob:
 		# return the quilt image
 		return self._quilt_image
 
-
 	# delete the files
 	def delete_files(self, frame=None):
 
@@ -579,7 +596,6 @@ class RenderJob:
 
 		# MULTIVIEW CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
-		# TODO: Needs to be implemented
 		elif self.use_multiview:
 
 			# restore the original active camera
@@ -610,31 +626,58 @@ class RenderJob:
 			self.scene.render.views['left'].use = True
 			self.scene.render.views['right'].use = True
 
+
+	# update the progress bar
+	def update_progress(self):
+
+		# get the curre
+
+		# SINGLE-CAMERA RENDERING
+		# ++++++++++++++++++++++++++++++++++
+		if not self.use_multiview:
+
+			# if a single frame shall be rendered
+			if self.animation == False:
+				return int(self.view / ((self.total_views - 1)) * 100)
+
+			# for animations
+			else:
+				return int(((self.frame - self.scene.frame_start) * (self.total_views - 1) + self.view) / ((self.total_views - 1) * (self.scene.frame_end - self.scene.frame_start + 1)) * 100)
+
+		# MULTIVIEW CAMERA RENDERING
+		# ++++++++++++++++++++++++++++++++++
+		elif self.use_multiview:
+
+			# if a single frame shall be rendered
+			if self.animation == False:
+				return int(self.view / ((self.total_views - 1)) * 100)
+
+			# for animations
+			else:
+				return int(((self.frame - self.scene.frame_start) * (self.total_views - 1) + self.view) / ((self.total_views - 1) * (self.scene.frame_end - self.scene.frame_start + 1)) * 100)
+
 	# CALLBACK FUNCTIONS / APPLICATION HANDLERS
 	# +++++++++++++++++++++++++++++++++++++++++++++++
 	def init_render(self, Scene, depsgraph):
 
-		# reset the render job state to IDLE
-		if self._state != "CANCEL_RENDER" and not self.scene.addon_settings.render_cancel:
+		# update operator state
+		self._state = "INIT_RENDER"
 
-			# update operator state
-			self._state = "INIT_RENDER"
-
-			LookingGlassAddonLogger.info("Rendering job initialized. (lockfile: %s, init: %s)" % (self._use_lockfile, self.init))
-
+		# log info
+		LookingGlassAddonLogger.info("Rendering job initialized. (lockfile: %s, init: %s)" % (self._use_lockfile, self.init))
 
 	# function that is called before rendering starts
 	def pre_render(self, Scene, depsgraph):
 
-		# reset the render job state to PRE_RENDER
-		if self._state != "CANCEL_RENDER" and not self.scene.addon_settings.render_cancel:
+		# update operator state
+		self._state = "PRE_RENDER"
 
-			# update operator state
-			self._state = "PRE_RENDER"
-
-			LookingGlassAddonLogger.info("Rendering view is going to be prepared.")
+		# SINGLE-CAMERA RENDERING
+		# ++++++++++++++++++++++++++++++++++
+		if not self.use_multiview:
 
 			# output current status
+			LookingGlassAddonLogger.info("Rendering view is going to be prepared.")
 			LookingGlassAddonLogger.info(" [#] active camera: %s" % self._camera_active)
 			LookingGlassAddonLogger.info(" [#] current frame: %s" % self.frame)
 			LookingGlassAddonLogger.info(" [#] current subframe: %s" % self.subframe)
@@ -642,17 +685,26 @@ class RenderJob:
 			LookingGlassAddonLogger.info(" [#] current quilt file: %s" % self.quilt_filepath())
 			LookingGlassAddonLogger.info(" [#] current view file: %s" % self.view_filepath())
 
+		# MULTIVIEW CAMERA RENDERING
+		# ++++++++++++++++++++++++++++++++++
+		elif self.use_multiview:
+
+			# output current status
+			LookingGlassAddonLogger.info("Rendering multiview is going to be prepared.")
+			LookingGlassAddonLogger.info(" [#] active camera: %s" % self._camera_active)
+			LookingGlassAddonLogger.info(" [#] current frame: %s" % self.frame)
+			LookingGlassAddonLogger.info(" [#] current subframe: %s" % self.subframe)
+			LookingGlassAddonLogger.info(" [#] current view: all (multiview)")
+			LookingGlassAddonLogger.info(" [#] current quilt file: %s" % self.quilt_filepath())
+			LookingGlassAddonLogger.info(" [#] current view file: %s" % self.view_filepath())
 
 	# function that is called after rendering finished
 	def post_render(self, Scene, depsgraph):
 
-		# reset the render job state to PRE_RENDER
-		if self._state != "CANCEL_RENDER" and not self.scene.addon_settings.render_cancel:
+		# update operator state
+		self._state = "POST_RENDER"
 
-			# update operator state
-			self._state = "POST_RENDER"
-
-			LookingGlassAddonLogger.info("Saving view file: %s" % self.view_filepath())
+		LookingGlassAddonLogger.info("Saving view file: %s" % self.view_filepath())
 
 			# save the rendered image in a file
 			#bpy.data.images["Render Result"].save_render(filepath=self.view_filepath(), scene=self.scene)
@@ -661,21 +713,15 @@ class RenderJob:
 	# function that is called when the renderjob is completed
 	def completed_render(self, Scene, depsgraph):
 
-		# reset the render job state to COMPLETE_RENDER
-		if self._state != "CANCEL_RENDER" and not self.scene.addon_settings.render_cancel:
-
-			# update operator state
-			self._state = "COMPLETE_RENDER"
-
-			# the initialization step was done
-			self.init = False
+		# update operator state
+		self._state = "COMPLETE_RENDER"
 
 	# function that is called if rendering was cancelled
 	def cancel_render(self, Scene, depsgraph):
 
 		# set render job state to CANCEL
 		self._state = "CANCEL_RENDER"
-		self.scene.addon_settings.render_cancel = True
+		self.scene.addon_settings.render_stop = True
 
 		LookingGlassAddonLogger.info("Rendering job was cancelled.")
 
@@ -708,12 +754,12 @@ class RenderSettings:
 
 
 	# initiate the class instance
-	def __init__(self, BlenderScene, animation, use_lockfile, use_multiview = False):
+	def __init__(self, BlenderScene, animation, use_lockfile, use_multiview):
 
 		# get initialization parameters
 		self.scene = BlenderScene
-		self._use_lockfile = use_lockfile
 		self.animation = animation
+		self._use_lockfile = use_lockfile
 		self.use_multiview = use_multiview
 
 		# if a valid scene was given
@@ -958,7 +1004,6 @@ class RenderSettings:
 
 					# add some custom values to the dict
 					settings_dict['blend_file'] = bpy.data.filepath
-					#pprint(settings_dict)
 
 					# write the date to the lock file
 					lockfile.write(json.dumps(settings_dict))
@@ -1093,20 +1138,20 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# REMOVE APP HANDLERS
 		# +++++++++++++++++++++++++
-		try:
+		# if this call was not just invoked to discard an incomplete render job
+		if not self.discard_lockfile:
 
 			# remove render app handlers
-			bpy.app.handlers.render_init.remove(self.init_render)
-			bpy.app.handlers.render_pre.remove(self.pre_render)
-			bpy.app.handlers.render_post.remove(self.post_render)
-			bpy.app.handlers.render_cancel.remove(self.cancel_render)
-			bpy.app.handlers.render_complete.remove(self.completed_render)
+			bpy.app.handlers.render_init.remove(self.render_settings.job.init_render)
+			bpy.app.handlers.render_pre.remove(self.render_settings.job.pre_render)
+			bpy.app.handlers.render_post.remove(self.render_settings.job.post_render)
+			bpy.app.handlers.render_cancel.remove(self.render_settings.job.cancel_render)
+			bpy.app.handlers.render_complete.remove(self.render_settings.job.completed_render)
 
 			# remove event timer
-			if self._handle_event_timer != None: context.window_manager.event_timer_remove(self._handle_event_timer)
+			if self._handle_event_timer: context.window_manager.event_timer_remove(self._handle_event_timer)
 
-		except:
-			pass
+			LookingGlassAddonLogger.info("Removing application handlers.")
 
 
 
@@ -1145,7 +1190,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# RESTORE USER SETTINGS
 		# +++++++++++++++++++++++++
 		# if this call was not just invoked to discard an incomplete render job
-		if self.discard_lockfile == False:
+		if not self.discard_lockfile:
 
 			# clean up the render job (e.g., the temporary cameras etc.)
 			self.render_settings.job.clean_up()
@@ -1172,7 +1217,10 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_settings.addon_settings.render_progress = 0.0
 		LookingGlassAddon.RenderInvoked = False
 		LookingGlassAddon.RenderAnimation = None
-		self.render_settings.addon_settings.render_cancel = False
+		self.render_settings.addon_settings.render_stop = False
+
+		# log debug info
+		LookingGlassAddonLogger.debug("Render job stopped.")
 
 		# return None since this is expected by the operator
 		return None
@@ -1184,6 +1232,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# RENDER SETTINGS
 		################################################################
+
 		# we handle the render settings in a separate class
 		# NOTE: This class also stores the original settings and provides a
 		#		restore_original() method to restore the scenes original render
@@ -1381,31 +1430,38 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		#LookingGlassAddonLogger.debug("Current render job state: %s" % self.render_settings.job._state)
+		#LookingGlassAddonLogger.debug("Current render job state: %s (stop state: %s)" % (self.render_settings.job._state, self.render_settings.addon_settings.render_stop))
 
+		# UPDATE PROGRESS BAR
+		# +++++++++++++++++++++++++++++++++++++++++++
+		self.render_settings.addon_settings.render_progress = self.render_settings.job.update_progress()
+
+
+
+		# PROCESS MODAL EVENTS
+		# +++++++++++++++++++++++++++++++++++++++++++
 		# if the ESC key was pressed
 		if event.type == 'ESC':
 
 			# update state variables
-			self.render_settings.job._state = "CANCEL_RENDER"
-			self.render_settings.addon_settings.render_cancel = True
+			self.render_settings.addon_settings.render_stop = True
 
 			# pass event through
 			return {'PASS_THROUGH'}
 
 		# if the TIMER event for the quilt rendering is called
-		elif event.type == 'TIMER' and not self.render_settings.addon_settings.render_cancel:
+		elif event.type == 'TIMER':
 
 			# INVOKE NEW RENDER JOB
 			# ++++++++++++++++++++++++++++++++++
-			if self.render_settings.job._state == "INVOKE_RENDER":
+			if self.render_settings.job._state == "INVOKE_RENDER" and not self.render_settings.addon_settings.render_stop:
 
 				# make sure the interface is not locked
 				# otherwise the renderjob won't be excecuted properly.
 				# Unclear why, but maybe because the camera settings will not
 				# be applied properly then. Solved issue:
 				# https://github.com/regcs/AliceLG-beta/issues/9
-				self.render_settings.use_lock_interface = False
+				self.render_settings.job.scene.render.use_lock_interface = False
 
 				# invoke the new render job
 				self.render_settings.job.invoke()
@@ -1415,27 +1471,25 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				result = bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True)
 				if result != {'CANCELLED'}:
 
+					self.render_settings.job.scene.render.use_lock_interface = True
+
  					# set render job state to IDLE
-					if self.render_settings.job._state != "CANCEL_RENDER":
-						self.render_settings.job._state = "IDLE"
+					self.render_settings.job._state = "IDLE"
 
-						# setup camera for rendering
-						self.render_settings.job.setup_camera()
+					# Some status infos for the user if this is not a multiview render:
+					if not self.use_multiview:
 
-						# Some status infos for the user if this is not a multiview render:
-						if not self.use_multiview:
+						# if a single frame shall be rendered
+						if self.render_settings.job.animation == False:
 
-							# if a single frame shall be rendered
-							if self.render_settings.job.animation == False:
+							# notify user
+							self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " ..")
 
-								# notify user
-								self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " ..")
+						# if an animation shall be rendered
+						elif self.render_settings.job.animation == True:
 
-							# if an animation shall be rendered
-							elif self.render_settings.job.animation == True:
-
-								# notify user
-								self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " of frame " + str(self.render_settings.job.frame) +  " ..")
+							# notify user
+							self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " of frame " + str(self.render_settings.job.frame) +  " ..")
 
 				# pass event through
 				return {'PASS_THROUGH'}
@@ -1446,7 +1500,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# ++++++++++++++++++++++++++++++++++
 
 			# if nothing is rendering, but the last view is not yet rendered
-			elif self.render_settings.job._state == "COMPLETE_RENDER" and not self.render_settings.addon_settings.render_cancel:
+			elif self.render_settings.job._state == "COMPLETE_RENDER" and not self.render_settings.addon_settings.render_stop:
 
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
@@ -1458,7 +1512,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					if not self.render_settings.job.assemble_quilt():
 
 						# cancel the operator
-						self._state = "CANCEL_RENDER"
+						self.render_settings.addon_settings.render_stop = True
 
 						# force the operator to keep the view Files
 						self.file_force_keep = True
@@ -1490,17 +1544,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# 						break
 
 
-
-				# UPDATE PROGRESS BAR
-				# +++++++++++++++++++++++++++++++++++++++++++
-				# if a single frame shall be rendered
-				if self.render_settings.job.animation == False:
-					self.render_settings.addon_settings.render_progress = int(self.render_settings.job.view / ((self.render_settings.job.total_views - 1)) * 100)
-				else:
-					self.render_settings.addon_settings.render_progress = int(((self.render_settings.job.frame - self.render_settings.job.scene.frame_start) * (self.render_settings.job.total_views - 1) + self.render_settings.job.view) / ((self.render_settings.job.total_views - 1) * (self.render_settings.job.scene.frame_end - self.render_settings.job.scene.frame_start + 1)) * 100)
-
-
-
 				# UPDATE LOCKFILE
 				# +++++++++++++++++++++++++++++++++++++++++++
 				# if the lockfile exists
@@ -1513,6 +1556,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				# VIEW & FRAME RENDERING
 				# ++++++++++++++++++++++++++++++++++++++++++++
+
 				# if a single frame shall be rendered
 				if self.render_settings.job.animation == False:
 
@@ -1528,12 +1572,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 					# if this was the last view
 					else:
 
-						# cancel the operator
-						self.render_settings.job._state = "CANCEL_RENDER"
-
 						# notify user
 						self.cancel_sign = "INFO"
 						self.cancel_message = "Complete quilt rendered."
+
+						# stop the operator
+						self.render_settings.addon_settings.render_stop = True
 
 
 				# if an animation shall be rendered
@@ -1567,7 +1611,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 								self.render_settings.job.delete_files(self.render_settings.job.frame)
 
 							# delete the temporarily created camera
-							self.render_settings.job.clean_up()
+							# self.render_settings.job.clean_up()
 
 							# reset the initialization step variable for the render job
 							self.render_settings.job.init = True
@@ -1585,7 +1629,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						else:
 
 							# cancel the operator
-							self.render_settings.job._state = "CANCEL_RENDER"
+							self.render_settings.addon_settings.render_stop = True
 
 							# notify user
 							self.cancel_sign = "INFO"
@@ -1597,14 +1641,12 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# pass event through
 				return {'PASS_THROUGH'}
 
+
 		# CANCEl-RENDER STEP
 		# ++++++++++++++++++++++++++++++++++
 
 		# if nothing is rendering, but the last view is not yet rendered
-		if self.render_settings.job._state == "CANCEL_RENDER" or self.render_settings.addon_settings.render_cancel:
-
-			# log debug info
-			LookingGlassAddonLogger.debug("Render job cancelled.")
+		if (self.render_settings.job._state == "INVOKE_RENDER" or self.render_settings.job._state == "COMPLETE_RENDER" or self.render_settings.job._state == "CANCEL_RENDER") and self.render_settings.addon_settings.render_stop:
 
 			# cancel the operator
 			# NOTE: - this includes recovering all original user settings

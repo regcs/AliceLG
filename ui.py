@@ -708,7 +708,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 	# Cancel button
-	render_cancel: bpy.props.BoolProperty(
+	render_stop: bpy.props.BoolProperty(
 										name="Cancel render job",
 										description="Press this button or the 'ESC' key to stop the quilt rendering.",
 										default = False,
@@ -1215,7 +1215,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 				# Show the corresponding progress bar for the rendering process
 				row_render_still = layout.row(align = True)
 				row_render_still.prop(context.scene.addon_settings, "render_progress", text="", slider=True)
-				row_render_still.prop(context.scene.addon_settings, "render_cancel", text="", icon='CANCEL')
+				row_render_still.prop(context.scene.addon_settings, "render_stop", text="", icon='CANCEL')
 			else:
 				# Button to start rendering a single quilt using the current render settings
 				row_render_still = layout.row(align = True)
@@ -1227,7 +1227,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 				# Show the corresponding progress bar for the rendering process
 				row_render_animation = layout.row(align = True)
 				row_render_animation.prop(context.scene.addon_settings, "render_progress", text="", slider=True)
-				row_render_animation.prop(context.scene.addon_settings, "render_cancel", text="", icon='CANCEL')
+				row_render_animation.prop(context.scene.addon_settings, "render_stop", text="", icon='CANCEL')
 			else:
 				# Button to start rendering a animation quilt using the current render settings
 				row_render_animation = layout.row(align = True)
@@ -1253,8 +1253,10 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_render_animation = layout.row(align = False)
 			render_quilt = row_render_animation.operator("render.quilt", text="Continue", icon='RENDER_STILL')
 			render_quilt.use_lockfile = True
+			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.render_mode == '1')
 			render_quilt = row_render_animation.operator("render.quilt", text="Discard", icon='CANCEL')
 			render_quilt.use_lockfile = True
+			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.render_mode == '1')
 			render_quilt.discard_lockfile = True
 
 

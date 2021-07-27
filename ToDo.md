@@ -3,10 +3,6 @@
 - handle installation of pyLightIO and its dependencies from preference pane or
   install automatic on startup (?)
 
-- handle multiview camera support
-
-  => use write_still in multiview only if output filename is specificed
-
 ## BUGS / ENHANCEMENTS
 
 - BUG: Shading & Overlay settings - the "CUSTOM" setting also changes the current viewport
