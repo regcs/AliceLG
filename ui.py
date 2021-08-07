@@ -744,7 +744,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 												 ('2', 'Skipped-views Preview II', 'Skip every third view'),
 												 ('3', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
 												 ],
-										default='1',
+										default='3',
 										name="Lightfield Preview Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
