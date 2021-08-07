@@ -77,6 +77,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	# DRAWING OPERATION VARIABLES
 	modal_redraw = True
 	depsgraph_update_time = 0
+	skip_views = 1
+	restricted_viewcone_limit = 0
 
 	# DEBUGING VARIABLES
 	start_multi_view = 0
@@ -315,6 +317,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					# set to the currently chosen quality
 					self.preset = int(context.scene.addon_settings.quiltPreset)
 
+					# dont skip any views
+					self.skip_views = 1
+					self.restricted_viewcone_limit = 0
+
  					# set to redraw
 					self.modal_redraw = True
 
@@ -340,16 +346,35 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# remember time of last depsgraph update
 				self.depsgraph_update_time = time.time()
 
-				# if the low quality quilt settings are activated
-				if self.addon_settings.viewport_use_preview_mode == True:
+				# if the "low resolution preview" is activated
+				if self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '0':
 
 					# activate them
 					self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
+
+				# if the "skip views preview I" is activated
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '1':
+
+					# skip every second view during rendering
+					self.skip_views = 2
+
+				# if the "skip views preview II" is activated
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '2':
+
+					# skip every third view during rendering
+					self.skip_views = 3
+
+				# if the "restricted viewcone preview" is activated
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3':
+
+					# only show the center 33% of all views
+					self.restricted_viewcone_limit = int(self.qs[self.preset]["total_views"] / 3)
 
 				else:
 
 					# set to the currently chosen quality
 					self.preset = int(scene.addon_settings.quiltPreset)
+					self.skip_views = 1
 
 			# if quilt viewer is active AND an image is selected
 			elif int(self.addon_settings.renderMode) == 1 and scene.addon_settings.quiltImage != None:
@@ -661,29 +686,46 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 					with self.qs[self.preset]["viewOffscreen"].bind():
 
-						# TODO: activate the "do_color_management=True" for Blender 3.0
-						#       to get the correct color space data
-						# draw the viewport rendering to the offscreen for the current view
-						self.qs[self.preset]["viewOffscreen"].draw_view3d(
-							# we use the "Scene" and the "View Layer" that is active in the Window
-							# the user currently works in
-							scene=context.scene,
-							view_layer=context.view_layer,
-							view3d=self.override['space_data'],
-							region=self.override['region'],
-							view_matrix=view_matrix,
-							projection_matrix=projection_matrix)
+						# if the "skip views preview" is activated AND this view shall be skipped
+						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '1' or self.addon_settings.lightfield_preview_mode == '2')) and view % self.skip_views:
 
-						LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.6f s" % (view, time.time() - start_test))
+							# clear this offscreen
+						    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
+						    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+
+						# if the "Restricted viewcone preview" is activated AND this view shall be skipped
+						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
+
+							# clear this offscreen
+						    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
+						    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+
+						else:
+
+							# TODO: activate the "do_color_management=True" for Blender 3.0
+							#       to get the correct color space data
+							# draw the viewport rendering to the offscreen for the current view
+							self.qs[self.preset]["viewOffscreen"].draw_view3d(
+								# we use the "Scene" and the "View Layer" that is active in the Window
+								# the user currently works in
+								scene=context.scene,
+								view_layer=context.view_layer,
+								view3d=self.override['space_data'],
+								region=self.override['region'],
+								view_matrix=view_matrix,
+								projection_matrix=projection_matrix)
+
+							LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.3f ms" % (view, (time.time() - start_test) * 1000))
+
 						start_test = time.time()
 
 						# copy texture into LightfieldView array
 						self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
 
-						LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.6f" % (view, time.time() - start_test))
+						LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 				LookingGlassAddonLogger.debug("-----------------------------")
-				LookingGlassAddonLogger.debug("Rendering took in total %.3f s" % (time.time() - self.start_multi_view))
+				LookingGlassAddonLogger.debug("Rendering took in total %.3f ms" % ((time.time() - self.start_multi_view) * 1000))
 				LookingGlassAddonLogger.debug("-----------------------------")
 
 				# update the lightfield displayed on the device

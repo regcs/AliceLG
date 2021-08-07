@@ -739,8 +739,12 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	# Lightfield Preview Resolution in Auto lightfield mode
 	lightfield_preview_mode: bpy.props.EnumProperty(
-										items = [('0', 'Low-resolution Preview', '32 views'),],
-										default='0',
+										items = [('0', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
+												 ('1', 'Skipped-views Preview I', 'Skip every second view'),
+												 ('2', 'Skipped-views Preview II', 'Skip every third view'),
+												 ('3', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
+												 ],
+										default='1',
 										name="Lightfield Preview Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
@@ -1048,7 +1052,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		#column.separator()
 
 		# if no Looking Glass was detected AND debug mode is not activated OR the active device is an emulated one
-		if (not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device) or pylio.DeviceManager.get_active().emulated == True:
+		if (not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device):
 
 			# deactivate quilt preset and debug buttons
 			row_preset.enabled = False
