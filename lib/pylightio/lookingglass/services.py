@@ -52,7 +52,7 @@ class HoloPlayService(BaseServiceType):
     # DEFINE CLASS PROPERTIES AS PRIVATE MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     __socket = None                                             # NNG socket
-    __address = 'ipc:///tmp/holoplay-driver.ipc'                # driver url (alternative: "ws://localhost:11222/driver")
+    __address = 'ipc:///tmp/holoplay-driver.ipc'                # driver url (alternative: "ws://localhost:11222/driver", "ipc:///tmp/holoplay-driver.ipc")
     __dialer = None                                             # NNG Dialer of the socket
     __devices = []                                              # list of devices supported by this service (#TODO: this needs to be implemented)
     __decoder_format = LightfieldImage.decoderformat.bytesio    # the decoder format in which the lightfield data is passed to the backend or display
@@ -161,7 +161,7 @@ class HoloPlayService(BaseServiceType):
                 # convert the lightfield into a suitable format for this service
                 # NOTE: HoloPlay Service expects a byte stream
                 bytesio = lightfield.decode(self.__decoder_format, flip_views=flip_views, custom_decoder=custom_decoder)
-                logger.debug(" [#] Decoded lightfield data to BytesIO stream in %.3f s." % (timeit.default_timer() - start))
+                #logger.debug(" [#] Decoded lightfield data to BytesIO stream in %.3f ms." % ((timeit.default_timer() - start) * 1000))
 
                 if type(bytesio) == io.BytesIO:
 
@@ -175,10 +175,9 @@ class HoloPlayService(BaseServiceType):
                     settings = {'vx': lightfield.metadata['columns'], 'vy':lightfield.metadata['rows'], 'vtotal': lightfield.metadata['rows'] * lightfield.metadata['columns'], 'aspect': aspect, 'invert': invert}
 
                     # pass the quilt to the device
-                    logger.info(" [#] Lightfield image is being sent to '%s' ..." % self)
+                    logger.info(" [#] Lightfield image is being sent to '%s'." % self)
                     self.__send_message(self.__show_quilt(device.configuration['index'], bytes, settings))
-                    logger.debug(" [#] Sending data and waiting for response took %.3f s." % (timeit.default_timer() - start))
-                    logger.info(" [#] Done.")
+                    logger.info(" [#] Done (total time: %.3f ms)." % ((timeit.default_timer() - start) * 1000))
 
                     return True
 
@@ -298,14 +297,27 @@ class HoloPlayService(BaseServiceType):
         # if a NNG socket is open
         if self.__is_socket():
 
+            start = timeit.default_timer()
+
             # dump a CBOR message
             cbor_dump = cbor.dumps(input_object)
+
+            logger.debug(" [#] Encoding command as CBOR before sending took %.3f ms." % ((timeit.default_timer() - start) * 1000))
+            start = timeit.default_timer()
 
             # send it to the socket
             self.__socket.send(cbor_dump)
 
+            logger.debug(" [#] Sending comnand took %.3f ms." % ((timeit.default_timer() - start) * 1000))
+            start = timeit.default_timer()
+
             # receive the CBOR-formatted response
-            response = self.__socket.recv()
+            if not ('show' in input_object['cmd'].keys()):
+                response = self.__socket.recv()
+            else:
+                return#response = self.__socket.recv()
+
+            logger.debug(" [#] Waiting for response took %.3f ms." % ((timeit.default_timer() - start) * 1000))
 
             # return the decoded CBOR response length and its conent
             return [len(response), cbor.loads(response)]

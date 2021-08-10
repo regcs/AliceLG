@@ -44,6 +44,12 @@ logger = logging.getLogger('pyLightIO')
 # views for Looking Glass devices
 class LookingGlassQuilt(BaseLightfieldImageFormat):
 
+    # PRIVATE ATTRIBUTES
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+    __merged_numpy = None   # a numpy array which holds all the view data
+
+
     # DEFINE PUBLIC CLASS ATTRIBUTES
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # supported quilt formats
@@ -103,7 +109,7 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
 
     # INSTANCE METHODS - IMPLEMENTED BY SUBCLASS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def __init__(self, id=None):
+    def __init__(self, id=None, colormode='RGBA'):
         ''' create a new and empty lightfield image object of type LookingGlassQuilt '''
 
         # first make the mandatory call to the __init__ method of the base class
@@ -112,10 +118,9 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
         # if no quilt format id was passed
         if not id:
 
-            # TODO: Implement this as arguments in a reasonable way
             # store color information
-            self.colormode = 'RGBA'
-            self.colorchannels = 4
+            self.colormode = colormode
+            self.colorchannels = len(colormode)
 
             # store quilt metadata
             self.metadata['quilt_width'] = 0
@@ -131,8 +136,8 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
 
             # TODO: Implement this as arguments in a reasonable way
             # store color information
-            self.colormode = 'RGBA'
-            self.colorchannels = 4
+            self.colormode = colormode
+            self.colorchannels = len(colormode)
 
             # store quilt metadata
             self.metadata['quilt_width'] = LookingGlassQuilt.formats.get(id)['quilt_width']
@@ -334,41 +339,59 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
     def __from_views_to_quilt_numpy(self, flip_views=False, dtype = np.uint8):
         ''' convert views given as numpy arrays to a quilt as a numpy array '''
 
-        # get the views
-        views = self.get_view_data()
-        views_format = self.views_format
+        start = timeit.default_timer()
 
-        # if the views should be flipped
-        if flip_views:
-            flipped_views = []
-            for i, view in enumerate(views):
-                flipped_views.append(view[::-1, :, :])
+        # if no merged numpy array exists
+        if self.__merged_numpy is None:
 
-            # create a numpy array from the list of flipped views
-            quilt_np = np.asarray(flipped_views)
-
-        else:
+            # get the views
+            views = self.get_view_data()
+            views_format = self.views_format
 
             # create a numpy array from the list of views
-            quilt_np = np.asarray(views)
+            self.__merged_numpy = np.asarray(views)
 
-        # step 1: get an array of shape (rows, columns, view_height, view_width)
-        quilt_np = quilt_np.reshape(self.metadata['rows'], self.metadata['columns'], self.metadata['view_height'], self.metadata['view_width'], self.colorchannels)
+            # step 1: get an array of shape (rows, columns, view_height, view_width)
+            self.__merged_numpy = self.__merged_numpy.reshape(self.metadata['rows'], self.metadata['columns'], self.metadata['view_height'], self.metadata['view_width'], self.colorchannels)
 
-        # then we reshape the numpy array to the quilt shape:
+            # then we reshape the numpy array to the quilt shape:
 
-        # step 2: get a reverted view into the numpy array
-        # NOTE: image origins are in the top left of the image and therefore the
-        #       row 0 starts with the leftmost camera perspective. But for the
-        #       quilt we need this row to be at the bottom. Therefore, revert order.
-        quilt_np = quilt_np[::-1, :, :]
+            # step 2: get a reverted view into the numpy array
+            # NOTE: image origins are in the top left of the image and therefore the
+            #       row 0 starts with the leftmost camera perspective. But for the
+            #       quilt we need this row to be at the bottom. Therefore, revert order.
+            self.__merged_numpy = self.__merged_numpy[::-1, :, :]
 
-        # step 3: swap the "columns" and "view_height" axis, so that we get an
-        #         array of shape (rows, view_height, columns, view_width)
-        quilt_np = quilt_np.swapaxes(1, 2)
+            # step 3: swap the "columns" and "view_height" axis, so that we get an
+            #         array of shape (rows, view_height, columns, view_width, colorchannels)
+            self.__merged_numpy = self.__merged_numpy.swapaxes(1, 2)
 
-        # step 4: reshape to the final quilt (rows * view_height, columns * view_width)
+            # re-assign the numpy arrays for all underlying LightfieldView-objects
+            # as (memory)views into the __merged_numpy array
+            # NOTE: This step speeds up the quilt creation by some tens of milliseconds
+            #       since the next time the LightfieldView pixel data is updated
+            #       it directly updates the pixel data in the __merged_numpy array.
+            i_x = i_y = 0
+            for i, view in enumerate(self.views):
+
+                # create subarray view into the quilt pixel data
+                view['view'].data = self.__merged_numpy[self.metadata['rows'] - 1 - i_y, :, i_x, :, :]
+
+                # choose column and row
+                if (i + 1) % self.metadata['columns'] == 0 and i > 0:
+                    i_x = 0
+                    i_y += 1
+                else:
+                    i_x += 1
+
+        # step 4: flip the individual views vertically, if required
+        if flip_views: quilt_np = self.__merged_numpy[::, ::-1, ::, ::, ::]
+
+        # step 5: reshape to the final quilt (rows * view_height, columns * view_width)
         quilt_np = quilt_np.reshape(self.metadata['quilt_height'], self.metadata['quilt_width'], self.colorchannels)
+
+        # log info
+        logger.debug(" [#] Created quilt as numpy array in %.3f ms." % ((timeit.default_timer() - start) * 1000))
 
         # output the views
         return quilt_np
@@ -379,12 +402,16 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
     def __from_numpyarray_to_bytesio(self, data):
         ''' convert pixel data from numpy array to BytesIO object '''
 
+        start = timeit.default_timer()
         # create a PIL image from the numpy
         quilt_image = Image.fromarray(data)
+        logger.debug(" [#] Converted numpy array to pillow image in %.3f ms." % ((timeit.default_timer() - start) * 1000))
 
         # create a BytesIO object and save the numpy image data therein
+        start = timeit.default_timer()
         bytesio = io.BytesIO()
         quilt_image.save(bytesio, 'BMP')
+        logger.debug(" [#] Saved image data in %.3f ms." % ((timeit.default_timer() - start) * 1000))
 
         # return the bytesio object
         return bytesio

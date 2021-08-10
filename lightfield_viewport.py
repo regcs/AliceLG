@@ -676,7 +676,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					# calculate the offset-projection of the current view
 					view_matrix, projection_matrix = self.setupVirtualCameraForView(camera, view, camera_view_matrix.copy(), camera_projection_matrix.copy())
 
-					LookingGlassAddonLogger.debug(" [#] [%i] Settin up view camera took %.6f s" % (view, time.time() - start_test))
+					LookingGlassAddonLogger.debug(" [#] [%i] Setting up view camera took %.3f ms" % (view, (time.time() - start_test) * 1000))
 					start_test = time.time()
 
 					# RENDER THE VIEW INTO THE OFFSCREEN
@@ -720,7 +720,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						start_test = time.time()
 
 						# copy texture into LightfieldView array
-						self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.get_view_data()[view])
+						self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.views[view]['view'].data)
 
 						LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
