@@ -593,7 +593,13 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# then we pass the numpy array to the bgl.Buffer as template,
 		# which causes Blender to write the buffer data into the numpy array directly
 		buffer = bgl.Buffer(bgl.GL_BYTE, array.shape, array)
-		bgl.glGetTexImage(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, bgl.GL_UNSIGNED_BYTE, buffer)
+
+		# set correct colormode
+		if array.shape[2] == 3: colormode = bgl.GL_RGB
+		if array.shape[2] == 4: colormode = bgl.GL_RGBA
+
+		# write pixel data from texture into the buffer (numpy array)
+		bgl.glGetTexImage(bgl.GL_TEXTURE_2D, 0, colormode, bgl.GL_UNSIGNED_BYTE, buffer)
 		bgl.glBindTexture(bgl.GL_TEXTURE_2D, 0)
 
 
@@ -621,10 +627,10 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				if self.lightfield_image: self.lightfield_image = None
 
 				# create a pylio LightfieldImage
-				self.lightfield_image = pylio.LightfieldImage.new(pylio.LookingGlassQuilt, id=self.preset)
+				self.lightfield_image = pylio.LightfieldImage.new(pylio.LookingGlassQuilt, id=self.preset, colormode='RGB')
 
 				# create a new set of LightfieldViews
-				self.lightfield_image.set_views([pylio.LightfieldView(np.empty((self.qs[self.preset]["viewOffscreen"].height, self.qs[self.preset]["viewOffscreen"].width, 4), dtype=np.uint8), pylio.LightfieldView.formats.numpyarray) for view in range(0, self.qs[self.preset]["total_views"])], pylio.LightfieldView.formats.numpyarray)
+				self.lightfield_image.set_views([pylio.LightfieldView(np.empty((self.qs[self.preset]["viewOffscreen"].height, self.qs[self.preset]["viewOffscreen"].width, 3), dtype=np.uint8), pylio.LightfieldView.formats.numpyarray) for view in range(0, self.qs[self.preset]["total_views"])], pylio.LightfieldView.formats.numpyarray)
 
 			LookingGlassAddonLogger.debug("Start rendering lightfield views ...")
 			LookingGlassAddonLogger.debug(" [#] View dimensions: %i x %i" % (self.qs[self.preset]["viewOffscreen"].width, self.qs[self.preset]["viewOffscreen"].height))
