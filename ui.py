@@ -25,9 +25,11 @@
 from .globals import *
 
 # ------------------- EXTERNAL MODULES -------------------
-import bpy
 import sys, os, json
 import time
+from math import *
+
+import bpy
 from bpy.props import FloatProperty, PointerProperty
 from bpy.types import PropertyGroup
 
