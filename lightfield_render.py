@@ -147,9 +147,12 @@ class RenderJob:
 		# metadata for HoloPlay Studio etc. is stored in the file name as a suffix
 		# example of the format convention: quiltfilename_qs5x9a1.6.png
 		if self.add_suffix:
-			return "_qs" + str(self.columns) + "x" + str(self.rows) + "a" + str(self.quilt_aspect)
+			if len(str(self.quilt_aspect)) > 3:
+				return f'_qs{self.columns}x{self.rows}a{self.quilt_aspect:.2f}'
+			else:
+				return f'_qs{self.columns}x{self.rows}a{self.quilt_aspect}'
 		else:
-			return ""
+			return ''
 
 	# return the filename of the quilt file
 	def quilt_filepath(self, frame=None):
@@ -1522,26 +1525,26 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.cancel_message = "Render job can not be continued. Missing view file(s) of the previously failed render job."
 
 
-					# # QUILT DISPLAY AS RENDER RESULT
-					# # ++++++++++++++++++++++++++++++++++++++++++++
-					# for window in context.window_manager.windows:
-					# 	for area in window.screen.areas:
-					#
-					# 		if area.type == 'IMAGE_EDITOR':
-					#
-					# 			if area.spaces.active != None:
-					#
-					# 				if area.spaces.active.image != None:
-					#
-					# 					if area.spaces.active.image.name == "Render Result":
-					#
-					# 						# and change the active image shown here to the quilt
-					# 						area.spaces.active.image = self.render_settings.job._quilt_image
-					#
-					# 						# fit the zoom factor in this window to show the complete quilt
-					# 						# bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
-					#
-					# 						break
+					# QUILT DISPLAY AS RENDER RESULT
+					# ++++++++++++++++++++++++++++++++++++++++++++
+					for window in context.window_manager.windows:
+						for area in window.screen.areas:
+
+							if area.type == 'IMAGE_EDITOR':
+
+								if area.spaces.active != None:
+
+									if area.spaces.active.image != None:
+
+										if area.spaces.active.image.name == "Render Result":
+
+											# and change the active image shown here to the quilt
+											area.spaces.active.image = self.render_settings.job._quilt_image
+
+											# fit the zoom factor in this window to show the complete quilt
+											# bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
+
+											break
 
 
 				# UPDATE LOCKFILE
