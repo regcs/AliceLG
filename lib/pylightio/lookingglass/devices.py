@@ -252,11 +252,11 @@ class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
                 'calibration': {
-                                    'DPI': 338.0,
                                     'configVersion': '1.0',
+                                    'serial': 'LKG-2K-DUMMY',
+                                    'DPI': 338.0,
                                     'screenH': 1600.0,
                                     'screenW': 2560.0,
-                                    'serial': 'LKG-1-DUMMY',
                                     'viewCone': 40.0,
                                     'aspect': 1.6
                                 },
@@ -293,13 +293,13 @@ class LookingGlassLarge(LookingGlassDeviceMixin, BaseDeviceType):
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
                 'calibration': {
-                                    'DPI': 338.0,
                                     'configVersion': '1.0',
+                                    'serial': 'LKG-4K-DUMMY',
+                                    'DPI': 283.0,
                                     'screenH': 2160.0,
                                     'screenW': 3840.0,
-                                    'serial': 'LKG-2-DUMMY',
                                     'viewCone': 40.0,
-                                    'aspect': 1.8
+                                    'aspect': 1.77777777
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
@@ -333,13 +333,13 @@ class LookingGlassLargePro(LookingGlassDeviceMixin, BaseDeviceType):
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
                 'calibration': {
-                                    'DPI': 338.0,
                                     'configVersion': '1.0',
+                                    'serial': 'LKG-4K-DUMMY',
+                                    'DPI': 283.0,
                                     'screenH': 2160.0,
                                     'screenW': 3840.0,
-                                    'serial': 'LKG-3-DUMMY',
                                     'viewCone': 40.0,
-                                    'aspect': 1.8
+                                    'aspect': 1.77777777
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
@@ -373,13 +373,13 @@ class LookingGlass8k(LookingGlassDeviceMixin, BaseDeviceType):
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
                 'calibration': {
-                                    'DPI': 338.0,
                                     'configVersion': '1.0',
+                                    'serial': 'LKG-8K-DUMMY',
+                                    'DPI': 280.0,
                                     'screenH': 4320.0,
                                     'screenW': 7680.0,
-                                    'serial': 'LKG-4-DUMMY',
                                     'viewCone': 40.0,
-                                    'aspect': 1.8
+                                    'aspect': 1.77777777
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
