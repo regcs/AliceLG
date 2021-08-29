@@ -708,18 +708,36 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 						else:
 
-							# TODO: activate the "do_color_management=True" for Blender 3.0
-							#       to get the correct color space data
-							# draw the viewport rendering to the offscreen for the current view
-							self.qs[self.preset]["viewOffscreen"].draw_view3d(
-								# we use the "Scene" and the "View Layer" that is active in the Window
-								# the user currently works in
-								scene=context.scene,
-								view_layer=context.view_layer,
-								view3d=self.override['space_data'],
-								region=self.override['region'],
-								view_matrix=view_matrix,
-								projection_matrix=projection_matrix)
+							# for Blender versions earlier than 3.0 no
+							# "do_color_management" argument exists
+							if bpy.app.version < (3, 0, 0):
+
+								# draw the viewport rendering to the offscreen for the current view
+								self.qs[self.preset]["viewOffscreen"].draw_view3d(
+									# we use the "Scene" and the "View Layer" that is active in the Window
+									# the user currently works in
+									scene=context.scene,
+									view_layer=context.view_layer,
+									view3d=self.override['space_data'],
+									region=self.override['region'],
+									view_matrix=view_matrix,
+									projection_matrix=projection_matrix)
+
+							# for Blender versions later than 3.0 the
+							# "do_color_management" argument exists
+							else:
+
+								# draw the viewport rendering to the offscreen for the current view
+								self.qs[self.preset]["viewOffscreen"].draw_view3d(
+									# we use the "Scene" and the "View Layer" that is active in the Window
+									# the user currently works in
+									scene=context.scene,
+									view_layer=context.view_layer,
+									view3d=self.override['space_data'],
+									region=self.override['region'],
+									view_matrix=view_matrix,
+									projection_matrix=projection_matrix,
+									do_color_management = True)
 
 							LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
