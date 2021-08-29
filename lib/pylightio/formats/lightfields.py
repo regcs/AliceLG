@@ -93,7 +93,7 @@ class LightfieldImage(object):
         raise TypeError("'%s' is no valid lightfield image type." % type)
 
     @classmethod
-    def from_buffer(cls, type, data, width, height, colorchannels, **kwargs):
+    def from_buffer(cls, type, data, width, height, colorchannels, quilt_name = "", **kwargs):
         ''' creat a lightfield image object of specified format from a data block of given format '''
 
         # try to find the class for the specified format, if it exists
@@ -104,7 +104,7 @@ class LightfieldImage(object):
             lightfield = LightfieldImageFormat[0](**kwargs)
 
             # load the image
-            lightfield.from_buffer(data, width, height, colorchannels)
+            lightfield.from_buffer(data, width, height, colorchannels, quilt_name = quilt_name)
 
             # return the lightfield image instance of the specified format
             return lightfield
@@ -262,7 +262,7 @@ class BaseLightfieldImageFormat(object):
                 view = LightfieldView(view, format)
 
                 # log a debug message
-                logger.debug('No LightfieldViews instance was passed to LightfieldImage.append_views().')
+                logger.debug('No LightfieldViews instance was passed to LightfieldImage.append_views(). Created one from the given view data!')
 
             else:
 

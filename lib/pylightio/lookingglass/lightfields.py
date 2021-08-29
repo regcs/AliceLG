@@ -162,26 +162,11 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
             quilt_image = Image.open(filepath)
             if quilt_image:
 
-                # reset state variable
-                found = False
-
-                # for each supported quilt format
-                for qf in LookingGlassQuilt.formats.get().values():
-
-                    # if the image dimensions matches one of the quilt formats
-                    # NOTE: We allow a difference of +/-1 px in width and height
-                    #       to accomodate for rounding errors in view width/height
-                    if quilt_image.width in range(qf['quilt_width'] - 1, qf['quilt_width'] + 1) and quilt_image.height in range(qf['quilt_height'] - 1, qf['quilt_height'] + 1):
-
-                        # store new row and column number in the metadata
-                        self.metadata['rows'] = qf['rows']
-                        self.metadata['columns'] = qf['columns']
-                        self.metadata['count'] = qf['rows'] * qf['columns']
-                        self.metadata['view_width'] = qf['view_width']
-                        self.metadata['view_height'] = qf['view_height']
-
-                        # update state variable
-                        found = True
+                # try to detect quilt from quilt name
+                found = self.__detect_from_quilt_suffix(os.path.basename(filepath))
+                if not found:
+                    # otherwise try to detect it from the quilt dimensions
+                    found = self.__detect_from_quilt_dimensions(quilt_width = quilt_image.width, quilt_height = quilt_image.height)
 
                 # if no fitting quilt format was found
                 if not found: raise TypeError("The loaded image is not in a supported format. Please check the image dimensions.")
@@ -212,7 +197,7 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
 
         raise FileNotFoundError("The quilt image was not found: %s" % filepath)
 
-    def from_buffer(self, data, width, height, colorchannels):
+    def from_buffer(self, data, width, height, colorchannels, quilt_name = ""):
         ''' load the quilt from the given data block and convert to numpy views '''
 
         # if this is a numpy array
@@ -220,26 +205,11 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
 
             start = timeit.default_timer()
 
-            # status variable for the quilt format
-            found = False
-
-            # for each supported quilt format
-            for qf in LookingGlassQuilt.formats.get().values():
-
-                # if the image dimensions matches one of the quilt formats
-                # NOTE: We allow a difference of +/-1 px in width and height
-                #       to accomodate for rounding errors in view width/height
-                if data.shape[0] in range((qf['quilt_width'] - 1) * (qf['quilt_height'] - 1) * 4, (qf['quilt_width'] + 1) * (qf['quilt_height'] + 1) * 4):
-
-                    # store new row and column number in the metadata
-                    self.metadata['rows'] = qf['rows']
-                    self.metadata['columns'] = qf['columns']
-                    self.metadata['count'] = qf['rows'] * qf['columns']
-                    self.metadata['view_width'] = qf['view_width']
-                    self.metadata['view_height'] = qf['view_height']
-
-                    # update state variable
-                    found = True
+            # try to detect quilt from quilt name
+            found = self.__detect_from_quilt_suffix(quilt_name)
+            if not found:
+                # otherwise try to detect it from the quilt dimensions
+                found = self.__detect_from_quilt_dimensions(quilt_pixels = data.shape[0])
 
             # if no fitting quilt format was found
             if not found: raise TypeError("The loaded image is not in a supported format. Please check the image dimensions.")
@@ -332,6 +302,97 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
         raise TypeError("The requested lightfield format '%s' is not supported." % format)
 
 
+    # PRIVATE INSTANCE METHODS: CONVERT BETWEEN DECODERFORMATS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    def __detect_from_quilt_suffix(self, quilt_name):
+        import re
+
+        # values from the metadata
+        columns = None
+        rows = None
+        aspect = None
+
+        # if a quilt name was given
+        if quilt_name:
+
+            # try to extract some metadata information from the quiltname
+            try:
+
+                rows = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
+                columns = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
+                aspect = float(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
+
+            except AttributeError:
+
+                try:
+
+                    rows = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(1))
+                    columns = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(2))
+
+                except AttributeError:
+
+                    pass
+
+            # for each supported quilt format
+            for qf in LookingGlassQuilt.formats.get().values():
+
+                # if the image dimensions matches one of the quilt formats
+                # NOTE: We allow a difference of +/-1 px in width and height
+                #       to accomodate for rounding errors in view width/height
+                if not (columns is None or rows is None) and columns == qf['columns'] and rows == qf['rows']:
+
+                    # store new row and column number in the metadata
+                    self.metadata['rows'] = qf['rows']
+                    self.metadata['columns'] = qf['columns']
+                    self.metadata['count'] = qf['rows'] * qf['columns']
+                    self.metadata['view_width'] = qf['view_width']
+                    self.metadata['view_height'] = qf['view_height']
+
+                    logger.info("Detected quilt format from name.")
+
+                    return True
+
+        return False
+
+    def __detect_from_quilt_dimensions(self, quilt_width = None, quilt_height = None, quilt_pixels = None, quilt_name = ""):
+
+        # for each supported quilt format
+        for qf in LookingGlassQuilt.formats.get().values():
+
+            # if the image dimensions matches one of the quilt formats
+            # NOTE: We allow a difference of +/-1 px in width and height
+            #       to accomodate for rounding errors in view width/height
+            if not quilt_pixels is None and quilt_pixels in range((qf['quilt_width'] - 1) * (qf['quilt_height'] - 1) * 4, (qf['quilt_width'] + 1) * (qf['quilt_height'] + 1) * 4):
+
+                # store new row and column number in the metadata
+                self.metadata['rows'] = qf['rows']
+                self.metadata['columns'] = qf['columns']
+                self.metadata['count'] = qf['rows'] * qf['columns']
+                self.metadata['view_width'] = qf['view_width']
+                self.metadata['view_height'] = qf['view_height']
+
+                logger.info("Detected quilt format from pixel count.")
+
+                return True
+
+            # if the image dimensions matches one of the quilt formats
+            # NOTE: We allow a difference of +/-1 px in width and height
+            #       to accomodate for rounding errors in view width/height
+            if not (quilt_width is None or quilt_height is None) and quilt_width in range(qf['quilt_width'] - 1, qf['quilt_width'] + 1) and quilt_height in range(qf['quilt_height'] - 1, qf['quilt_height'] + 1):
+
+                # store new row and column number in the metadata
+                self.metadata['rows'] = qf['rows']
+                self.metadata['columns'] = qf['columns']
+                self.metadata['count'] = qf['rows'] * qf['columns']
+                self.metadata['view_width'] = qf['view_width']
+                self.metadata['view_height'] = qf['view_height']
+
+                logger.info("Detected quilt format from width and height.")
+
+                return True
+
+        return False
+
     # PRIVATE INSTANCE METHODS: VIEWS TO QUILTS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # NOTE: this function is based on https://stackoverflow.com/questions/42040747/more-idiomatic-way-to-display-images-in-a-grid-with-numpy
@@ -385,7 +446,10 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
                     i_x += 1
 
         # step 4: flip the individual views vertically, if required
-        if flip_views: quilt_np = self.__merged_numpy[::, ::-1, ::, ::, ::]
+        if flip_views:
+            quilt_np = self.__merged_numpy[::, ::-1, ::, ::, ::]
+        else:
+            quilt_np = self.__merged_numpy[::, ::, ::, ::, ::]
 
         # step 5: reshape to the final quilt (rows * view_height, columns * view_width)
         quilt_np = quilt_np.reshape(self.metadata['quilt_height'], self.metadata['quilt_width'], self.colorchannels)

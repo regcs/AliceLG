@@ -569,7 +569,7 @@ class LookingGlassAddonUI:
 				pass
 
 			# create a LightfieldImage from the selected quilt
-			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], context.scene.addon_settings.quiltImage.channels)
+			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], context.scene.addon_settings.quiltImage.channels, quilt_name = context.scene.addon_settings.quiltImage.name)
 
 			# update the lightfield displayed on the device
 			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
