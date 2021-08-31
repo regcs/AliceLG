@@ -438,15 +438,6 @@ class LookingGlassAddonUI:
 				# resize the numpy array
 				LookingGlassAddon.quiltPixels.resize(len(context.scene.addon_settings.quiltImage.pixels), refcheck=False)
 
-			# 	# delete the texture, if it is existing
-			# 	# NOTE: Unclear why glIsTexture expects integer and DeleteTexture a Buffer object
-			# 	if LookingGlassAddon.quiltTextureID != None and bgl.glIsTexture(LookingGlassAddon.quiltTextureID[0]) == True:
-			# 		bgl.glDeleteTextures(1, LookingGlassAddon.quiltTextureID)
-			#
-			# # create a new texture
-			# LookingGlassAddon.quiltTextureID = bgl.Buffer(bgl.GL_INT, [1])
-			# bgl.glGenTextures(1, LookingGlassAddon.quiltTextureID)
-
 
 
 			# GET PIXEL DATA
@@ -518,7 +509,6 @@ class LookingGlassAddonUI:
 
 				# copy pixel data to the array and a BGL Buffer
 				tempImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
-				#LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(tempImage.pixels), LookingGlassAddon.quiltPixels)
 
 			# TODO: The following lines would be enough, if the color
 			#		management settings would be applied in memory. Not deleted
@@ -527,29 +517,6 @@ class LookingGlassAddonUI:
 			# # copy pixel data to the array and a BGL Buffer
 			# context.scene.addon_settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
 			# LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.addon_settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
-
-
-
-			# # APPLY CORRECT COLOR FORMAT TO OPENGL TEXTURE
-			# # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-			# if tempImage.colorspace_settings.name == 'sRGB':
-			#
-			# 	# bind the texture and apply bgl.GL_SRGB8_ALPHA8 as internal format
-			# 	# NOTE: We do all that, because otherwise the colorspace will be wrong in Blender
-			# 	#		see: https://developer.blender.org/T79788#1034183
-			# 	bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
-			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_SRGB8_ALPHA8, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
-			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
-			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
-
-			# else:
-			# 	print("# USING GL_RGBA")
-			# 	# use linear color space
-			# 	bgl.glBindTexture(bgl.GL_TEXTURE_2D, LookingGlassAddon.quiltTextureID.to_list()[0])
-			# 	bgl.glTexImage2D(bgl.GL_TEXTURE_2D, 0, bgl.GL_RGBA, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], 0, bgl.GL_RGBA, bgl.GL_FLOAT, LookingGlassAddon.quiltTextureBuffer)
-			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MIN_FILTER, bgl.GL_LINEAR)
-			# 	bgl.glTexParameteri(bgl.GL_TEXTURE_2D, bgl.GL_TEXTURE_MAG_FILTER, bgl.GL_LINEAR)
-
 
 			# delete the temporary Blender image
 			bpy.data.images.remove(tempImage)

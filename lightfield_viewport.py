@@ -567,41 +567,39 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def from_texture_to_numpy_array(texture, array):
 		"""copy the current texture to a numpy array"""
 
-		# TODO: Replace these BGL calls with the new BPY API for OpenGL
-		# ++++++++++++++
-		# The following seems to be the basic approach for Blender 3.0 to get the
-		# offscreen image data into a buffer. Not implemented in 2.93:
-		# with offscreen.bind():
-		#     fb = gpu.state.active_framebuffer_get()
-		#     buffer = fb.read_color(0, 0, WIDTH, HEIGHT, 4, 0, 'UBYTE')
-		#
-		# offscreen.free()
-		#
-		# ++++++++++++++
-		#
-		# ALTERNATIVELY (also working only in Blender 3.0+):
-		#
-		# - get the gpu.types.GPUTexture of the GPUOffscreen from its texture_color attribute
-		# - use the read() method of gpu.types.GPUTexture to obtain a buffer with pixel data
-		#
-		# ++++++++++++++
+		# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
+		#		THE bgl.* CALLS SHOULD BE REMOVED
+		# for Blender versions earlier than 3.0 (prior to the major BGL changes)
+		if bpy.app.version < (3, 0, 0):
 
-		# activate the texture
-		bgl.glActiveTexture(bgl.GL_TEXTURE0)
-		bgl.glBindTexture(bgl.GL_TEXTURE_2D, texture)
+			# activate the texture
+			bgl.glActiveTexture(bgl.GL_TEXTURE0)
+			bgl.glBindTexture(bgl.GL_TEXTURE_2D, texture)
 
-		# then we pass the numpy array to the bgl.Buffer as template,
-		# which causes Blender to write the buffer data into the numpy array directly
-		buffer = bgl.Buffer(bgl.GL_BYTE, array.shape, array)
+			# then we pass the numpy array to the bgl.Buffer as template,
+			# which causes Blender to write the buffer data into the numpy array directly
+			buffer = bgl.Buffer(bgl.GL_BYTE, array.shape, array)
 
-		# set correct colormode
-		if array.shape[2] == 3: colormode = bgl.GL_RGB
-		if array.shape[2] == 4: colormode = bgl.GL_RGBA
+			# set correct colormode
+			if array.shape[2] == 3: colormode = bgl.GL_RGB
+			if array.shape[2] == 4: colormode = bgl.GL_RGBA
 
-		# write pixel data from texture into the buffer (numpy array)
-		bgl.glGetTexImage(bgl.GL_TEXTURE_2D, 0, colormode, bgl.GL_UNSIGNED_BYTE, buffer)
-		bgl.glBindTexture(bgl.GL_TEXTURE_2D, 0)
+			# write pixel data from texture into the buffer (numpy array)
+			bgl.glGetTexImage(bgl.GL_TEXTURE_2D, 0, colormode, bgl.GL_UNSIGNED_BYTE, buffer)
+			bgl.glBindTexture(bgl.GL_TEXTURE_2D, 0)
 
+		# for Blender versions later than 3.0 (after the major BGL changes)
+		else:
+
+			# then we pass the numpy array to the gpu.types.Buffer as template,
+			# which causes Blender to write the buffer data into the numpy array directly
+			buffer = gpu.types.Buffer('UBYTE', array.shape, array)
+
+			# get the active framebuffer
+			framebuffer = gpu.state.active_framebuffer_get()
+
+			# write pixel data from texture into the buffer (numpy array)
+			framebuffer.read_color(0, 0, array.shape[1], array.shape[0], array.shape[2], 0, 'UBYTE', data=buffer)
 
 	# Draw function which copies data from the 3D View
 	def render_view(self, context):
@@ -695,16 +693,36 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						# if the "skip views preview" is activated AND this view shall be skipped
 						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '1' or self.addon_settings.lightfield_preview_mode == '2')) and view % self.skip_views:
 
-							# clear this offscreen
-						    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
-						    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+							# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
+							#		THE bgl.* calls can be removed
+							# for Blender versions earlier than 3.0 (prior to the major BGL changes)
+							if bpy.app.version < (3, 0, 0):
+
+								# clear this offscreen
+							    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
+							    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+
+							else:
+
+								# clear this offscreen
+								self.qs[self.preset]["viewOffscreen"].texture_color.clear(format='FLOAT', value=(0.0, 0.0, 0.0, 1.0))
 
 						# if the "Restricted viewcone preview" is activated AND this view shall be skipped
 						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
 
-							# clear this offscreen
-						    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
-						    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+							# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
+							#		THE bgl.* calls can be removed
+							# for Blender versions earlier than 3.0 (prior to the major BGL changes)
+							if bpy.app.version < (3, 0, 0):
+
+								# clear this offscreen
+							    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
+							    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
+
+							else:
+
+								# clear this offscreen
+								self.qs[self.preset]["viewOffscreen"].texture_color.clear(format='FLOAT', value=(0.0, 0.0, 0.0, 1.0))
 
 						else:
 
@@ -988,8 +1006,8 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 						gpu.matrix.load_matrix(viewMatrix @ view_matrix)
 						gpu.matrix.load_projection_matrix(projectionMatrix)
 
-						bgl.glEnable(bgl.GL_DEPTH_TEST)
-						bgl.glDepthMask(bgl.GL_TRUE)
+						gpu.state.depth_test_set('LESS_EQUAL')
+						gpu.state.depth_mask_set(True)
 
 						# if the camera fustum shall be drawn
 						if context.scene.addon_settings.showFrustum == True:
@@ -1003,8 +1021,8 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 							self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
 							batch_focalplane_outline.draw(self.frustum_shader)
 
-						bgl.glDepthMask(bgl.GL_FALSE)
-						bgl.glEnable(bgl.GL_BLEND)
+						gpu.state.depth_mask_set(False)
+						gpu.state.blend_set('ALPHA')
 
 						# if the camera fustum shall be drawn
 						if context.scene.addon_settings.showFrustum == True:
@@ -1018,8 +1036,8 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 							self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
 							batch_focalplane_face.draw(self.frustum_shader)
 
-						bgl.glDisable(bgl.GL_DEPTH_TEST)
-						bgl.glDisable(bgl.GL_BLEND)
+						gpu.state.depth_test_set('NONE')
+						gpu.state.blend_set('NONE')
 
 						# reset the matrices to their original state
 						gpu.matrix.reset()
