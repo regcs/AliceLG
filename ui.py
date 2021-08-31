@@ -763,7 +763,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	viewport_use_preview_mode: bpy.props.BoolProperty(
 										name="Use Preview Mode",
 										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed)",
-										default = False,
+										default = True,
 										)
 
 	viewport_manual_refresh: bpy.props.BoolProperty(
