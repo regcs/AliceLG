@@ -989,8 +989,17 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 				# make the first connected display the active display
 				pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
 
+				# get currently active device
+				device = pylio.DeviceManager.get_active()
+
 				# set the checkbox to True (because now we want to use the device settings)
 				context.scene.addon_settings.render_use_device = True
+
+			# try to find the suitable default quilt preset
+			preset = pylio.LookingGlassQuilt.formats.find(device.default_quilt_width, device.default_quilt_height, device.default_quilt_rows, device.default_quilt_columns)
+
+			# then update the selected quilt preset from the device's default quilt
+			if preset: context.scene.addon_settings.quiltPreset = str(preset)
 
 		return {'FINISHED'}
 

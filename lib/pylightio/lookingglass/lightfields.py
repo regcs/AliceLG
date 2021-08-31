@@ -90,6 +90,13 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
             if id in cls.__dict.keys(): cls.__dict[id] = values
 
         @classmethod
+        def find(cls, width, height, rows, columns):
+            ''' try to find a format id based on the given parameters '''
+            for id, format in cls.__dict.items():
+                if (format['quilt_width'], format['quilt_height'], format['rows'], format['columns']) == (width, height, rows, columns):
+                    return id
+
+        @classmethod
         def count(cls):
             ''' get number of formats '''
             if id in cls.__dict.keys(): return len(cls.__dict)

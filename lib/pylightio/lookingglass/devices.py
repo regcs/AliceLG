@@ -146,8 +146,50 @@ class LookingGlassDeviceMixin(object):
     def calibration(self, value):
         self.configuration['calibration'] = value
 
+    @property
+    def defaultQuilt(self):
+        return self.configuration['defaultQuilt']
 
-    # (B) calibration properties
+    @defaultQuilt.setter
+    def defaultQuilt(self, value):
+        self.configuration['defaultQuilt'] = value
+
+
+    # (B) default quilt settings
+    @property
+    def default_quilt_width(self):
+        return self.defaultQuilt['quiltX']
+
+    @default_quilt_width.setter
+    def default_quilt_width(self, value):
+        pass
+
+    @property
+    def default_quilt_height(self):
+        return self.defaultQuilt['quiltY']
+
+    @default_quilt_height.setter
+    def default_quilt_height(self, value):
+        pass
+
+    @property
+    def default_quilt_columns(self):
+        return self.defaultQuilt['tileX']
+
+    @default_quilt_columns.setter
+    def default_quilt_columns(self, value):
+        pass
+
+    @property
+    def default_quilt_rows(self):
+        return self.defaultQuilt['tileY']
+
+    @default_quilt_rows.setter
+    def default_quilt_rows(self, value):
+        pass
+
+
+    # (C) calibration properties
     @property
     def aspect(self):
         return self.calibration['aspect']
@@ -221,8 +263,8 @@ class LookingGlassPortrait(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 0.75,
-                                    'quiltX': 3840,
-                                    'quiltY': 3840,
+                                    'quiltX': 3360,
+                                    'quiltY': 3360,
                                     'tileX': 8,
                                     'tileY': 6
                                 },

@@ -56,7 +56,7 @@ except:
 # Debugging Settings
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # this is only for debugging purposes
-LookingGlassAddon.debugging_use_dummy_device = False
+LookingGlassAddon.debugging_use_dummy_device = False 
 
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
@@ -254,6 +254,20 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# initialize the RenderSettings
 			# NOTE: This automatically loads the last render settings from the lockfile
 			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.render_mode == '1'))
+
+		else:
+
+			# get active device
+			device = pylio.DeviceManager.get_active()
+
+			# try to find the suitable default quilt preset
+			if device: preset = pylio.LookingGlassQuilt.formats.find(device.default_quilt_width, device.default_quilt_height, device.default_quilt_rows, device.default_quilt_columns)
+
+			# then update the selected quilt preset from the device's default quilt
+			if device and preset:
+				bpy.context.scene.addon_settings.quiltPreset = str(preset)
+				bpy.context.scene.addon_settings.render_quilt_preset = str(preset)
+
 
 		# invoke the camera frustum rendering operator
 		bpy.ops.render.frustum('INVOKE_DEFAULT')
