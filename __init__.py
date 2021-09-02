@@ -111,11 +111,12 @@ logfile_handler.setLevel(logging.DEBUG)
 logfile_handler.namer = logfile_namer
 
 # create formatter
-formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+console_formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+logfile_formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
 # add formatter to ch
-console_handler.setFormatter(formatter)
-logfile_handler.setFormatter(formatter)
+console_handler.setFormatter(console_formatter)
+logfile_handler.setFormatter(logfile_formatter)
 
 # add console handler to logger
 logger.addHandler(console_handler)
@@ -136,15 +137,16 @@ if LookingGlassAddon.debugging_print_internal_logger_all == False: console_handl
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
-logfile_handler.setLevel(logging.INFO)
+logfile_handler.setLevel(logging.DEBUG)
 logfile_handler.namer = logfile_namer
 
 # create formatter
-formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+console_formatter = logging.Formatter('[%(name)s] [%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+logfile_formatter = logging.Formatter('[%(levelname)s] %(asctime)s - %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
 # add formatter to ch
-console_handler.setFormatter(formatter)
-logfile_handler.setFormatter(formatter)
+console_handler.setFormatter(console_formatter)
+logfile_handler.setFormatter(logfile_formatter)
 
 # add console handler to logger
 LookingGlassAddonLogger.addHandler(console_handler)
