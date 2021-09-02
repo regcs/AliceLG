@@ -693,36 +693,18 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						# if the "skip views preview" is activated AND this view shall be skipped
 						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '1' or self.addon_settings.lightfield_preview_mode == '2')) and view % self.skip_views:
 
-							# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
-							#		THE bgl.* calls can be removed
-							# for Blender versions earlier than 3.0 (prior to the major BGL changes)
-							if bpy.app.version < (3, 0, 0):
+							# clear LightfieldView array's color data (so it appears black)
+							self.lightfield_image.views[view]['view'].data[:] = 0
 
-								# clear this offscreen
-							    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
-							    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
-
-							else:
-
-								# clear this offscreen
-								self.qs[self.preset]["viewOffscreen"].texture_color.clear(format='FLOAT', value=(0.0, 0.0, 0.0, 1.0))
+							LookingGlassAddonLogger.debug(" [#] [%i] Clearing skipped view's numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 						# if the "Restricted viewcone preview" is activated AND this view shall be skipped
 						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
 
-							# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
-							#		THE bgl.* calls can be removed
-							# for Blender versions earlier than 3.0 (prior to the major BGL changes)
-							if bpy.app.version < (3, 0, 0):
+							# clear LightfieldView array's color data (so it appears black)
+							self.lightfield_image.views[view]['view'].data[:] = 0
 
-								# clear this offscreen
-							    bgl.glClearColor(0.0, 0.0, 0.0, 0.0)
-							    bgl.glClear(bgl.GL_COLOR_BUFFER_BIT)
-
-							else:
-
-								# clear this offscreen
-								self.qs[self.preset]["viewOffscreen"].texture_color.clear(format='FLOAT', value=(0.0, 0.0, 0.0, 1.0))
+							LookingGlassAddonLogger.debug(" [#] [%i] Clearing skipped view's numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 						else:
 
@@ -759,12 +741,12 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 							LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
-						start_test = time.time()
+							start_test = time.time()
 
-						# copy texture into LightfieldView array
-						self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.views[view]['view'].data)
+							# copy texture into LightfieldView array
+							self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.views[view]['view'].data[:])
 
-						LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
+							LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 				LookingGlassAddonLogger.debug("-----------------------------")
 				LookingGlassAddonLogger.debug("Rendering took in total %.3f ms" % ((time.time() - self.start_multi_view) * 1000))
