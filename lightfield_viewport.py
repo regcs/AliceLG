@@ -389,7 +389,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 					# invoke an update of the Looking Glass viewport
 					self.modal_redraw = True
-					
+
 					# set to the currently chosen quality
 					self.preset = int(scene.addon_settings.quiltPreset)
 					self.skip_views = 1
@@ -403,15 +403,15 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# set to the currently chosen quality
 				self.preset = int(scene.addon_settings.quiltPreset)
 
+				# TODO: Hacky, but this identifies color management changes
 				# go through the updates
 				for DepsgraphUpdate in depsgraph.updates.values():
 					#print(" # ", DepsgraphUpdate.is_updated_geometry, DepsgraphUpdate.is_updated_shading, DepsgraphUpdate.is_updated_transform, DepsgraphUpdate.id.name)
 
-					# TODO: Hacky, but this identifies color management changes
 					if DepsgraphUpdate.is_updated_geometry  == True and DepsgraphUpdate.is_updated_shading == True and DepsgraphUpdate.is_updated_transform == True:
 
 						# update status variable
-						changed = True
+						changed = False
 
 						break
 
