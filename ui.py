@@ -708,12 +708,13 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	# Lightfield Preview Resolution in Auto lightfield mode
 	lightfield_preview_mode: bpy.props.EnumProperty(
-										items = [('0', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
-												 ('1', 'Skipped-views Preview I', 'Skip every second view'),
-												 ('2', 'Skipped-views Preview II', 'Skip every third view'),
-												 ('3', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
+										items = [('0', 'No Preview', 'Lightfield window updates are performed after (not during) user interactions.'),
+												 ('1', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
+												 ('2', 'Skipped-views Preview I', 'Skip every second view'),
+												 ('3', 'Skipped-views Preview II', 'Skip every third view'),
+												 ('4', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
 												 ],
-										default='3',
+										default='0',
 										name="Lightfield Preview Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)

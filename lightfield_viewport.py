@@ -340,38 +340,56 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			if (int(self.addon_settings.renderMode) == 0 and int(self.addon_settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
 				# print("DEPSGRAPH UPDATE: ", depsgraph.updates.values())
 
-				# invoke an update of the Looking Glass viewport
-				self.modal_redraw = True
-
 				# remember time of last depsgraph update
 				self.depsgraph_update_time = time.time()
 
-				# if the "low resolution preview" is activated
+				# if the "no preview" is activated
 				if self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '0':
+
+					# we don't redraw, because changes are only updated after the user interaction finished
+					pass
+
+				# if the "low resolution preview" is activated
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '1':
+
+					# invoke an update of the Looking Glass viewport
+					self.modal_redraw = True
 
 					# activate them
 					self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
 
 				# if the "skip views preview I" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '1':
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '2':
+
+					# invoke an update of the Looking Glass viewport
+					self.modal_redraw = True
 
 					# skip every second view during rendering
 					self.skip_views = 2
 
 				# if the "skip views preview II" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '2':
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3':
+
+					# invoke an update of the Looking Glass viewport
+					self.modal_redraw = True
 
 					# skip every third view during rendering
 					self.skip_views = 3
 
 				# if the "restricted viewcone preview" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3':
+				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4':
+
+					# invoke an update of the Looking Glass viewport
+					self.modal_redraw = True
 
 					# only show the center 33% of all views
 					self.restricted_viewcone_limit = int(self.qs[self.preset]["total_views"] / 3)
 
 				else:
 
+					# invoke an update of the Looking Glass viewport
+					self.modal_redraw = True
+					
 					# set to the currently chosen quality
 					self.preset = int(scene.addon_settings.quiltPreset)
 					self.skip_views = 1
@@ -691,7 +709,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					with self.qs[self.preset]["viewOffscreen"].bind():
 
 						# if the "skip views preview" is activated AND this view shall be skipped
-						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '1' or self.addon_settings.lightfield_preview_mode == '2')) and view % self.skip_views:
+						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '2' or self.addon_settings.lightfield_preview_mode == '3')) and view % self.skip_views:
 
 							# clear LightfieldView array's color data (so it appears black)
 							self.lightfield_image.views[view]['view'].data[:] = 0
@@ -699,7 +717,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 							LookingGlassAddonLogger.debug(" [#] [%i] Clearing skipped view's numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 						# if the "Restricted viewcone preview" is activated AND this view shall be skipped
-						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
+						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
 
 							# clear LightfieldView array's color data (so it appears black)
 							self.lightfield_image.views[view]['view'].data[:] = 0
