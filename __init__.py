@@ -21,7 +21,7 @@
 bl_info = {
 	"name": "Alice/LG",
 	"author": "Christian Stolze",
-	"version": (2, 0, 1),
+	"version": (2, 0, 2),
 	"blender": (2, 83, 0),
 	"location": "View3D > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks through the Looking Glass (lightfield displays)",
@@ -61,7 +61,7 @@ LookingGlassAddon.debugging_use_dummy_device = False
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
 # errors are printed to console.
-LookingGlassAddon.debugging_print_pylio_logger_all = False
+LookingGlassAddon.debugging_print_pylio_logger_all = True
 LookingGlassAddon.debugging_print_internal_logger_all = True
 
 
