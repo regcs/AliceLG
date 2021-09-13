@@ -24,7 +24,7 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 ## System Requirements
 - Windows, Linux, or macOS
-- [Blender 2.83 or later](https://www.blender.org/download/)
+- [Blender 2.93 or later](https://www.blender.org/download/)
 - [Holoplay Service App](https://lookingglassfactory.com/software)
 
 ## Installation
