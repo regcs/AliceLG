@@ -59,8 +59,8 @@ class LookingGlassAddon:
 	# NOTE: The tuple has the form (import name, install name, install version)
 	external_dependecies = [
 							('pynng', 'pynng', ''),
-							('cbor', 'cbor', ''),
 							('PIL', 'pillow', ''),
+							('cv2', 'opencv-python', ''),
 							('pylightio', 'pylightio', ''),
 							]
 
@@ -214,8 +214,8 @@ class LookingGlassAddon:
 					# NOTE: We flip the views in Y direction, because the OpenGL
 					#		and PIL definition of the image origin are different.
 					#		(i.e., top-left vs. bottom-left)
-					if flip_views == None: flip_views = True
-					if invert == None: invert = False
+					if flip_views is None: flip_views = False
+					if invert is None: invert = False
 
 					# let the device display the image
 					device.display(lightfield_image, flip_views=flip_views, invert=invert)
@@ -228,8 +228,8 @@ class LookingGlassAddon:
 					# NOTE: We DON'T flip the views in Y direction, because the Blender
 					#		and PIL definition of the image origin are the same.
 					# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
-					if flip_views == None: flip_views = False
-					if invert == None: invert = False
+					if flip_views is None: flip_views = True
+					if invert is None: invert = False
 
 					# let the device display the image
 					device.display(lightfield_image, flip_views=flip_views, invert=invert)

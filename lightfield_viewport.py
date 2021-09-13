@@ -582,7 +582,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 
 	@staticmethod
-	def from_texture_to_numpy_array(texture, array):
+	def from_texture_to_numpy_array(offscreen, array):
 		"""copy the current texture to a numpy array"""
 
 		# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
@@ -592,7 +592,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 			# activate the texture
 			bgl.glActiveTexture(bgl.GL_TEXTURE0)
-			bgl.glBindTexture(bgl.GL_TEXTURE_2D, texture)
+			bgl.glBindTexture(bgl.GL_TEXTURE_2D, offscreen.color_texture)
 
 			# then we pass the numpy array to the bgl.Buffer as template,
 			# which causes Blender to write the buffer data into the numpy array directly
@@ -762,7 +762,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 							start_test = time.time()
 
 							# copy texture into LightfieldView array
-							self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"].color_texture, self.lightfield_image.views[view]['view'].data[:])
+							self.from_texture_to_numpy_array(self.qs[self.preset]["viewOffscreen"], self.lightfield_image.views[view]['view'].data[:])
 
 							LookingGlassAddonLogger.debug(" [#] [%i] Copying texture to numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 

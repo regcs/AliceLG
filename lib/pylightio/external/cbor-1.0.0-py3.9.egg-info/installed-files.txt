@@ -1,0 +1,14 @@
+../cbor/VERSION.py
+../cbor/__init__.py
+../cbor/__pycache__/VERSION.cpython-39.pyc
+../cbor/__pycache__/__init__.cpython-39.pyc
+../cbor/__pycache__/cbor.cpython-39.pyc
+../cbor/__pycache__/cbor_rpc_client.cpython-39.pyc
+../cbor/__pycache__/tagmap.cpython-39.pyc
+../cbor/cbor.py
+../cbor/cbor_rpc_client.py
+../cbor/tagmap.py
+PKG-INFO
+SOURCES.txt
+dependency_links.txt
+top_level.txt

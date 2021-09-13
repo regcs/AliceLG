@@ -6,11 +6,6 @@
 ## BUGS / ENHANCEMENTS
 
 - BUG: Shading & Overlay settings - the "CUSTOM" setting also changes the current viewport
-- BUG: The color management for the Offscreen management in the live view is wrong
-
-    => the will be easy to handle if Gottfrieds commit is implemented in Blender 3.0
-
-- select the default quilt based on the device type automatically when selecting a device
 
 ## DOCUMENTATION
 

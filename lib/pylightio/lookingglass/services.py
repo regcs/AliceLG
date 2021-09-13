@@ -18,17 +18,19 @@
 
 # EXTERNAL PACKAGE DEPENDENCIES
 ###################################################
-import os, io
-import pynng, cbor
+import sys, os, io, struct
+import pynng, cv2
 import math
+import numpy as np
 
 # debugging
-import timeit
+import time
 
 # INTERNAL PACKAGE DEPENDENCIES
 ###################################################
 from pylightio.managers.services import BaseServiceType
 from pylightio.formats import *
+from pylightio.external import cbor
 
 # PREPARE LOGGING
 ###################################################
@@ -55,7 +57,7 @@ class HoloPlayService(BaseServiceType):
     __address = 'ipc:///tmp/holoplay-driver.ipc'                # driver url (alternative: "ws://localhost:11222/driver", "ipc:///tmp/holoplay-driver.ipc")
     __dialer = None                                             # NNG Dialer of the socket
     __devices = []                                              # list of devices supported by this service (#TODO: this needs to be implemented)
-    __decoder_format = LightfieldImage.decoderformat.bytesio    # the decoder format in which the lightfield data is passed to the backend or display
+    __decoder_format = LightfieldImage.decoderformat.numpyarray # the decoder format in which the lightfield data is passed to the service
 
     # Error
     ###################
@@ -103,7 +105,7 @@ class HoloPlayService(BaseServiceType):
         ''' return the holoplay service version '''
 
         # if the NNG socket is connected to HoloPlay Service App
-        if self.__is_connected():
+        if self.__is_connected() and not self.version:
 
             # request service version
             response = self.__send_message({'cmd': {'info': {}}, 'bin': ''})
@@ -154,34 +156,57 @@ class HoloPlayService(BaseServiceType):
 
         # if the service is ready
         if self.is_ready():
-            start = timeit.default_timer()
+            start_total = time.time()
             # if a lightfield was given
             if lightfield != None:
 
                 # convert the lightfield into a suitable format for this service
                 # NOTE: HoloPlay Service expects a byte stream
-                bytesio = lightfield.decode(self.__decoder_format, flip_views=flip_views, custom_decoder=custom_decoder)
-                #logger.debug(" [#] Decoded lightfield data to BytesIO stream in %.3f ms." % ((timeit.default_timer() - start) * 1000))
+                start = time.time()
+                decoded_lightfield_data = lightfield.decode(self.__decoder_format, flip_views=flip_views, custom_decoder=custom_decoder)
 
-                if type(bytesio) == io.BytesIO:
+                # lightfield is decoded as numpy array
+                if self.__decoder_format == LightfieldImage.decoderformat.numpyarray and type(decoded_lightfield_data) == np.ndarray:
 
-                    # convert to bytes
-                    bytes = bytesio.getvalue()
+                    # flip the individual views vertically, if required
+                    start = time.time()
+                    if flip_views:
+                        merged_numpy = lightfield.merged_numpy.view()[:, ::-1, :, :, :]
 
-                    # free the memory buffer
-                    bytesio.close()
+                        logger.debug(" [#] Flipping the numpy array of shape %s took %.3f ms." % (merged_numpy.shape, (time.time() - start) * 1000))
+                        start = time.time()
+                    else:
+                        merged_numpy = lightfield.merged_numpy.view()
+
+                    # convert BGR <-> RGB on little-endian systems to make the
+                    # data in the numpy buffer comply with the BITMAP file format
+                    # specifications
+                    start = time.time()
+                    if sys.byteorder == "little":
+                        if lightfield.colorchannels == 3:
+                            bytes = cv2.cvtColor(merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels), cv2.COLOR_BGR2RGB)
+
+                        elif lightfield.colorchannels == 4:
+                            bytes = cv2.cvtColor(merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels), cv2.COLOR_BGRA2RGBA)
+
+                        logger.debug(" [#] Converting from BGR to RGB took %.3f ms." % ((time.time() - start) * 1000))
+
+                    else:
+                        bytes = merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels)
+
+                        logger.debug(" [#] Reading bytes from %s took %.3f ms." % (type(bytes), (time.time() - start) * 1000))
 
                     # parse the quilt metadata
                     settings = {'vx': lightfield.metadata['columns'], 'vy':lightfield.metadata['rows'], 'vtotal': lightfield.metadata['rows'] * lightfield.metadata['columns'], 'aspect': aspect, 'invert': invert}
 
                     # pass the quilt to the device
                     logger.info(" [#] Lightfield image is being sent to '%s'." % self)
-                    self.__send_message(self.__show_quilt(device.configuration['index'], bytes, settings))
-                    logger.info(" [#] Done (total time: %.3f ms)." % ((timeit.default_timer() - start) * 1000))
+                    self.__send_message(self.__show_quilt(device.configuration['index'], bytes, settings), image_shape=(lightfield.metadata['quilt_height'],lightfield.metadata['quilt_width'], lightfield.colorchannels))
+                    logger.info(" [#] Done (total time: %.3f ms)." % ((time.time() - start_total) * 1000))
 
                     return True
 
-                raise TypeError("The '%s' expected lightfield data conversion to %s, but %s was passed." % (self, io.BytesIO, type(bytesio)))
+                raise TypeError("The '%s' expected lightfield data conversion to %s, but %s was passed." % (self, np.ndarray, type(decoded_lightfield_data)))
 
             # otherwise show the demo quilt
             else:
@@ -189,7 +214,7 @@ class HoloPlayService(BaseServiceType):
                 # pass the quilt to the device
                 logger.info(" [#] Display of demo quilt is requested for '%s' ..." % self)
                 self.__send_message(self.__show_demo(device.configuration['index']))
-                logger.debug(" [#] Sending request and waiting for response took %.3f s." % (timeit.default_timer() - start))
+                logger.debug(" [#] Sending request and waiting for response took %.3f s." % (time.time() - start))
                 logger.info(" [#] Done.")
 
                 return True
@@ -292,24 +317,27 @@ class HoloPlayService(BaseServiceType):
             self.__dialer = None
             self.version = ""
 
-    def __send_message(self, input_object):
+    def __send_message(self, input_object, image_shape=None):
         ''' send a message to HoloPlay Service '''
+
         # if a NNG socket is open
         if self.__is_socket():
-
-            start = timeit.default_timer()
+            start = time.time()
 
             # dump a CBOR message
-            cbor_dump = cbor.dumps(input_object)
+            if image_shape is None:
+                cbor_dump = cbor.dumps(input_object)
+            else:
+                cbor_dump = cbor.dumps(input_object, image_shape=image_shape)
 
-            logger.debug(" [#] Encoding command as CBOR before sending took %.3f ms." % ((timeit.default_timer() - start) * 1000))
-            start = timeit.default_timer()
+            logger.debug(" [#] Encoding command as CBOR before sending took %.3f ms." % ((time.time() - start) * 1000))
+            start = time.time()
 
             # send it to the socket
             self.__socket.send(cbor_dump)
 
-            logger.debug(" [#] Sending comnand took %.3f ms." % ((timeit.default_timer() - start) * 1000))
-            start = timeit.default_timer()
+            logger.debug(" [#] Sending command of length %i took %.3f ms." % (len(cbor_dump), (time.time() - start) * 1000))
+            start = time.time()
 
             # receive the CBOR-formatted response
             if not ('show' in input_object['cmd'].keys()):
@@ -317,7 +345,7 @@ class HoloPlayService(BaseServiceType):
             else:
                 return#response = self.__socket.recv()
 
-            logger.debug(" [#] Waiting for response took %.3f ms." % ((timeit.default_timer() - start) * 1000))
+            logger.debug(" [#] Waiting for response took %.3f ms." % ((time.time() - start) * 1000))
 
             # return the decoded CBOR response length and its conent
             return [len(response), cbor.loads(response)]

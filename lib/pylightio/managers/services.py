@@ -138,7 +138,7 @@ class BaseServiceType(object):
 
     # DEFINE CLASS PROPERTIES AS PRIVATE MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    __version = ""                                      # version string of the service service
+    __version = ""                                      # version string of the service
 
     # INSTANCE METHODS - IMPLEMENTED BY BASE CLASS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
