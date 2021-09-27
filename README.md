@@ -111,4 +111,4 @@ The Blender add-on part of this project is licensed under the [GNU GPL v3 Licens
 
 This Blender add-on partially relies on the following GPL-compatible open-source libraries / modules and their dependencies:
 
-- [pyLightIO](https://github.com/regcs/pyLightIO) licensed under [Apache Software License 2.0](https://github.com/regcs/pyLightIO/blob/master/LICENSE)
+- pyLightIO licensed under Apache Software License 2.0

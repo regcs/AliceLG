@@ -599,7 +599,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	clip_start: bpy.props.FloatProperty(
 										name = "Clip Start",
 										default = 4.2,
-										min = 0,
+										min = 0.000001,
+										soft_min = 0.1,
 										precision = 1,
 										step = 10,
 										description = "Far clipping plane of the Looking Glass frustum.",
