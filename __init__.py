@@ -268,8 +268,11 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# then update the selected quilt preset from the device's default quilt
 			if device and preset:
 				bpy.context.scene.addon_settings.quiltPreset = str(preset)
-				bpy.context.scene.addon_settings.render_quilt_preset = str(preset)
+			elif device and not preset:
 
+				# fallback solution, if the default quilt is not found:
+				# We use the Looking Glass Portrait standard quilt (48 views)
+				bpy.context.scene.addon_settings.quiltPreset = "4"
 
 		# invoke the camera frustum rendering operator
 		bpy.ops.render.frustum('INVOKE_DEFAULT')

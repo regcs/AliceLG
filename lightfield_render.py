@@ -1417,13 +1417,9 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# Create timer event that runs every 1 ms to check the rendering process
 		self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
 
-		# START THE MODAL OPERATOR
-		# ++++++++++++++++++++++++++++++++++
 		# add the modal operator handler
 		context.window_manager.modal_handler_add(self)
 
-		# SET STATUS VARIABLES FOR PROGRESSBAR
-		# ++++++++++++++++++++++++++++++++++
 		LookingGlassAddon.RenderInvoked = True
 		LookingGlassAddon.RenderAnimation = self.render_settings.job.animation
 

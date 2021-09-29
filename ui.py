@@ -968,7 +968,13 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 			preset = pylio.LookingGlassQuilt.formats.find(device.default_quilt_width, device.default_quilt_height, device.default_quilt_rows, device.default_quilt_columns)
 
 			# then update the selected quilt preset from the device's default quilt
-			if preset: context.scene.addon_settings.quiltPreset = str(preset)
+			if preset:
+				context.scene.addon_settings.quiltPreset = str(preset)
+
+			# fallback solution, if the default quilt is not found:
+			# We use the Looking Glass Portrait standard quilt (48 views)
+			else:
+				context.scene.addon_settings.quiltPreset = "4"
 
 		return {'FINISHED'}
 
