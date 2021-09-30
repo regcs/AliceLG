@@ -147,8 +147,8 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
             self.colorchannels = len(colormode)
 
             # store quilt metadata
-            self.metadata['quilt_width'] = LookingGlassQuilt.formats.get(id)['quilt_width']
-            self.metadata['quilt_height'] = LookingGlassQuilt.formats.get(id)['quilt_height']
+            self.metadata['quilt_width'] = LookingGlassQuilt.formats.get(id)['view_width'] * LookingGlassQuilt.formats.get(id)['columns']
+            self.metadata['quilt_height'] = LookingGlassQuilt.formats.get(id)['view_height'] * LookingGlassQuilt.formats.get(id)['rows']
             self.metadata['view_width'] = LookingGlassQuilt.formats.get(id)['view_width']
             self.metadata['view_height'] = LookingGlassQuilt.formats.get(id)['view_height']
             self.metadata['rows'] = LookingGlassQuilt.formats.get(id)['rows']

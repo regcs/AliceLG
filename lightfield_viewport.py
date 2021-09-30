@@ -642,16 +642,23 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# delete the current LightfieldImage
 				if self.lightfield_image: self.lightfield_image = None
 
+                # TODO: Actually we would use "RGB" and a numpy array with 3
+				#		color channels, because that would be more efficient.
+				#		But we can't read in RGB mode to gpu.types.Buffer
+                #       due to a Blender bug / limitation:
+				#
+                #       https://developer.blender.org/T91828
+
 				# create a pylio LightfieldImage
-				self.lightfield_image = pylio.LightfieldImage.new(pylio.LookingGlassQuilt, id=self.preset, colormode='RGB')
+				self.lightfield_image = pylio.LightfieldImage.new(pylio.LookingGlassQuilt, id=self.preset, colormode='RGBA')
 
 				# create a new set of LightfieldViews
-				self.lightfield_image.set_views([pylio.LightfieldView(np.empty((self.qs[self.preset]["viewOffscreen"].height, self.qs[self.preset]["viewOffscreen"].width, 3), dtype=np.uint8), pylio.LightfieldView.formats.numpyarray) for view in range(0, self.qs[self.preset]["total_views"])], pylio.LightfieldView.formats.numpyarray)
+				self.lightfield_image.set_views([pylio.LightfieldView(np.empty((self.qs[self.preset]["viewOffscreen"].height, self.qs[self.preset]["viewOffscreen"].width, 4), dtype=np.uint8), pylio.LightfieldView.formats.numpyarray) for view in range(0, self.qs[self.preset]["total_views"])], pylio.LightfieldView.formats.numpyarray)
 
 			LookingGlassAddonLogger.debug("Start rendering lightfield views ...")
 			LookingGlassAddonLogger.debug(" [#] View dimensions: %i x %i" % (self.qs[self.preset]["viewOffscreen"].width, self.qs[self.preset]["viewOffscreen"].height))
 			LookingGlassAddonLogger.debug(" [#] LightfieldImage views: %i" % len(self.lightfield_image.get_view_data()))
-			LookingGlassAddonLogger.debug(" [#] Using quilt preset: %i" % self.preset)
+			LookingGlassAddonLogger.debug(" [#] Using quilt preset: %i (%s, %i x %i)" % (self.preset, self.qs[self.preset]['description'], self.lightfield_image.metadata['quilt_width'], self.lightfield_image.metadata['quilt_height']))
 
 
 			# PREPARE VIEW & PROJECTION MATRIX

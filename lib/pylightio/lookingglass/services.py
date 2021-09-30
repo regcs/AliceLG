@@ -178,20 +178,37 @@ class HoloPlayService(BaseServiceType):
                     else:
                         merged_numpy = lightfield.merged_numpy.view()
 
-                    # convert BGR <-> RGB on little-endian systems to make the
+                    # convert BGR(A) <-> RGB on little-endian systems to make the
                     # data in the numpy buffer comply with the BITMAP file format
                     # specifications
                     start = time.time()
                     if sys.byteorder == "little":
+
                         if lightfield.colorchannels == 3:
+
                             bytes = cv2.cvtColor(merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels), cv2.COLOR_BGR2RGB)
 
-                        elif lightfield.colorchannels == 4:
-                            bytes = cv2.cvtColor(merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels), cv2.COLOR_BGRA2RGBA)
+                            logger.debug(" [#] Converting from BGR to RGB took %.3f ms." % ((time.time() - start) * 1000))
 
-                        logger.debug(" [#] Converting from BGR to RGB took %.3f ms." % ((time.time() - start) * 1000))
+                        elif lightfield.colorchannels == 4:
+
+                            bytes = cv2.cvtColor(merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels), cv2.COLOR_BGRA2RGB)
+
+                            logger.debug(" [#] Converting from BGRA to RGB took %.3f ms." % ((time.time() - start) * 1000))
+
+                    elif not sys.byteorder == "little" and lightfield.colorchannels == 4:
+
+                        # TODO: Actually we would not need this, if we could
+                        #       read in RGB mode to gpu.types.Buffer, but we can't
+                        #       due to a Blender bug / limitation:
+                        #
+                        #       https://developer.blender.org/T91828
+                        bytes = cv2.cvtColor(merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels), cv2.COLOR_RGBA2RGB)
+
+                        logger.debug(" [#] Converting from RGBA to RGB took %.3f ms." % ((time.time() - start) * 1000))
 
                     else:
+
                         bytes = merged_numpy.reshape(lightfield.metadata['quilt_height'], lightfield.metadata['quilt_width'], lightfield.colorchannels)
 
                         logger.debug(" [#] Reading bytes from %s took %.3f ms." % (type(bytes), (time.time() - start) * 1000))
@@ -200,8 +217,8 @@ class HoloPlayService(BaseServiceType):
                     settings = {'vx': lightfield.metadata['columns'], 'vy':lightfield.metadata['rows'], 'vtotal': lightfield.metadata['rows'] * lightfield.metadata['columns'], 'aspect': aspect, 'invert': invert}
 
                     # pass the quilt to the device
-                    logger.info(" [#] Lightfield image is being sent to '%s'." % self)
-                    self.__send_message(self.__show_quilt(device.configuration['index'], bytes, settings), image_shape=(lightfield.metadata['quilt_height'],lightfield.metadata['quilt_width'], lightfield.colorchannels))
+                    logger.info(" [#] Lightfield image with shape %s is being sent to '%s'." % (bytes.shape, self))
+                    self.__send_message(self.__show_quilt(device.configuration['index'], bytes, settings), image_shape=(lightfield.metadata['quilt_height'],lightfield.metadata['quilt_width'], 3))
                     logger.info(" [#] Done (total time: %.3f ms)." % ((time.time() - start_total) * 1000))
 
                     return True

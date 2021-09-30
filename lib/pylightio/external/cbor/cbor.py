@@ -235,16 +235,20 @@ def dumps_bitmap(val, image_shape):
     BPC         = 8                 # Bits per component
     BPP         = CHANNELS*BPC      # Bits per pixel
     COMPRESSION = 0
-    SIZE_IMG    = WIDTH*HEIGHT*BPP
+    SIZE_IMG    = WIDTH*HEIGHT*CHANNELS
     SIZE_FIL    = OFFSET+SIZE_IMG
 
-    head = BMP_ID + struct.pack('IHHIIIIHHIIIIII',\
-        SIZE_FIL,0,0,OFFSET,SIZE_DIB,WIDTH,HEIGHT,PLANES,BPP,COMPRESSION,SIZE_IMG,0,0,0,0)
+    head = BMP_ID + struct.pack('IHHIIIIHHIIIIII', SIZE_FIL,0,0,OFFSET,SIZE_DIB,WIDTH,HEIGHT,PLANES,BPP,COMPRESSION,0,0,0,0,0)
 
+    # add header to the CBOR encoding list
     dumps_list.append(_encode_type_num(CBOR_BYTES, len(head) + val.size))
     dumps_list.append(head)
-    dumps_list.append(val)
-    #print("NUMPY CONVERSION WITH SHAPE %s TOOK: %.3f" % (image_shape, (time.time() - start) * 1000))
+
+    # add zero padding to each row, since this is required by the BMP format
+    if ((WIDTH * 3) % 4): dumps_list.append(np.pad(val.reshape((HEIGHT, WIDTH * 3)), ((0, 0), (0, 4 - (WIDTH * 3) % 4)), 'constant'))
+    else: dumps_list.append(val)
+
+    # print("NUMPY CONVERSION WITH SHAPE %s TOOK: %.3f" % (image_shape, (time.time() - start) * 1000))
     return
 
 
@@ -340,7 +344,7 @@ def dumps(ob, sort_keys=False, image_shape=None):
         result = dumps_string(ob)
     elif type(ob) == memoryview:
         result = dumps_memoryview(ob)
-    elif type(ob) == np.ndarray:
+    elif type(ob) == np.ndarray and (not image_shape is None):
         result = dumps_bitmap(ob, image_shape)
     elif isinstance(ob, (list, tuple)):
         result = dumps_array(ob, sort_keys=sort_keys)
