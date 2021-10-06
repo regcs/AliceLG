@@ -803,10 +803,12 @@ class RenderSettings:
 			# get active Looking Glass
 			if self.addon_settings.render_use_device == True and pylio.DeviceManager.get_active():
 				self._device = pylio.DeviceManager.get_active()
+				self._quilt_preset = self.addon_settings.quiltPreset
 
 			# or the selected emulated device
 			elif self.addon_settings.render_use_device == False:
 				self._device = pylio.DeviceManager.get_device(key="index", value=int(self.addon_settings.render_device_type))
+				self._quilt_preset = self.addon_settings.render_quilt_preset
 
 			# get all quilt presets from pylio
 			self._qs = pylio.LookingGlassQuilt.formats.get()
@@ -863,11 +865,11 @@ class RenderSettings:
 			elif not self._use_lockfile:
 
 				# settings of the current preset
-				self.job.view_width = self._qs[int(self.addon_settings.render_quilt_preset)]["view_width"]
-				self.job.view_height = self._qs[int(self.addon_settings.render_quilt_preset)]["view_height"]
-				self.job.rows = self._qs[int(self.addon_settings.render_quilt_preset)]["rows"]
-				self.job.columns = self._qs[int(self.addon_settings.render_quilt_preset)]["columns"]
-				self.job.total_views = self._qs[int(self.addon_settings.render_quilt_preset)]["total_views"]
+				self.job.view_width = self._qs[int(self._quilt_preset)]["view_width"]
+				self.job.view_height = self._qs[int(self._quilt_preset)]["view_height"]
+				self.job.rows = self._qs[int(self._quilt_preset)]["rows"]
+				self.job.columns = self._qs[int(self._quilt_preset)]["columns"]
+				self.job.total_views = self._qs[int(self._quilt_preset)]["total_views"]
 
 				# if the operator was called with the animation flag set
 				if self.animation == True:
