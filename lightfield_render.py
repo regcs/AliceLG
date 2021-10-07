@@ -433,6 +433,9 @@ class RenderJob:
 
 		# GET THE PIXEL DATA OF THE RENDERED VIEWS
 		# ++++++++++++++++++++++++++++++++++++++++++++
+		# clear the quilt pixel data for the (next) quilt
+		self._view_images_pixels.clear()
+
 		# iterate through all views
 		for view in range(0, self.total_views):
 
