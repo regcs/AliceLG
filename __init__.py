@@ -281,6 +281,21 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# if the current blender session has a file
 			if bpy.data.filepath != "":
 
+				# if an output path was specified
+				if "-o" in LookingGlassAddon.blender_arguments or "--render-output" in LookingGlassAddon.blender_arguments:
+
+					# get the file name position
+					try:
+						index = LookingGlassAddon.blender_arguments.index("-o") + 1
+					except ValueError:
+						index = LookingGlassAddon.blender_arguments.index("--render-output") + 1
+
+					# get filename and set it asd output path
+					bpy.context.scene.render.filepath = LookingGlassAddon.blender_arguments[index]
+
+					# deactivate the "Add Metadata option"
+					bpy.context.scene.addon_settings.render_add_suffix = False
+
 				# if the a quilt shall be rendered
 				if '-alicelg-render' in LookingGlassAddon.addon_arguments:
 					bpy.ops.render.quilt('EXEC_DEFAULT', use_multiview=True, blocking=True)
