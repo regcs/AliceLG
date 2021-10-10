@@ -51,7 +51,7 @@ LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 # internal rendering jobs
 class RenderJob:
 
-	def __init__(self, scene, animation, use_lockfile, use_multiview):
+	def __init__(self, scene, animation, use_lockfile, use_multiview, blocking):
 
 		# INITIALIZE ATTRIBUTES
 		# +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -64,6 +64,7 @@ class RenderJob:
 		self.animation = animation
 		self._use_lockfile = use_lockfile
 		self.use_multiview = use_multiview
+		self.blocking = blocking
 
 		# render job control attributes
 		self._state = 'INVOKE_RENDER' # possible states: 'INVOKE_RENDER', 'INIT_RENDER', 'PRE_RENDER', 'POST_RENDER', 'COMPLETE_RENDER', 'CANCEL_RENDER''IDLE'
@@ -760,13 +761,14 @@ class RenderSettings:
 
 
 	# initiate the class instance
-	def __init__(self, BlenderScene, animation, use_lockfile, use_multiview):
+	def __init__(self, BlenderScene, animation, use_lockfile, use_multiview, blocking):
 
 		# get initialization parameters
 		self.scene = BlenderScene
 		self.animation = animation
 		self._use_lockfile = use_lockfile
 		self.use_multiview = use_multiview
+		self.blocking = blocking
 
 		# if a valid scene was given
 		if self.scene and type(self.scene) == bpy.types.Scene:
@@ -779,7 +781,7 @@ class RenderSettings:
 			self.addon_settings = self.scene.addon_settings
 
 			# initialize the rendering job variables
-			self.job = RenderJob(self.scene, self.animation, self._use_lockfile, self.use_multiview)
+			self.job = RenderJob(self.scene, self.animation, self._use_lockfile, self.use_multiview, self.blocking)
 
 			# copy the attributes of the original bpy.types.RenderSettings object
 			for key in dir(self.scene.render):
@@ -804,12 +806,12 @@ class RenderSettings:
 			# DEVICE SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 			# get active Looking Glass
-			if self.addon_settings.render_use_device == True and pylio.DeviceManager.get_active():
+			if not self.blocking and (self.addon_settings.render_use_device == True and pylio.DeviceManager.get_active()):
 				self._device = pylio.DeviceManager.get_active()
 				self._quilt_preset = self.addon_settings.quiltPreset
 
 			# or the selected emulated device
-			elif self.addon_settings.render_use_device == False:
+			elif self.blocking or self.addon_settings.render_use_device == False:
 				self._device = pylio.DeviceManager.get_device(key="index", value=int(self.addon_settings.render_device_type))
 				self._quilt_preset = self.addon_settings.render_quilt_preset
 
@@ -1117,6 +1119,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	use_lockfile: bpy.props.BoolProperty(default = False)
 	discard_lockfile: bpy.props.BoolProperty(default = False)	# trigger discarding lockfile
 	use_multiview: bpy.props.BoolProperty(default = False)		# use the multiview rendering
+	blocking: bpy.props.BoolProperty(default = False)			# start rendering in blocking mode (for renderfarms & command line calls)
 
 	# render settings
 	render_settings = None
@@ -1236,6 +1239,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 	# invoke the modal operator
+	def execute(self, context):
+		return self.invoke(context, None)
+
+
+	# invoke the modal operator
 	def invoke(self, context, event):
 
 		# RENDER SETTINGS
@@ -1245,7 +1253,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# NOTE: This class also stores the original settings and provides a
 		#		restore_original() method to restore the scenes original render
 		#		settings after the render job is done
-		self.render_settings = RenderSettings(bpy.context.scene, self.animation, self.use_lockfile, self.use_multiview)
+		self.render_settings = RenderSettings(bpy.context.scene, self.animation, self.use_lockfile, self.use_multiview, self.blocking)
 
 		# if a lockfile should be loaded
 		if self.use_lockfile:
@@ -1410,31 +1418,45 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		self.render_settings.job.scene.render.use_multiview = self.use_multiview
 
 		# HANDLERS FOR THE RENDERING PROCESS
-		# +++++++++++++++++++++++++++++++++++
+		# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		bpy.app.handlers.render_init.append(self.render_settings.job.init_render)
 		bpy.app.handlers.render_pre.append(self.render_settings.job.pre_render)
 		bpy.app.handlers.render_post.append(self.render_settings.job.post_render)
 		bpy.app.handlers.render_cancel.append(self.render_settings.job.cancel_render)
 		bpy.app.handlers.render_complete.append(self.render_settings.job.completed_render)
 
-		# HANDLER FOR EVENT TIMER
-		# ++++++++++++++++++++++++++++++++++
-		# Create timer event that runs every 1 ms to check the rendering process
-		self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
-
-		# add the modal operator handler
-		context.window_manager.modal_handler_add(self)
-
 		LookingGlassAddon.RenderInvoked = True
 		LookingGlassAddon.RenderAnimation = self.render_settings.job.animation
 
-		# keep the modal operator running
-		return {'RUNNING_MODAL'}
+		# START RENDERING IN MODAL OR BLOCKING MODE
+		# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		# if operator was called in non-blocking mode
+		if not self.blocking:
+
+			# HANDLER FOR EVENT TIMER
+			# ++++++++++++++++++++++++++++++++++
+			# Create timer event that runs every 1 ms to check the rendering process
+			self._handle_event_timer = context.window_manager.event_timer_add(0.001, window=context.window)
+
+			# add the modal operator handler
+			context.window_manager.modal_handler_add(self)
+
+			# keep the modal operator running
+			return {'RUNNING_MODAL'}
+
+		else:
+
+			# render the quilt in blocking mode until it is finished
+			while (self.modal(context, None) == {'PASS_THROUGH'}):
+				time.sleep(0.001)
+
+			# finish operator
+			return {'FINISHED'}
 
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		#LookingGlassAddonLogger.debug("Current render job state: %s (stop state: %s)" % (self.render_settings.job._state, self.render_settings.addon_settings.render_stop))
+		LookingGlassAddonLogger.debug("Current render job state: %s (stop state: %s)" % (self.render_settings.job._state, self.render_settings.addon_settings.render_stop))
 
 		# UPDATE PROGRESS BAR
 		# +++++++++++++++++++++++++++++++++++++++++++
@@ -1445,7 +1467,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		# PROCESS MODAL EVENTS
 		# +++++++++++++++++++++++++++++++++++++++++++
 		# if the ESC key was pressed
-		if event.type == 'ESC':
+		if not event is None and event.type == 'ESC':
 
 			# update state variables
 			self.render_settings.addon_settings.render_stop = True
@@ -1454,7 +1476,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			return {'PASS_THROUGH'}
 
 		# if the TIMER event for the quilt rendering is called
-		elif event.type == 'TIMER':
+		elif event is None or (not event is None and event.type == 'TIMER'):
 
 			# INVOKE NEW RENDER JOB
 			# ++++++++++++++++++++++++++++++++++
@@ -1477,8 +1499,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 					self.render_settings.job.scene.render.use_lock_interface = True
 
- 					# set render job state to IDLE
-					self.render_settings.job._state = "IDLE"
+ 					# set render job state to IDLE, if operator not in blocking mode
+					if not self.blocking: self.render_settings.job._state = "IDLE"
 
 					# Some status infos for the user if this is not a multiview render:
 					if not self.use_multiview:

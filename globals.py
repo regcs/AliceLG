@@ -64,6 +64,11 @@ class LookingGlassAddon:
 							('pylightio', 'pylightio', ''),
 							]
 
+	# Blender arguments
+	blender_arguments = ""
+	addon_arguments = ""
+	background = False
+
 	# the pyLightIO service for display communication
 	service = None
 

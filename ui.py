@@ -295,7 +295,8 @@ class LookingGlassAddonUI:
 		if context.scene.addon_settings.lookingglassCamera != None:
 
 			# if the frustum drawing operator is not invoked, but should be
-			if LookingGlassAddon.FrustumInitialized == False and context.scene.addon_settings.showFrustum == True: bpy.ops.render.frustum('INVOKE_DEFAULT')
+			if LookingGlassAddon.FrustumInitialized == False and context.scene.addon_settings.showFrustum == True and LookingGlassAddon.background == False:
+				bpy.ops.render.frustum('INVOKE_DEFAULT')
 
 			# apply the settings to the selected camera object
 			camera = context.scene.addon_settings.lookingglassCamera

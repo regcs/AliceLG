@@ -255,7 +255,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 			# initialize the RenderSettings
 			# NOTE: This automatically loads the last render settings from the lockfile
-			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.render_mode == '1'))
+			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.render_mode == '1'), blocking=LookingGlassAddon.background)
 
 		else:
 
@@ -268,38 +268,73 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# then update the selected quilt preset from the device's default quilt
 			if device and preset:
 				bpy.context.scene.addon_settings.quiltPreset = str(preset)
+
 			elif device and not preset:
 
 				# fallback solution, if the default quilt is not found:
 				# We use the Looking Glass Portrait standard quilt (48 views)
 				bpy.context.scene.addon_settings.quiltPreset = "4"
 
-		# invoke the camera frustum rendering operator
-		bpy.ops.render.frustum('INVOKE_DEFAULT')
+		# check if Blender is run in background mode
+		if LookingGlassAddon.background:
 
-		# get the active window
-		LookingGlassAddon.BlenderWindow = bpy.context.window
+			# if the current blender session has a file
+			if bpy.data.filepath != "":
 
-		# if the lightfield window was active
-		if bpy.context.scene.addon_settings.ShowLightfieldWindow == True:
+				# if the a quilt shall be rendered
+				if '-alicelg-render' in LookingGlassAddon.addon_arguments:
+					bpy.ops.render.quilt('EXEC_DEFAULT', use_multiview=True, blocking=True)
 
-			# for each scene in the file
-			for scene in bpy.context.blend_data.scenes:
+				# if the a quilt shall be rendered
+				elif '-alicelg-render-anim' in LookingGlassAddon.addon_arguments:
+					bpy.ops.render.quilt('EXEC_DEFAULT', animation=True, use_multiview=True, blocking=True)
 
-				# set the lightfield window button state to 'deactivated'
-			    scene.addon_settings.ShowLightfieldWindow = False
+		else:
 
-		# if no Looking Glass was detected AND debug mode is not activated
-		if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
+			# invoke the camera frustum rendering operator
+			bpy.ops.render.frustum('INVOKE_DEFAULT')
 
-			# set the "use device" checkbox in quilt setup to False
-			# (because there is no device we could take the settings from)
-			bpy.context.scene.addon_settings.render_use_device = False
+			# get the active window
+			LookingGlassAddon.BlenderWindow = bpy.context.window
+
+			# if the lightfield window was active
+			if bpy.context.scene.addon_settings.ShowLightfieldWindow == True:
+
+				# for each scene in the file
+				for scene in bpy.context.blend_data.scenes:
+
+					# set the lightfield window button state to 'deactivated'
+				    scene.addon_settings.ShowLightfieldWindow = False
+
+			# if no Looking Glass was detected AND debug mode is not activated
+			if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
+
+				# set the "use device" checkbox in quilt setup to False
+				# (because there is no device we could take the settings from)
+				bpy.context.scene.addon_settings.render_use_device = False
 
 
 
 # ---------- ADDON INITIALIZATION & CLEANUP -------------
 def register():
+
+	# extract the arguments Blender was called with
+	try:
+	    index = sys.argv.index("--") + 1
+
+	except ValueError:
+	    index = len(sys.argv)
+
+	# separate the passed arguments into Blender arguments (before "--") and
+	# add-on arguments (after "--")
+	LookingGlassAddon.blender_arguments = sys.argv[:index]
+	LookingGlassAddon.addon_arguments = sys.argv[index:]
+
+	# check if Blender is run in background mode
+	if ('--background' in LookingGlassAddon.blender_arguments or '-b' in LookingGlassAddon.blender_arguments):
+
+		# update the corresponding status variable
+		LookingGlassAddon.background = True
 
 	# if all dependencies are satisfied
 	if LookingGlassAddon.check_dependecies() == False:
