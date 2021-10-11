@@ -773,6 +773,89 @@ class RenderSettings:
 		# if a valid scene was given
 		if self.scene and type(self.scene) == bpy.types.Scene:
 
+			# COMMAND LINE ARGUMENTS
+			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+			# check if Blender is run in background mode
+			if LookingGlassAddon.background:
+
+				# if an output path was specified
+				if "-o" in LookingGlassAddon.addon_arguments or "--render-output" in LookingGlassAddon.addon_arguments:
+
+					# get the file name position
+					try:
+						index = LookingGlassAddon.addon_arguments.index("-o") + 1
+					except ValueError:
+						index = LookingGlassAddon.addon_arguments.index("--render-output") + 1
+
+					# set the file name 
+					self.scene.render.filepath = LookingGlassAddon.addon_arguments[index]
+
+					# deactivate the "Add Metadata option"
+					self.scene.addon_settings.render_add_suffix = False
+
+				# if an starting frame was specified
+				if "-s" in LookingGlassAddon.addon_arguments or "--frame-start" in LookingGlassAddon.addon_arguments:
+
+					# get the file name position
+					try:
+						index = LookingGlassAddon.addon_arguments.index("-s") + 1
+					except ValueError:
+						index = LookingGlassAddon.addon_arguments.index("--frame-start") + 1
+
+					# set the frame start
+					self.scene.frame_start = int(LookingGlassAddon.addon_arguments[index])
+
+				# if an end frame was specified
+				if "-e" in LookingGlassAddon.addon_arguments or "--frame-end" in LookingGlassAddon.addon_arguments:
+
+					# get the file name position
+					try:
+						index = LookingGlassAddon.addon_arguments.index("-e") + 1
+					except ValueError:
+						index = LookingGlassAddon.addon_arguments.index("--frame-end") + 1
+
+					# set the end frame
+					self.scene.frame_end = int(LookingGlassAddon.addon_arguments[index])
+
+				# if a frame step was specified
+				if "-j" in LookingGlassAddon.addon_arguments or "--frame-jump" in LookingGlassAddon.addon_arguments:
+
+					# get the file name position
+					try:
+						index = LookingGlassAddon.addon_arguments.index("-j") + 1
+					except ValueError:
+						index = LookingGlassAddon.addon_arguments.index("--frame-jump") + 1
+
+					# set the frame step
+					self.scene.frame_step = int(LookingGlassAddon.addon_arguments[index])
+
+				# if a rendering frame was specified
+				if "-f" in LookingGlassAddon.addon_arguments or "--render-frame" in LookingGlassAddon.addon_arguments:
+
+					# get the file name position
+					try:
+						index = LookingGlassAddon.addon_arguments.index("-f") + 1
+					except ValueError:
+						index = LookingGlassAddon.addon_arguments.index("--render-frame") + 1
+
+					# if a relative frame number is given
+					if LookingGlassAddon.addon_arguments[index][0] == "+":
+
+						# set the current frame
+						self.scene.frame_current += int(LookingGlassAddon.addon_arguments[index])
+
+					# if a relative frame number is given
+					elif LookingGlassAddon.addon_arguments[index][0] == "-":
+
+						# set the current frame
+						self.scene.frame_current += int(LookingGlassAddon.addon_arguments[index])
+
+					else:
+
+						# set the current frame
+						self.scene.frame_current = int(LookingGlassAddon.addon_arguments[index])
+
 			# INITIALIZATION
 			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
