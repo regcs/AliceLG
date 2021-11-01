@@ -48,7 +48,7 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 
 			# NOTE: - pip should be preinstalled for Blender 2.81+
 			#		  therefore we don't check for it anymore
-			import subprocess
+			import platform, subprocess
 			import datetime
 
 			# path to python (NOTE: bpy.app.binary_path_python was deprecated since 2.91)
@@ -58,6 +58,11 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			# generate logfile
 			logfile = open(bpy.path.abspath(LookingGlassAddon.logpath + 'side-packages-install.log'), 'a')
 			LookingGlassAddonLogger.info("Installing missing side-packages. See '%s' for details." % (LookingGlassAddon.logpath + 'side-packages-install.log',))
+
+			# ensure that pip is installed
+			# NOTE: This should not be required, but a Linux user reported that
+			#		on Blender 2.93 PIP was not bundled
+			if platform.system() == 'Linux': subprocess.call([python_path, '-m', 'ensurepip'], stdout=logfile)
 
 			# install the dependencies to the add-on's library path
 			for module in LookingGlassAddon.external_dependecies:
