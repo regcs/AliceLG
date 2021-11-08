@@ -59,7 +59,6 @@ class LookingGlassAddon:
 	# NOTE: The tuple has the form (import name, install name, install version)
 	external_dependecies = [
 							('pynng', 'pynng', ''),
-							('PIL', 'pillow', ''),
 							('cv2', 'opencv-python', ''),
 							('pylightio', 'pylightio', ''),
 							]

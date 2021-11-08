@@ -20,7 +20,6 @@
 ###################################################
 import io, os
 import numpy as np
-from PIL import Image
 
 # debuging
 import time
