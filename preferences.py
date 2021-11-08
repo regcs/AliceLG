@@ -68,16 +68,20 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			for module in LookingGlassAddon.external_dependecies:
 				if not LookingGlassAddon.is_installed(module):
 
-					subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', module[1], '--target', LookingGlassAddon.libpath], stdout=logfile)
-				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'cbor>=1.0.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'cffi>=1.12.3', '--target', LookingGlassAddon.libpath], stdout=logfile)
-				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pycparser>=2.19', '--target', LookingGlassAddon.libpath], stdout=logfile)
-				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'sniffio>=1.1.0', '--target', LookingGlassAddon.libpath], stdout=logfile)
-				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pillow', '--target', LookingGlassAddon.libpath], stdout=logfile)
-				# subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', 'pynng', '--target', LookingGlassAddon.libpath], stdout=logfile)
+					# if this is pynng and we are on a M1 architecture, we install
+					# pynng from the bundled wheel
+					# TODO: This is a workaround for https://github.com/regcs/AliceLG/issues/54
+					#		As soon as 'pynng' is officially supporting M1, we can remove it
+					if module[1] == 'pynng' and platform.system() == 'Darwin' and not platform.processor() == 'i386':
+
+						subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', LookingGlassAddon.libpath + 'pynng-0.7.1-cp39-cp39-macosx_10_9_universal2.whl', '--target', LookingGlassAddon.libpath, '--no-cache'], stdout=logfile)
+
+					else:
+
+						subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', module[1], '--target', LookingGlassAddon.libpath, '--no-cache'], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
-			logfile.write("Installed: " + str(datetime.datetime.now()) + '\n')
+			logfile.write("Installer finished: " + str(datetime.datetime.now()) + '\n')
 			logfile.write("###################################" + '\n')
 
 			# close logfile
