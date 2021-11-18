@@ -733,9 +733,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 						else:
 
-							# for Blender versions earlier than 3.0 no
+							# for Blender versions earlier than 2.93.6 no
 							# "do_color_management" argument exists
-							if bpy.app.version < (3, 0, 0):
+							if bpy.app.version < (2, 93, 6):
 
 								# draw the viewport rendering to the offscreen for the current view
 								self.qs[self.preset]["viewOffscreen"].draw_view3d(
@@ -748,7 +748,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 									view_matrix=view_matrix,
 									projection_matrix=projection_matrix)
 
-							# for Blender versions later than 3.0 the
+							# for Blender versions later than 2.93.6 the
 							# "do_color_management" argument exists
 							else:
 
