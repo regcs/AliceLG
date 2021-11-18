@@ -328,7 +328,7 @@ class RenderJob:
 			# translate the camera by the calculated offset in x-direction
 			# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
 			#		then we apply the offset and transform back to world coordinates
-			self._camera_active.location = self._view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self._view_matrix_inv @ self._camera_original.location.copy()))
+			self._camera_active.matrix_world = self._view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self._view_matrix_inv @ self._camera_original.matrix_world.copy()))
 
 			# modify the projection matrix, relative to the camera size
 			self._camera_active.data.shift_x = self._camera_original.data.shift_x + 0.5 * offset / cameraSize
@@ -422,7 +422,7 @@ class RenderJob:
 					# translate the camera by the calculated offset in x-direction
 					# NOTE: the matrix multiplications first transform the camera location into camera coordinates,
 					#		then we apply the offset and transform back to world coordinates
-					self._camera_active.location = self._view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self._view_matrix_inv @ self._camera_original.location.copy()))
+					self._camera_active.matrix_world = self._view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (self._view_matrix_inv @ self._camera_original.matrix_world.copy()))
 
 					# modify the projection matrix, relative to the camera size
 					self._camera_active.data.shift_x = self._camera_original.data.shift_x + 0.5 * offset / cameraSize
@@ -788,7 +788,7 @@ class RenderSettings:
 					except ValueError:
 						index = LookingGlassAddon.addon_arguments.index("--render-output") + 1
 
-					# set the file name 
+					# set the file name
 					self.scene.render.filepath = LookingGlassAddon.addon_arguments[index]
 
 					# deactivate the "Add Metadata option"
