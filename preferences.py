@@ -132,9 +132,9 @@ class LOOKINGGLASS_PT_install_dependencies(AddonPreferences):
 
 
 # Preferences pane for this Addon in the Blender preferences
-class LOOKINGGLASS_PT_render_settings(AddonPreferences):
+class LOOKINGGLASS_PT_preferences(AddonPreferences):
 	bl_idname = __package__
-	bl_label = "Render Settings" # display name in the interface.
+	bl_label = "Alice/LG Preferences"
 
 	# render mode
 	render_mode: bpy.props.EnumProperty(
@@ -143,9 +143,24 @@ class LOOKINGGLASS_PT_render_settings(AddonPreferences):
 									default='0',
 									name="Render Mode",
 									)
+
+	# logger level
+	logger_level: bpy.props.EnumProperty(
+									items = [('0', 'Debug messages', 'All messages are written to the log file. This is for detailed debugging and extended bug reports.'),
+											 ('1', 'Info, Warnings, and Errors', 'All info, warning, and error messages are written to the log file. This is for standard bug reports.')],
+									default='1',
+									name="Logging Mode",
+									update=LookingGlassAddon.update_logger_levels,
+									)
 	# draw function
 	def draw(self, context):
 
 		layout = self.layout
+
+		# render mode
 		row_render_mode = layout.row()
 		row_render_mode.prop(self, "render_mode")
+
+		# logger level
+		row_logger_level = layout.row()
+		row_logger_level.prop(self, "logger_level")

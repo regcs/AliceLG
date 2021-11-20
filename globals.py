@@ -190,6 +190,41 @@ class LookingGlassAddon:
 
 	# GLOBAL ADDON FUNCTIONS
 	# +++++++++++++++++++++++++++++++++++++++
+	# update the logger level
+	@staticmethod
+	def update_logger_levels(self, context):
+
+		# set logerg levels according to the add-on preferences
+		# 1: pyLightIO logger
+		logger = logging.getLogger('pyLightIO')
+		for handler in logger.handlers:
+
+			# if this is the TimedRotatingFileHandler
+			if type(handler) == logging.handlers.TimedRotatingFileHandler:
+
+				# if the level is DEBUG
+				if bpy.context.preferences.addons[__package__].preferences.logger_level == '0':
+					handler.setLevel(logging.DEBUG)
+
+				# if the level is INFO
+				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
+					handler.setLevel(logging.INFO)
+
+		# 2: Alice/LG logger
+		logger = logging.getLogger('Alice/LG')
+		for handler in logger.handlers:
+
+			# if this is the TimedRotatingFileHandler
+			if type(handler) == logging.handlers.TimedRotatingFileHandler:
+
+				# if the level is DEBUG
+				if bpy.context.preferences.addons[__package__].preferences.logger_level == '0':
+					handler.setLevel(logging.DEBUG)
+
+				# if the level is INFO
+				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
+					handler.setLevel(logging.INFO)
+
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
 	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):

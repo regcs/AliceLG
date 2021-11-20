@@ -107,7 +107,7 @@ elif LookingGlassAddon.debugging_print_pylio_logger_all == False: console_handle
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'pylightio.log', when="D", interval=1, backupCount=7, encoding='utf-8')
-logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.setLevel(logging.INFO)
 logfile_handler.namer = logfile_namer
 
 # create formatter
@@ -137,7 +137,7 @@ if LookingGlassAddon.debugging_print_internal_logger_all == False: console_handl
 
 # create timed rotating file handler and set level to debug: Create a new logfile every day and keep the last seven days
 logfile_handler = logging.handlers.TimedRotatingFileHandler(LookingGlassAddon.logpath + 'alice-lg.log', when="D", interval=1, backupCount=7, encoding='utf-8')
-logfile_handler.setLevel(logging.DEBUG)
+logfile_handler.setLevel(logging.INFO)
 logfile_handler.namer = logfile_namer
 
 # create formatter
@@ -235,6 +235,9 @@ else:
 # TODO: Find out what the two arguments are that are required
 @persistent
 def LookingGlassAddonInitHandler(dummy1, dummy2):
+
+	# update the logger levels according to the preferences
+	LookingGlassAddon.update_logger_levels(None, None)
 
 	# if NOT all dependencies are satisfied
 	if not LookingGlassAddon.check_dependecies():
@@ -373,7 +376,7 @@ def register():
 		# UI elements
 		# add-on preferences
 		bpy.utils.register_class(LOOKINGGLASS_PT_install_dependencies)
-		bpy.utils.register_class(LOOKINGGLASS_PT_render_settings)
+		bpy.utils.register_class(LOOKINGGLASS_PT_preferences)
 		# add-on panels
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
@@ -459,6 +462,7 @@ def unregister():
 		# unregister only the preferences
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_preferences"): bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
 
 		# remove initialization helper app handler
 		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
@@ -477,6 +481,7 @@ def unregister():
 		# unregister all classes of the addon
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_preferences"): bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
 		if hasattr(bpy.types, "LookingGlassAddonSettings"): bpy.utils.unregister_class(LookingGlassAddonSettings)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_display_list"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
