@@ -91,6 +91,12 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	_handle_trackFrameChanges = None
 	_handle_trackActiveWindow = None
 
+	# CONTEXT OVERRIDE
+	_override = None
+
+	# SETTINGS BACKUP
+	_shading_restore_backup = {}
+	_overlay_restore_backup = {}
 
 	# METHODS
 	# ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -218,7 +224,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		################################################################
 
 		# create an override context from the invoking context
-		self.override = context.copy()
+		self._override = context.copy()
 
 		# update the viewport settings
 		self.updateViewportSettings(context)
@@ -468,10 +474,43 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 
 
+	# Save the viewport settings
+	def saveViewportSettings(self):
+
+		# SHADING ATTRIBUTES
+		# define some exceptions that must not be taken into
+		attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type"]
+
+		# use the "space data" of the selected viewport
+		attributeList = dir(self._override['space_data'].shading)
+		for attr in attributeList:
+
+			if not attr in attributeExceptions:
+				#print("[SHADING]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.shading, attr))
+
+				try:
+					self._shading_restore_backup[attr] = getattr(self._override['space_data'].shading, attr)
+				except Exception as e:
+					#print(" # ", e)
+					pass
+
+		attributeList = dir(self._override['space_data'].overlay)
+		for attr in attributeList:
+
+			if not attr in attributeExceptions:
+				#print("[OVERLAY]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.overlay, attr))
+
+				try:
+					self._overlay_restore_backup[attr] = getattr(self._override['space_data'].overlay, attr)
+				except Exception as e:
+					#print(" # ", e)
+					pass
+
+
 	# Update the viewport settings
 	def updateViewportSettings(self, context):
 
-		# Adjust the viewport render settings
+		# CHECK FOR SELECTED VIEWPORT
 		######################################################
 
 		# if the settings shall be taken from a Blender viewport
@@ -495,67 +534,49 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			# if the SpaceView3D still exists
 			if found == True:
 
-				# SHADING ATTRIBUTES
-				# define some exceptions that must not be taken into
-				attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type"]
-
-				# use the "space data" of the selected viewport
-				attributeList = dir(self.override['space_data'].shading)
-				for attr in attributeList:
-
-					if not attr in attributeExceptions:
-						#print("[SHADING]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.shading, attr))
-
-						try:
-							setattr(self.override['space_data'].shading, attr, getattr(LookingGlassAddon.BlenderViewport.shading, attr))
-						except Exception as e:
-							#print(" # ", e)
-							pass
-
-				attributeList = dir(self.override['space_data'].overlay)
-				for attr in attributeList:
-
-					if not attr in attributeExceptions:
-						#print("[OVERLAY]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.overlay, attr))
-
-						try:
-							setattr(self.override['space_data'].overlay, attr, getattr(LookingGlassAddon.BlenderViewport.overlay, attr))
-						except Exception as e:
-							#print(" # ", e)
-							pass
+				# assign the selected viewport
+				self._override['space_data'] = LookingGlassAddon.BlenderViewport
 
 			else:
 
 				# reset the global variable and fall back to custom settings
 				LookingGlassAddon.BlenderViewport = None
 
+
+		# SAVE ALL SHADING & OVERLAY SETTINGS
+		####################################################################
+		self.saveViewportSettings()
+
+
+		# APPLY CUSTOM SETTINGS IF REQUIRED
+		####################################################################
+
 		# if the custom settings shall be used OR the chosen Blender Viewport is invalid
 		if self.addon_settings.viewportMode == 'CUSTOM' or LookingGlassAddon.BlenderViewport == None:
 
-			# APPLY THE CURRENT USER SETTINGS FOR THE LIGHTFIELD RENDERING
 			# SHADING ATTRIBUTES
-			self.override['space_data'].shading.type = self.addon_settings.shadingMode
-			self.override['space_data'].shading.show_xray = bool(self.addon_settings.viewport_show_xray)
-			self.override['space_data'].shading.xray_alpha = float(self.addon_settings.viewport_xray_alpha)
-			self.override['space_data'].shading.use_dof = bool(int(self.addon_settings.viewport_use_dof))
+			self._override['space_data'].shading.type = self.addon_settings.shadingMode
+			self._override['space_data'].shading.show_xray = bool(self.addon_settings.viewport_show_xray)
+			self._override['space_data'].shading.xray_alpha = float(self.addon_settings.viewport_xray_alpha)
+			self._override['space_data'].shading.use_dof = bool(int(self.addon_settings.viewport_use_dof))
 
 			# OVERLAY ATTRIBUTES: Guides
-			self.override['space_data'].overlay.show_floor = bool(int(self.addon_settings.viewport_show_floor))
-			self.override['space_data'].overlay.show_axis_x = bool(int(self.addon_settings.viewport_show_axes[0]))
-			self.override['space_data'].overlay.show_axis_y = bool(int(self.addon_settings.viewport_show_axes[1]))
-			self.override['space_data'].overlay.show_axis_z = bool(int(self.addon_settings.viewport_show_axes[2]))
-			self.override['space_data'].overlay.grid_scale = float(self.addon_settings.viewport_grid_scale)
+			self._override['space_data'].overlay.show_floor = bool(int(self.addon_settings.viewport_show_floor))
+			self._override['space_data'].overlay.show_axis_x = bool(int(self.addon_settings.viewport_show_axes[0]))
+			self._override['space_data'].overlay.show_axis_y = bool(int(self.addon_settings.viewport_show_axes[1]))
+			self._override['space_data'].overlay.show_axis_z = bool(int(self.addon_settings.viewport_show_axes[2]))
+			self._override['space_data'].overlay.grid_scale = float(self.addon_settings.viewport_grid_scale)
 			# OVERLAY ATTRIBUTES: Objects
-			self.override['space_data'].overlay.show_extras = bool(int(self.addon_settings.viewport_show_extras))
-			self.override['space_data'].overlay.show_relationship_lines = bool(int(self.addon_settings.viewport_show_relationship_lines))
-			self.override['space_data'].overlay.show_outline_selected = bool(int(self.addon_settings.viewport_show_outline_selected))
-			self.override['space_data'].overlay.show_bones = bool(int(self.addon_settings.viewport_show_bones))
-			self.override['space_data'].overlay.show_motion_paths = bool(int(self.addon_settings.viewport_show_motion_paths))
-			self.override['space_data'].overlay.show_object_origins = bool(int(self.addon_settings.viewport_show_origins))
-			self.override['space_data'].overlay.show_object_origins_all = bool(int(self.addon_settings.viewport_show_origins_all))
+			self._override['space_data'].overlay.show_extras = bool(int(self.addon_settings.viewport_show_extras))
+			self._override['space_data'].overlay.show_relationship_lines = bool(int(self.addon_settings.viewport_show_relationship_lines))
+			self._override['space_data'].overlay.show_outline_selected = bool(int(self.addon_settings.viewport_show_outline_selected))
+			self._override['space_data'].overlay.show_bones = bool(int(self.addon_settings.viewport_show_bones))
+			self._override['space_data'].overlay.show_motion_paths = bool(int(self.addon_settings.viewport_show_motion_paths))
+			self._override['space_data'].overlay.show_object_origins = bool(int(self.addon_settings.viewport_show_origins))
+			self._override['space_data'].overlay.show_object_origins_all = bool(int(self.addon_settings.viewport_show_origins_all))
 			# OVERLAY ATTRIBUTES: Geometry
-			self.override['space_data'].overlay.show_wireframes = bool(int(self.addon_settings.viewport_show_wireframes))
-			self.override['space_data'].overlay.show_face_orientation = bool(int(self.addon_settings.viewport_show_face_orientation))
+			self._override['space_data'].overlay.show_wireframes = bool(int(self.addon_settings.viewport_show_wireframes))
+			self._override['space_data'].overlay.show_face_orientation = bool(int(self.addon_settings.viewport_show_face_orientation))
 
 		# if the settings rely on a specific viewport / SpaceView3D
 		elif self.addon_settings.viewportMode != 'CUSTOM' and LookingGlassAddon.BlenderViewport != None:
@@ -564,14 +585,45 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			if LookingGlassAddon.BlenderViewport.shading.type == 'RENDERED' and context.engine == 'CYCLES':
 
 				# change the shading type to SOLID
-				self.override['space_data'].shading.type = 'SOLID'
+				self._override['space_data'].shading.type = 'SOLID'
 
 				# notify user
 				self.report({"WARNING"}, "Render engine (%s) not supported in lightfield viewport. Switched to SOLID mode." % context.engine)
 
 		# always disable the hdri preview spheres
-		self.override['space_data'].overlay.show_look_dev = False
+		self._override['space_data'].overlay.show_look_dev = False
 
+	# Restore the viewport settings
+	def restoreViewportSettings(self):
+
+		# SHADING ATTRIBUTES
+		# define some exceptions that must not be taken into
+		attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type"]
+
+		# use the "space data" of the selected viewport
+		attributeList = dir(self._override['space_data'].shading)
+		for attr in attributeList:
+
+			if not attr in attributeExceptions:
+				#print("[SHADING]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.shading, attr))
+
+				try:
+					setattr(self._override['space_data'].shading, attr, self._shading_restore_backup[attr])
+				except Exception as e:
+					#print(" # ", e)
+					pass
+
+		attributeList = dir(self._override['space_data'].overlay)
+		for attr in attributeList:
+
+			if not attr in attributeExceptions:
+				#print("[OVERLAY]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.overlay, attr))
+
+				try:
+					setattr(self._override['space_data'].overlay, attr, self._overlay_restore_backup[attr])
+				except Exception as e:
+					#print(" # ", e)
+					pass
 
 
 	@staticmethod
@@ -729,13 +781,16 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 								# the user currently works in
 								scene=context.scene,
 								view_layer=context.view_layer,
-								view3d=self.override['space_data'],
-								region=self.override['region'],
+								view3d=self._override['space_data'],
+								region=self._override['region'],
 								view_matrix=view_matrix,
 								projection_matrix=projection_matrix,
 								do_color_management = True)
 
 							LookingGlassAddonLogger.debug(" [#] [%i] Drawing view into offscreen took %.3f ms" % (view, (time.time() - start_test) * 1000))
+
+				# restore all viewport shading and overlay settings
+				self.restoreViewportSettings()
 
 				LookingGlassAddonLogger.debug("-----------------------------")
 				LookingGlassAddonLogger.debug("Rendering all views took in total %.3f ms" % ((time.time() - self.start_multi_view) * 1000))
