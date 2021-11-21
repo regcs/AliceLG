@@ -23,7 +23,7 @@ This add-on was created for the use of Blender with the Looking Glass holographi
 
 ## Installation
 
-1. [Download](https://www.blender.org/download/) and install the Holoplay Service App on your PC or Mac.
+1. [Download](https://lookingglassfactory.com/software) and install the Holoplay Service App on your PC or Mac.
 
 2. Download the [zip file of the latest release](https://github.com/regcs/AliceLG/releases/) of this add-on.
 
