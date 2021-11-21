@@ -401,14 +401,21 @@ def register():
 		LookingGlassAddonLogger.info("Connecting to HoloPlay Service ...")
 
 		# create a service using "HoloPlay Service" backend
-		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService)
+		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService, client_name = LookingGlassAddon.name)
 
-		# TODO: ERROR HANDLING
-		# if no errors were detected
-		if LookingGlassAddon.service or LookingGlassAddon.debugging_use_dummy_device == True:
+		# if a service was added
+		if type(LookingGlassAddon.service) == pylio.lookingglass.services.HoloPlayService:
 
-			# log info
-			LookingGlassAddonLogger.info(" [#] HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+			# if the service is ready
+			if LookingGlassAddon.service.is_ready():
+
+				# log info
+				LookingGlassAddonLogger.info(" [#] Connected to HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+
+			else:
+
+				# log info
+				LookingGlassAddonLogger.info(" [#] Connection failed.")
 
 			# make the device manager use the created service instance
 			pylio.DeviceManager.set_service(LookingGlassAddon.service)
@@ -418,6 +425,9 @@ def register():
 			#		each device type that is defined in pyLightIO.
 			pylio.DeviceManager.add_emulated()
 
+		# if the service is ready OR dummy devices shall be added
+		if LookingGlassAddon.service.is_ready() or LookingGlassAddon.debugging_use_dummy_device:
+
 			# refresh the list of connected devices using the active pylio service
 			pylio.DeviceManager.refresh()
 
@@ -425,10 +435,6 @@ def register():
 			if LookingGlassAddon.debugging_use_dummy_device: pylio.DeviceManager.set_active(pylio.DeviceManager.to_list(None, None)[0].id)
 			if pylio.DeviceManager.count(): pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
 
-		else:
-
-			# log info
-			LookingGlassAddonLogger.info(" [#] Connection failed.")
 
 			# # prepare the error string from the error code
 			# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):

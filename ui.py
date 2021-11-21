@@ -920,60 +920,63 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 		# log info
 		LookingGlassAddonLogger.info("Refreshing device information ...")
 
-		# if the a service for display communication is active
-		if LookingGlassAddon.service:
+		# if a service for display communication was successfully added
+		if (not LookingGlassAddon.service is None):
 
-			# refresh the list of connected devices using the active service
-			pylio.DeviceManager.refresh()
+			# if the service is ready
+			if LookingGlassAddon.service.is_ready():
 
-			# log info
-			LookingGlassAddonLogger.info(" [#] Number of connected displays: %i" % pylio.DeviceManager.count())
-
-			# loop through all connected devices
-			for idx, device in enumerate(pylio.DeviceManager.to_list()):
+				# refresh the list of connected devices using the active service
+				pylio.DeviceManager.refresh()
 
 				# log info
-				LookingGlassAddonLogger.info(" [#] Display %i: %s" % (idx, device.name,))
+				LookingGlassAddonLogger.info(" [#] Number of connected displays: %i" % pylio.DeviceManager.count())
 
-		# if no Looking Glass was detected AND debug mode is deaqctivated
-		if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
+				# loop through all connected devices
+				for idx, device in enumerate(pylio.DeviceManager.to_list()):
 
-			# set the checkbox to False (because there is no device we
-			# could take the settings from)
-			context.scene.addon_settings.render_use_device = False
+					# log info
+					LookingGlassAddonLogger.info(" [#] Display %i: %s" % (idx, device.name,))
 
-		# if a Looking Glass was detected, but non was previously selected
-		elif pylio.DeviceManager.count():
+			# if no Looking Glass was detected AND debug mode is deaqctivated
+			if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
 
-			# get currently active device
-			device = pylio.DeviceManager.get_active()
+				# set the checkbox to False (because there is no device we
+				# could take the settings from)
+				context.scene.addon_settings.render_use_device = False
 
-			# if None is active or the active device is an emulated one
-			if not device or (device and device.emulated):
-
-				# log info
-				LookingGlassAddonLogger.info(" [#] Setting active display %i: %s" % (pylio.DeviceManager.to_list()[0].id, pylio.DeviceManager.to_list()[0].name,))
-
-				# make the first connected display the active display
-				pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
+			# if a Looking Glass was detected, but non was previously selected
+			elif pylio.DeviceManager.count():
 
 				# get currently active device
 				device = pylio.DeviceManager.get_active()
 
-				# set the checkbox to True (because now we want to use the device settings)
-				context.scene.addon_settings.render_use_device = True
+				# if None is active or the active device is an emulated one
+				if not device or (device and device.emulated):
 
-			# try to find the suitable default quilt preset
-			preset = pylio.LookingGlassQuilt.formats.find(device.default_quilt_width, device.default_quilt_height, device.default_quilt_rows, device.default_quilt_columns)
+					# log info
+					LookingGlassAddonLogger.info(" [#] Setting active display %i: %s" % (pylio.DeviceManager.to_list()[0].id, pylio.DeviceManager.to_list()[0].name,))
 
-			# then update the selected quilt preset from the device's default quilt
-			if preset:
-				context.scene.addon_settings.quiltPreset = str(preset)
+					# make the first connected display the active display
+					pylio.DeviceManager.set_active(pylio.DeviceManager.to_list()[0].id)
 
-			# fallback solution, if the default quilt is not found:
-			# We use the Looking Glass Portrait standard quilt (48 views)
-			else:
-				context.scene.addon_settings.quiltPreset = "4"
+					# get currently active device
+					device = pylio.DeviceManager.get_active()
+
+					# set the checkbox to True (because now we want to use the device settings)
+					context.scene.addon_settings.render_use_device = True
+
+				# try to find the suitable default quilt preset
+				preset = pylio.LookingGlassQuilt.formats.find(device.default_quilt_width, device.default_quilt_height, device.default_quilt_rows, device.default_quilt_columns)
+
+				# then update the selected quilt preset from the device's default quilt
+				if preset:
+					context.scene.addon_settings.quiltPreset = str(preset)
+
+				# fallback solution, if the default quilt is not found:
+				# We use the Looking Glass Portrait standard quilt (48 views)
+				else:
+					context.scene.addon_settings.quiltPreset = "4"
 
 		return {'FINISHED'}
 
@@ -1026,7 +1029,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		row_orientationa.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
 		row_orientation.separator()
 
-		# Lightfield window & debug button
+		# Lightfield window button
 		column_2 = row_orientation.column(align=True)
 		row_orientationb = column_2.row(align = True)
 		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.addon_settings.ShowLightfieldWindow)
@@ -1042,12 +1045,12 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 			# deactivate quilt preset and debug buttons
 			row_preset.enabled = False
 
+		# if the HoloPlay Service is not added or not ready
+		if (LookingGlassAddon.service is None or not LookingGlassAddon.service.is_ready()) and not LookingGlassAddon.debugging_use_dummy_device:
 
-		# if the HoloPlay Service is NOT available
-		if (not LookingGlassAddon.service and LookingGlassAddon.debugging_use_dummy_device == False):
-
-			# deactivate the looking glass selection
+			# deactivate the looking glass selection and lightfield window button
 			row_orientationa.enabled = False
+			row_orientationb.enabled = False
 
 
 
