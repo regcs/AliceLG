@@ -1,21 +1,15 @@
-# Alice/LG 2.0 (beta) - The Blender Add-on for Looking Glass Displays
+# Alice/LG 2.0 - The Blender Add-on for Looking Glass Displays
 
-**Author:** Christian Stolze
-
-### Let [Alice/LG](https://github.com/regcs/AliceLG/releases/download/v1.1.6-beta/AliceLG-beta7.zip) take your Blender artworks through the Looking Glass! This short guide is to get you started.
+### Let [Alice/LG](https://github.com/regcs/AliceLG/releases) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## About the Add-on
 This add-on was created for the use of Blender with the Looking Glass holographic displays. I initially developed this add-on privately in my free time because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). The version 2.0 of Alice/LG was developed in collaboration with the Looking Glass Factory.
-
-If you like this add-on and want to do a private donation, thank you for your support! I will most-likely invest it into new hardware, since rendering with an Quad-Core Intel Core i7 increases my coffee consumption way too much ...
-
-[![Donate](https://www.paypalobjects.com/en_US/DK/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=N2TKY97VJJL96)
 
 ## Main Features
 - integration into the common Blender workflow
 - an optional view frustum representing the Looking Glass volume in the scene
 - lightfield viewport in the Looking Glass with automatic and manual refresh modes
-- render any camera view as single quilt image or animation
+- render any camera view as single quilt image or quilt animation
 - decide if you want to keep the separate view files or just the final quilt
 - support for multiple scenes and view layers
 - camera & quilt settings are saved with your Blender file
@@ -24,14 +18,14 @@ If you like this add-on and want to do a private donation, thank you for your su
 
 ## System Requirements
 - Windows, Linux, or macOS
-- [Blender 2.93 or later](https://www.blender.org/download/)
+- [Blender 2.93.6 or later](https://www.blender.org/download/)
 - [Holoplay Service App](https://lookingglassfactory.com/software)
 
 ## Installation
 
 1. [Download](https://www.blender.org/download/) and install the Holoplay Service App on your PC or Mac.
 
-2. Download the [zip file of the latest release](https://github.com/regcs/AliceLG/releases/download/v1.1.6-beta/AliceLG-beta7.zip) of this add-on.
+2. Download the [zip file of the latest release](https://github.com/regcs/AliceLG/releases/) of this add-on.
 
 3. Install _Alice/LG_ in Blender:
    - Open Blender
@@ -43,6 +37,8 @@ If you like this add-on and want to do a private donation, thank you for your su
    - Restart Blender
 
 ## How to Use
+
+The following provides some basic information which is going to help you to get started. But make sure, you also check out the [Getting Started Guide](https://docs.lookingglassfactory.com/artist-tools/blender) as well as the [very helpful tutorial](https://learn.lookingglassfactory.com/tutorials/blender) on the Looking Glass Factory website!
 
 ### Add-on Controls
 
@@ -104,6 +100,39 @@ While the add-on tries to check some basic settings, the user is highly recommen
 If you decide to discard the incomplete render jobs, the add-on will try to delete the view files of the incomplete render job.
 
 _NOTE: This feature is considered to be 'experimental'. It might not detect crashes under all circumstances and might not succeed to continue the rendering always. If you encounter a situation were this feature failed, please submit a detailed bug report._
+
+## Renderfarm Implementation (Experimental)
+
+The rendering of still holograms and holographic animations can be a time-consuming task on. Therefore, this add-on provides a command line mechanism that was created for render farms which want to support the quilt rendering by Alice/LG on their systems. Since it has not been tested on a render farm environment yet, this feature is considered experimental. If you are working at a render farm and need help to implement this mechanism on your system, please [open an issue on the add-on's GitHub repository](https://github.com/regcs/AliceLG/issues).
+
+### Basic Command Line Calls
+
+As a first prerequisite, Alice/LG needs to be installed and activated on the render farm's Blender installation. To initiate a quilt rendering from the command line, there are two main calls which are understood by Alice/LG:
+
+- `-alicelg-render`: Start the rendering of a single quilt.
+- `-alicelg-render-anim`: Start the rendering of a quilt animation.
+
+Both arguments require that Blender is started in background mode (i.e., using the '-b' command line argument) and with a .blend-file specified, which contains all the necessary render settings. Furthermore, both arguments must be preceded by a `--`. An example, which opens the file 'my_lg_hologram.blend' and starts rendering a single quilt looks like that:
+
+`blender -b my_lg_hologram.blend -- -alicelg-render`
+
+### Additional Parameters
+
+The add-on also understands the some additional parameters to fine-tune the rendering process. These parameters are very similar to Blender's internal command line rendering parameters:
+
+- `-o`  or `--render-output` `<path>`: Set the render path and file name. Automatically disables the "Add Metadata" option.
+- `-s`  or `--frame-start` `<frame>`: Set start to frame `<frame>`, supports +/- for relative frames too.
+- `-e`  or `--frame-end` `<frame>`: Set end to frame `<frame>`, supports +/- for relative frames too.
+- `-j`  or `--frame-jump` `<frame>`: Set number of frames to step forward after each rendered frame
+- `-f`  or `--render-frame`: Specify a single frame to render
+
+**It is important that these arguments are specified after the mandatory `--`** to notify Blender that the arguments are meant for the add-on. An example call which would start Blender in background mode, load the 'my_lg_hologram.blend' file, and render a quilt animation from frame 10 to 24 with the base file name `quilt_anim` would look like this:
+
+`blender -b my_lg_hologram.blend -- -alicelg-render-anim -o /tmp/quilt_anim.png -s 10 -e 24`
+
+Another example, which would only render the frame 16 as a single quilt, would like this:
+
+`blender -b my_lg_hologram.blend -- -alicelg-render -o /tmp/quilt.png -f 16`
 
 ## License & Dependencies
 
