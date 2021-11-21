@@ -80,11 +80,11 @@ class HoloPlayService(BaseServiceType):
 
     # INSTANCE METHODS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    def __init__(self, timeout = 5000):
+    def __init__(self, timeout = 5000, client_name = ""):
         ''' initialize the class instance and create the NNG socket '''
 
         # open a Req0 socket
-        self.__socket = pynng.Req0(recv_timeout = timeout)
+        self.__socket = pynng.Req0(recv_timeout = timeout, send_timeout = timeout)
 
         # if the NNG socket is open
         if self.__is_socket():
@@ -92,7 +92,20 @@ class HoloPlayService(BaseServiceType):
             logger.info("Created socket: %s" % self.__socket)
 
             # connect to HoloPlay Service App
-            self.__connect()
+            if self.__connect():
+
+                # send initialization command
+                response = self.__send_message(self.__init(client_name))
+                if response != None:
+
+                    # if no error was received
+                    if response[1]['error'] == 0:
+
+                        # fill version string of the Holo Play Service
+                        self.version = response[1]['version']
+
+                # log info
+                logger.info("Connected to HoloPlay Service v%s." % self.get_version())
 
     def is_ready(self):
         ''' check if the service is ready: Is NNG socket created and connected to HoloPlay Service App? '''
@@ -104,7 +117,7 @@ class HoloPlayService(BaseServiceType):
     def get_version(self):
         ''' return the holoplay service version '''
 
-        # if the NNG socket is connected to HoloPlay Service App
+        # if the NNG socket is connected to HoloPlay Service App and version still unknown
         if self.__is_connected() and not self.version:
 
             # request service version
@@ -114,7 +127,7 @@ class HoloPlayService(BaseServiceType):
                 # if no error was received
                 if response[1]['error'] == 0:
 
-                    # version string of the Holo Play Service
+                    # fill version string of the Holo Play Service
                     self.version = response[1]['version']
 
         return self.version
@@ -275,9 +288,7 @@ class HoloPlayService(BaseServiceType):
     def __connect(self):
         ''' connect to holoplay service '''
 
-        # set default error value:
-        # NOTE: - if communication with HoloPlay Service fails, we use the
-        #         direct HID approach to read calibration data
+        # set default error value
         error = self.client_error.CLIERR_NOERROR.value
 
         # if there is not already a connection
@@ -291,12 +302,10 @@ class HoloPlayService(BaseServiceType):
                 # TODO: Set proper error values
                 error = self.client_error.CLIERR_NOERROR.value
 
-                logger.info("Connected to HoloPlay Service v%s." % self.get_version())
-
                 return True
 
-            # if the connection was refused
-            except pynng.exceptions.ConnectionRefused:
+            # if the connection was not established
+            except:# pynng.exceptions.ConnectionRefused
 
                 # Close socket and reset status variable
                 self.__close()
@@ -383,9 +392,29 @@ class HoloPlayService(BaseServiceType):
     # PRIVATE STATIC METHODS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     @staticmethod
+    def __init(client_name):
+        ''' initialize the client at HoloPlay Service with the given name '''
+
+        # log info
+        logger.debug("Registering at HoloPlay Service with INIT command:")
+
+        # define CBOR command
+        command = {
+            'cmd': {
+                'init': {'appid': client_name},
+            },
+            'bin': '',
+        }
+        return command
+
+    @staticmethod
     def __get_devices():
         ''' tell HoloPlay Service to send the calibrations of all devices '''
 
+        # log info
+        logger.debug("Requesting device list from HoloPlay Service with INFO command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'info': {},
@@ -398,6 +427,10 @@ class HoloPlayService(BaseServiceType):
     def __show_demo(dev_index):
         ''' tell HoloPlay Service to show the demo quilt '''
 
+        # log info
+        logger.debug("Requesting demo quilt from HoloPlay Service with SHOW command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'show': {
@@ -410,6 +443,11 @@ class HoloPlayService(BaseServiceType):
     @staticmethod
     def __show_quilt(dev_index, bindata, settings):
         ''' tell HoloPlay Service to display the incoming quilt '''
+
+        # log info
+        logger.debug("Requesting quilt display from HoloPlay Service with SHOW command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'show': {
@@ -428,6 +466,11 @@ class HoloPlayService(BaseServiceType):
     @staticmethod
     def __load_quilt(dev_index, name, settings = None):
         ''' tell HoloPlay Service to load a cached quilt '''
+
+        # log info
+        logger.debug("Requesting to load cached quilt from HoloPlay Service with SHOW command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'show': {
@@ -450,6 +493,11 @@ class HoloPlayService(BaseServiceType):
     @staticmethod
     def __cache_quilt(dev_index, bindata, name, settings):
         ''' tell HoloPlay Service to cache the incoming quilt '''
+
+        # log info
+        logger.debug("Requesting to cache quilt by HoloPlay Service with CACHE command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'cache': {
@@ -469,6 +517,10 @@ class HoloPlayService(BaseServiceType):
     def __hide(dev_index):
         ''' tell HoloPlay Service to hide the displayed quilt '''
 
+        # log info
+        logger.debug("Requesting to hide quilt from HoloPlay Service with HIDE command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'hide': {
@@ -482,6 +534,11 @@ class HoloPlayService(BaseServiceType):
     @staticmethod
     def __wipe(dev_index):
         ''' tell HoloPlay Service to clear the display (shows the logo quilt) '''
+
+        # log info
+        logger.debug("Requesting to wipe the quilt from HoloPlay Service with HIDE command:")
+
+        # define CBOR command
         command = {
             'cmd': {
                 'targetDisplay': dev_index,

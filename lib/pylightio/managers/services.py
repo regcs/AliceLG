@@ -49,7 +49,7 @@ class ServiceManager(object):
     # CLASS METHODS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     @classmethod
-    def add(cls, service_type):
+    def add(cls, service_type, client_name = ""):
         ''' open the service of the specified type '''
 
         # try to find the class for the specified type, if it exists
@@ -59,7 +59,7 @@ class ServiceManager(object):
         if ServiceTypeClass:
 
             # create the service instance
-            service = ServiceTypeClass[0]()
+            service = ServiceTypeClass[0](client_name = client_name)
 
             # append registered device to the device list
             cls.__service_list.append(service)
@@ -68,7 +68,14 @@ class ServiceManager(object):
             if (not cls.get_active() or (cls.get_active() and not cls.get_active().is_ready())):
                 cls.set_active(service)
 
-            logger.info("Added service '%s' to the service manager." % service)
+            # if the service is ready
+            if service.is_ready():
+
+                logger.info("Added service '%s' to the service manager. Service is ready." % service)
+
+            else:
+
+                logger.warning("Added service '%s' to the service manager, but service is not ready." % service)
 
             return service
 
@@ -148,7 +155,10 @@ class BaseServiceType(object):
     def __str__(self):
         ''' the display name of the service when the instance is called '''
 
-        return "%s v%s" % (self.name, self.get_version())
+        if self.get_version():
+            return "%s v%s" % (self.name, self.get_version())
+        else:
+            return "%s" % (self.name)
 
     # TEMPLATE METHODS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
