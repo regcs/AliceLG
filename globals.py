@@ -250,9 +250,6 @@ class LookingGlassAddon:
 				##################################################################
 				if render_mode == 0:
 
-					# NOTE: We flip the views in Y direction, because the OpenGL
-					#		and PIL definition of the image origin are different.
-					#		(i.e., top-left vs. bottom-left)
 					if flip_views is None: flip_views = False
 					if invert is None: invert = False
 
@@ -264,9 +261,6 @@ class LookingGlassAddon:
 				# if the quilt view mode is active AND an image is loaded
 				elif render_mode == 1:
 
-					# NOTE: We DON'T flip the views in Y direction, because the Blender
-					#		and PIL definition of the image origin are the same.
-					# TODO: CHECK IF THE NOTE IS TRUE. HAD SOME WEIRD THINGS GOING ON.
 					if flip_views is None: flip_views = True
 					if invert is None: invert = False
 
@@ -281,14 +275,3 @@ class LookingGlassAddon:
 
 			else:
 				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")
-
-
-	# GLOBAL ADDON PROPERTIES
-	# +++++++++++++++++++++++++++++++++++++++
-	# @property
-	# def updateLiveViewer(self):
-	# 	return __updateLiveViewer
-	#
-	# @updateLiveViewer.setter
-	# def updateLiveViewer(self, state):
-	# 	__updateLiveViewer = state

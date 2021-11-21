@@ -301,7 +301,6 @@ class LookingGlassAddonUI:
 			# apply the settings to the selected camera object
 			camera = context.scene.addon_settings.lookingglassCamera
 
-			# TODO: Check if this is really helpful. Maybe remove later or refine.
 			# keep clip end behind the clip start
 			if context.scene.addon_settings.clip_end < context.scene.addon_settings.clip_start:
 				context.scene.addon_settings.clip_end = context.scene.addon_settings.clip_start
@@ -391,7 +390,6 @@ class LookingGlassAddonUI:
 			for screen in bpy.data.workspaces[context.scene.addon_settings.blender_workspace].screens:
 				for area in screen.areas:
 					for space in area.spaces:
-						# TODO: the check "space != LookingGlassAddon.lightfieldSpace" is somewhat hacky. But without it, an additional element is created in the list. Need to clarify later, why ...
 						if space.type == 'VIEW_3D':
 
 							# add an item to the item list
@@ -1050,15 +1048,6 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 
 			# deactivate the looking glass selection
 			row_orientationa.enabled = False
-
-		# if NO Looking Glass is selected or detected OR the user is in an fullscreen area
-		# TODO: Blender doesn't allow creating a new window from a fullscreen area.
-		# 		Can we still handle this by using override contexts? Until this is clarified
-		#		the button will be disabled in fullscreen areas.
-		if int(context.scene.addon_settings.activeDisplay) == -1 or context.screen.show_fullscreen == True:
-
-			# deactivate the lightfield window button and debug button
-			row_orientationb.enabled = False
 
 
 

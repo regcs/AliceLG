@@ -232,7 +232,6 @@ else:
 
 
 # ----------------- ADDON INITIALIZATION --------------------
-# TODO: Find out what the two arguments are that are required
 @persistent
 def LookingGlassAddonInitHandler(dummy1, dummy2):
 
@@ -257,7 +256,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 		if LookingGlassAddon.has_lockfile:
 
 			# initialize the RenderSettings
-			# NOTE: This automatically loads the last render settings from the lockfile
+			# NOTE: This  loads the last render settings from the lockfile
 			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.render_mode == '1'), blocking=LookingGlassAddon.background)
 
 		else:
@@ -415,8 +414,8 @@ def register():
 			pylio.DeviceManager.set_service(LookingGlassAddon.service)
 
 			# create a set of emulated devices
-			# NOTE: This automatically creates an emulated device for each device
-			#		that is defined in pyLightIO
+			# NOTE: This automatically creates an emulated Looking Glass for
+			#		each device type that is defined in pyLightIO.
 			pylio.DeviceManager.add_emulated()
 
 			# refresh the list of connected devices using the active pylio service

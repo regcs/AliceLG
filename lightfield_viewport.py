@@ -632,8 +632,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 		with offscreen.bind():
 
-			# TODO: LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93 ANYMORE,
-			#		THE bgl.* CALLS SHOULD BE REMOVED
+			# TODO: IN LATER VERSIONS OF ALICE/LG THAT DO NOT SUPPORT 2.93
+			#		 ANYMORE, THE bgl.* CALLS SHOULD BE REMOVED
 			# for Blender versions earlier than 3.0 (prior to the major BGL changes)
 			if bpy.app.version < (3, 0, 0):
 
@@ -692,9 +692,17 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
                 # TODO: Actually we would use "RGB" and a numpy array with 3
 				#		color channels, because that would be more efficient.
 				#		But we can't read in RGB mode to gpu.types.Buffer
-                #       due to a Blender bug / limitation:
+                #       due to Blender's default OpenGL settings:
 				#
                 #       https://developer.blender.org/T91828
+				#
+				#		If we don't so it that way, it causes crashes:
+				#
+				#		https://github.com/regcs/AliceLG/issues/59
+				#
+				#		The Blender behaviour was fixed for v.3.0+. At the
+				#		point when Alice/LG does not support 2.93 anymore,
+				#		we can change this. (because the Blender fix is not)
 
 				# create a pylio LightfieldImage
 				self.lightfield_image = pylio.LightfieldImage.new(pylio.LookingGlassQuilt, id=self.preset, colormode='RGBA')
@@ -799,7 +807,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 				# COPY THE VIEWS INTO A BUFFER
 				# NOTE: We do this in a separate loop, because for an unknown
-				#		reason, it is faster.
+				#		reason (probably something Blender internal), it is faster.
 				# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 				self.start_multi_view = time.time()

@@ -302,8 +302,10 @@ class RenderJob:
 				# set the scenes active camera to this temporary camera
 				self.scene.camera = self._camera_active
 
-				# NOTE: It seems not to be required. Rendering still works,
-				#		which is nice, because the camera remains invisible
+				# NOTE: In contrast to multiview rendering, linking is not
+				#		required for single cameras. Rendering still works,
+				#		which is nice, because the camera remains invisible.
+				#		Leave this here for debugging purposes.
 				# # add this camera to the master collection of the scene
 				# self.scene.collection.objects.link(self._camera_active)
 
@@ -387,8 +389,6 @@ class RenderJob:
 						render_view.camera_suffix = '_v' + str(view).zfill(len(str(self.total_views - 1)))
 						render_view.use = True
 
-						# NOTE: It seems not to be required. Rendering still works,
-						#		which is nice, because the camera remains invisible
 						# add this camera to the master collection of the scene
 						self.scene.collection.objects.link(self._camera_temp[view])
 
@@ -449,7 +449,6 @@ class RenderJob:
 				self._view_image = bpy.data.images.load(self.view_filepath(view))
 
 				# store the pixel data in an numpy array
-				# NOTE: we use foreach_get, since this is significantly faster
 				tmp_pixels = np.empty(len(self._view_image.pixels), np.float32)
 				self._view_image.pixels.foreach_get(tmp_pixels)
 
@@ -985,15 +984,19 @@ class RenderSettings:
 			raise AttributeError("Could not initialize render settings. The given object '%s' was no bpy.types.Scene object." % self.scene)
 
 
-	# TODO: Clean this method up and add comments
+
 	# convert the object to a nested dictionary
 	# NOTE: This function is largely taken from https://stackoverflow.com/a/1118038
 	def to_dict(self, obj, classkey=None):
+
+		# if this is an dictionary
 		if isinstance(obj, dict):
 			data = {}
 			for (k, v) in obj.items():
 				data[k] = self.to_dict(v, classkey)
 			return data
+
+		# if this is the addon settings
 		elif isinstance(obj, LookingGlassAddonSettings):
 			data = {}
 			for key in dir(obj):
@@ -1002,6 +1005,8 @@ class RenderSettings:
 						value = self.to_dict(getattr(obj, key))
 						data[key] = value
 			return data
+
+		# if this are EEVEE or Cycles settings
 		elif isinstance(obj, type(self.scene.eevee)) or isinstance(obj, type(self.scene.cycles)) or isinstance(obj, type(self.scene.cycles_curves)):
 			data = {}
 			for key in dir(obj):
@@ -1010,13 +1015,17 @@ class RenderSettings:
 						value = self.to_dict(getattr(obj, key))
 						data[key] = value
 			return data
+
+		# if this is one of the class methods
 		elif hasattr(obj, "_ast"):
 			return self.to_dict(obj._ast())
+
 		elif hasattr(obj, "__iter__") and not isinstance(obj, str):
 			try:
 				return [self.to_dict(v, classkey) for v in obj]
 			except:
 				LookingGlassAddonLogger.error("Could not serialize object:", obj)
+
 		elif hasattr(obj, "__dict__"):
 			data = dict([(key, self.to_dict(value, classkey))
 			for key, value in obj.__dict__.items()
@@ -1024,10 +1033,15 @@ class RenderSettings:
 			if classkey is not None and hasattr(obj, "__class__"):
 				data[classkey] = obj.__class__.__name__
 			return data
+
 		elif hasattr(obj, "_asdict"):
 			return to_dict(obj._asdict())
+
+		# if this is an object name
 		elif hasattr(obj, "name"):
 			return obj.name
+
+		# if this is one of the standard types
 		elif isinstance(obj, (bool, int, float, str, list)):
 			return obj
 		else:
@@ -1228,6 +1242,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 	# cancel modal operator
+	# NOTE: - this includes deleting all view files
+	#		- this includes recovering all original user settings
 	def cancel(self, context):
 
 		# REMOVE APP HANDLERS
@@ -1346,7 +1362,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				self.report({"ERROR"}, "Render job can not be continued. Lockfile not found or corrupted.")
 
 				# cancel the operator
-				# NOTE: - this includes deleting all view files
 				self.cancel(context)
 
 				# don't execute operator
@@ -1455,7 +1470,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		if self.discard_lockfile == True:
 
 			# cancel the operator
-			# NOTE: - this includes deleting all view files
 			self.cancel(context)
 
 			# notify user
@@ -1539,7 +1553,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
-		LookingGlassAddonLogger.debug("Current render job state: %s (stop state: %s)" % (self.render_settings.job._state, self.render_settings.addon_settings.render_stop))
+		# LookingGlassAddonLogger.debug("Current render job state: %s (stop state: %s)" % (self.render_settings.job._state, self.render_settings.addon_settings.render_stop))
 
 		# UPDATE PROGRESS BAR
 		# +++++++++++++++++++++++++++++++++++++++++++
@@ -1576,7 +1590,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				self.render_settings.job.invoke()
 
 				# start rendering
- 				# NOTE: Not using write_still because we save the images manually
 				result = bpy.ops.render.render("INVOKE_DEFAULT", animation=False, write_still=True)
 				if result != {'CANCELLED'}:
 
@@ -1758,7 +1771,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		if (self.render_settings.job._state == "INVOKE_RENDER" or self.render_settings.job._state == "COMPLETE_RENDER" or self.render_settings.job._state == "CANCEL_RENDER") and self.render_settings.addon_settings.render_stop:
 
 			# cancel the operator
-			# NOTE: - this includes recovering all original user settings
 			self.cancel(context)
 
 			# notify user
