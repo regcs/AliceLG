@@ -1042,8 +1042,9 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		# if no Looking Glass was detected AND debug mode is not activated OR the active device is an emulated one
 		if (not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device):
 
-			# deactivate quilt preset and debug buttons
+			# deactivate quilt preset and lightfield window buttons
 			row_preset.enabled = False
+			row_orientationb.enabled = False
 
 		# if the HoloPlay Service is not added or not ready
 		if (LookingGlassAddon.service is None or not LookingGlassAddon.service.is_ready()) and not LookingGlassAddon.debugging_use_dummy_device:
