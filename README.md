@@ -103,7 +103,7 @@ _NOTE: This feature is considered to be 'experimental'. It might not detect cras
 
 ## Renderfarm Implementation (Experimental)
 
-The rendering of still holograms and holographic animations can be a time-consuming task on. Therefore, this add-on provides a command line mechanism that was created for render farms which want to support the quilt rendering by Alice/LG on their systems. Since it has not been tested on a render farm environment yet, this feature is considered experimental. If you are working at a render farm and need help to implement this mechanism on your system, please [open an issue on the add-on's GitHub repository](https://github.com/regcs/AliceLG/issues).
+The rendering of still holograms and holographic animations can be a time-consuming task. Therefore, this add-on provides a command line mechanism that was created for render farms which want to support the quilt rendering by Alice/LG on their systems. Since it has not been tested on a render farm environment yet, this feature is considered experimental. If you are working at a render farm and need help to implement this mechanism on your system, please [open an issue on the add-on's GitHub repository](https://github.com/regcs/AliceLG/issues).
 
 ### Basic Command Line Calls
 
@@ -118,7 +118,7 @@ Both arguments require that Blender is started in background mode (i.e., using t
 
 ### Additional Parameters
 
-The add-on also understands the some additional parameters to fine-tune the rendering process. These parameters are very similar to Blender's internal command line rendering parameters:
+The add-on also understands some additional parameters to fine-tune the rendering process. These parameters are very similar to Blender's internal command line rendering parameters:
 
 - `-o`  or `--render-output` `<path>`: Set the render path and file name. Automatically disables the "Add Metadata" option.
 - `-s`  or `--frame-start` `<frame>`: Set start to frame `<frame>`, supports +/- for relative frames too.
