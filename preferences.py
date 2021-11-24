@@ -90,6 +90,10 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 class LOOKINGGLASS_PT_install_dependencies(AddonPreferences):
 	bl_idname = __package__
 
+	# need this here, since the actual logger level property is not initialized
+	# before the dependencies are installed. but we want to log all details
+	logger_level = 0
+
 	# draw function
 	def draw(self, context):
 
