@@ -244,7 +244,6 @@ class HoloPlayService(BaseServiceType):
                 # pass the quilt to the device
                 logger.info(" [#] Display of demo quilt is requested for '%s' ..." % self)
                 self.__send_message(self.__show_demo(device.configuration['index']))
-                logger.debug(" [#] Sending request and waiting for response took %.3f s." % (time.time() - start))
                 logger.info(" [#] Done.")
 
                 return True

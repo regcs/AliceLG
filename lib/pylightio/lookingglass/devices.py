@@ -259,7 +259,8 @@ class LookingGlassPortrait(LookingGlassDeviceMixin, BaseDeviceType):
                                     'screenW': 1536.0,
                                     'serial': 'LKG-5-DUMMY',
                                     'viewCone': 40.0,
-                                    'aspect': 0.75
+                                    'aspect': 0.75,
+                                    'invView': True
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 0.75,
@@ -300,7 +301,8 @@ class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
                                     'screenH': 1600.0,
                                     'screenW': 2560.0,
                                     'viewCone': 40.0,
-                                    'aspect': 1.6
+                                    'aspect': 1.6,
+                                    'invView': True
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.6,
@@ -341,7 +343,8 @@ class LookingGlassLarge(LookingGlassDeviceMixin, BaseDeviceType):
                                     'screenH': 2160.0,
                                     'screenW': 3840.0,
                                     'viewCone': 40.0,
-                                    'aspect': 1.77777777
+                                    'aspect': 1.77777777,
+                                    'invView': True
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
@@ -381,7 +384,8 @@ class LookingGlassLargePro(LookingGlassDeviceMixin, BaseDeviceType):
                                     'screenH': 2160.0,
                                     'screenW': 3840.0,
                                     'viewCone': 40.0,
-                                    'aspect': 1.77777777
+                                    'aspect': 1.77777777,
+                                    'invView': True
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
@@ -421,7 +425,8 @@ class LookingGlass8k(LookingGlassDeviceMixin, BaseDeviceType):
                                     'screenH': 4320.0,
                                     'screenW': 7680.0,
                                     'viewCone': 40.0,
-                                    'aspect': 1.77777777
+                                    'aspect': 1.77777777,
+                                    'invView': True
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
