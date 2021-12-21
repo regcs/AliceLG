@@ -224,6 +224,10 @@ class LookingGlassAddon:
 				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
 					handler.setLevel(logging.INFO)
 
+				# if the level is ERROR
+				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
+					handler.setLevel(logging.ERROR)
+
 		# 2: Alice/LG logger
 		logger = logging.getLogger('Alice/LG')
 		for handler in logger.handlers:
@@ -238,6 +242,15 @@ class LookingGlassAddon:
 				# if the level is INFO
 				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
 					handler.setLevel(logging.INFO)
+
+				# if the level is ERROR
+				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
+					handler.setLevel(logging.ERROR)
+
+		# 3. Enable or disable all logging mode.
+		enable = bpy.context.preferences.addons[__package__].preferences.logger_level != '2'
+		LookingGlassAddon.debugging_print_pylio_logger_all = enable
+		LookingGlassAddon.debugging_print_internal_logger_all = enable
 
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod

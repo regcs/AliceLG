@@ -127,7 +127,10 @@ logger.addHandler(logfile_handler)
 # NOTE: This is the addon's own logger. Use it to log messages on different levels.
 # create logger
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
-LookingGlassAddonLogger.setLevel(logging.DEBUG)
+if LookingGlassAddon.debugging_print_internal_logger_all:
+	LookingGlassAddonLogger.setLevel(logging.DEBUG)
+else:
+	LookingGlassAddonLogger.setLevel(logging.ERROR)
 
 # create console handler and set level to WARNING
 console_handler = logging.StreamHandler()
@@ -185,15 +188,11 @@ LookingGlassAddonLogger.info(" [#] Add-on path: %s" % LookingGlassAddon.path)
 if bpy.app.version < bl_info['blender']:
 	raise Exception("This version of Blender is not supported by " + bl_info['name'] + ". Please use v" + '.'.join(str(v) for v in bl_info['blender']) + " or higher.")
 
-# Check Add-on Dependencies
-# +++++++++++++++++++++++++++++++++++++++++++++
-# this to produce log messages
-LookingGlassAddon.check_dependecies(debug=True)
 
 # Load Internal Modules
 # +++++++++++++++++++++++++++++++++++++++++++++
-# if NOT all the dependenceis are satisfied
-if not LookingGlassAddon.check_dependecies():
+# if NOT all the dependenceis are satisfied, debug will produce log messages.
+if not LookingGlassAddon.check_dependecies(debug=LookingGlassAddon.debugging_print_internal_logger_all):
 
 	# reload/import all preferences' related code
 	try:

@@ -147,8 +147,9 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 
 	# logger level
 	logger_level: bpy.props.EnumProperty(
-									items = [('0', 'Debug messages', 'All messages are written to the log file. This is for detailed debugging and extended bug reports.'),
-											 ('1', 'Info, Warnings, and Errors', 'All info, warning, and error messages are written to the log file. This is for standard bug reports.')],
+									items = [('0', 'Debug messages', 'All messages are written to the log file. This is for detailed debugging and extended bug reports'),
+											 ('1', 'Info, Warnings, and Errors', 'All info, warning, and error messages are written to the log file. This is for standard bug reports'),
+											 ('2', 'Only Errors', 'Only error messages are written to the log file. This is for less verbose console outputs')],
 									default='1',
 									name="Logging Mode",
 									update=LookingGlassAddon.update_logger_levels,
