@@ -145,6 +145,20 @@ class LookingGlassAddon:
 
 		return found_all
 
+	# unload all dependencies
+	@classmethod
+	def unload_dependecies(cls):
+
+		# are all modules in the packages list available in the "lib" directory?
+		for module in cls.external_dependecies:
+
+			# get names
+			module_name, install_name, install_version = module
+
+			# unload the module
+			del sys.modules[module_name]
+			#del module_name
+
 
 
 	# LOOKING GLASS QUILT PRESETS
