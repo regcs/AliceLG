@@ -1003,7 +1003,7 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		# if a camera is selected AND the space is not in camera mode
 		if self and context:
-			if context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
+			if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
 				if (context.space_data != None and context.space_data.region_3d != None) and context.space_data.region_3d.view_perspective != 'CAMERA':
 
 					# currently selected camera

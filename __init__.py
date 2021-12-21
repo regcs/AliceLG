@@ -338,7 +338,7 @@ def register():
 		# update the corresponding status variable
 		LookingGlassAddon.background = True
 
-	# if all dependencies are satisfied
+	# if NOT all dependencies are satisfied
 	if LookingGlassAddon.check_dependecies() == False:
 
 		# register the preferences operators
@@ -374,7 +374,6 @@ def register():
 
 		# UI elements
 		# add-on preferences
-		bpy.utils.register_class(LOOKINGGLASS_PT_install_dependencies)
 		bpy.utils.register_class(LOOKINGGLASS_PT_preferences)
 		# add-on panels
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
@@ -461,7 +460,7 @@ def register():
 
 def unregister():
 
-	# if not all dependencies are satisfied
+	# if NOT all dependencies are satisfied
 	if LookingGlassAddon.check_dependecies() == False:
 
 		# unregister only the preferences
@@ -484,25 +483,22 @@ def unregister():
 		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
 
 		# unregister all classes of the addon
-		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_OT_install_dependencies)
-		if hasattr(bpy.types, "LOOKINGGLASS_PT_preferences"): bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
-		if hasattr(bpy.types, "LookingGlassAddonSettings"): bpy.utils.unregister_class(LookingGlassAddonSettings)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_display_list"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_refresh_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_lightfield_window"): bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_blender_viewport_assign"): bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_add_camera"): bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
+		bpy.utils.unregister_class(LookingGlassAddonSettings)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_blender_viewport_assign)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_add_camera)
 
 		# Looking Glass quilt rendering
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_render_quilt"): bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
 		# Looking Glass viewport & camera frustum
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_render_viewport"): bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
-		if hasattr(bpy.types, "LOOKINGGLASS_OT_render_frustum"): bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
-
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 
 		# UI elements
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_general"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_camera"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_render"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
@@ -511,3 +507,6 @@ def unregister():
 
 		# delete all variables
 		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings
+
+	# unload all libraries
+	LookingGlassAddon.unload_dependecies()
