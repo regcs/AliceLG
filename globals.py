@@ -246,6 +246,15 @@ class LookingGlassAddon:
 				# if the level is ERROR
 				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
 					handler.setLevel(logging.ERROR)
+
+
+	@staticmethod
+	def update_console_output(self, context):
+		'''Update the global vars controlling outputs to console'''
+		LookingGlassAddon.debugging_print_pylio_logger_all = self.console_output
+		LookingGlassAddon.debugging_print_internal_logger_all = self.console_output
+
+
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
 	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):

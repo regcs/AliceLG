@@ -154,15 +154,16 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 									name="Logging Mode",
 									update=LookingGlassAddon.update_logger_levels,
 									)
+	console_output: bpy.props.BoolProperty(
+									default=False,
+									name="Log to console",
+									description="Additionally log outputs to std out for debugging",
+									update=LookingGlassAddon.update_console_output,
+									)
+
 	# draw function
 	def draw(self, context):
-
 		layout = self.layout
-
-		# render mode
-		row_render_mode = layout.row()
-		row_render_mode.prop(self, "render_mode")
-
-		# logger level
-		row_logger_level = layout.row()
-		row_logger_level.prop(self, "logger_level")
+		layout.prop(self, "render_mode")
+		layout.prop(self, "logger_level")
+		layout.prop(self, "console_output")
