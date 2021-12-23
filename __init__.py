@@ -127,10 +127,7 @@ logger.addHandler(logfile_handler)
 # NOTE: This is the addon's own logger. Use it to log messages on different levels.
 # create logger
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
-if LookingGlassAddon.debugging_print_internal_logger_all:
-	LookingGlassAddonLogger.setLevel(logging.DEBUG)
-else:
-	LookingGlassAddonLogger.setLevel(logging.ERROR)
+LookingGlassAddonLogger.setLevel(logging.DEBUG)
 
 # create console handler and set level to WARNING
 console_handler = logging.StreamHandler()

@@ -246,12 +246,6 @@ class LookingGlassAddon:
 				# if the level is ERROR
 				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
 					handler.setLevel(logging.ERROR)
-
-		# 3. Enable or disable all logging mode.
-		enable = bpy.context.preferences.addons[__package__].preferences.logger_level != '2'
-		LookingGlassAddon.debugging_print_pylio_logger_all = enable
-		LookingGlassAddon.debugging_print_internal_logger_all = enable
-
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
 	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):
