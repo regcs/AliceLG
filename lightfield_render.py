@@ -507,7 +507,9 @@ class RenderJob:
 		LookingGlassAddonLogger.info(" [#] Assembled quilt in memory.")
 
 		# copy the viewfile
-		shutil.copy(self.view_filepath(), self.quilt_filepath())
+		# NOTE: We use copyfile() instead of copy(), because the latter failed
+		#		on network drives. Are there any downsides to this?
+		shutil.copyfile(self.view_filepath(), self.quilt_filepath())
 
 		# delete the current image data block of the quilt render result
 		# NOTE: This is required to prevent image data block accumulation
