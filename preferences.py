@@ -164,23 +164,24 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 	# draw function
 	def draw(self, context):
 		layout = self.layout
-# render mode
-row_render_mode = layout.row()
-column_1 = row_render_mode.column()
-column_1.label(text="Render Mode:")
-column_1.scale_x = 0.2
-column_2 = row_render_mode.column()
-column_2.prop(self, "render_mode", text="")
-column_2.scale_x = 0.8
 
-# logger level
-row_logger = layout.row()
-column_1 = row_logger.column()
-column_1.label(text="Logging Mode:")
-column_1.scale_x = 0.2
-column_2 = row_logger.column()
-column_2.prop(self, "logger_level", text="")
-column_2.scale_x = 0.55
-column_3 = row_logger.column()
-column_3.prop(self, "console_output")
-column_3.scale_x = 0.25
+		# render mode
+		row_render_mode = layout.row()
+		column_1 = row_render_mode.column()
+		column_1.label(text="Render Mode:")
+		column_1.scale_x = 0.2
+		column_2 = row_render_mode.column()
+		column_2.prop(self, "render_mode", text="")
+		column_2.scale_x = 0.8
+
+		# logger level
+		row_logger = layout.row()
+		column_1 = row_logger.column()
+		column_1.label(text="Logging Mode:")
+		column_1.scale_x = 0.2
+		column_2 = row_logger.column()
+		column_2.prop(self, "logger_level", text="")
+		column_2.scale_x = 0.55
+		column_3 = row_logger.column()
+		column_3.prop(self, "console_output")
+		column_3.scale_x = 0.25
