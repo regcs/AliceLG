@@ -158,7 +158,7 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 									default=False,
 									name="Log to console",
 									description="Additionally log outputs to std out for debugging",
-									update=LookingGlassAddon.update_console_output,
+									update=LookingGlassAddon.update_logger_levels,
 									)
 
 	# draw function

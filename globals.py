@@ -208,52 +208,53 @@ class LookingGlassAddon:
 	@staticmethod
 	def update_logger_levels(self, context):
 
-		# set logerg levels according to the add-on preferences
-		# 1: pyLightIO logger
-		logger = logging.getLogger('pyLightIO')
-		for handler in logger.handlers:
+		# update global variables for console output
+		LookingGlassAddon.debugging_print_pylio_logger_all = bpy.context.preferences.addons[__package__].preferences.console_output
+		LookingGlassAddon.debugging_print_internal_logger_all = bpy.context.preferences.addons[__package__].preferences.console_output
 
-			# if this is the TimedRotatingFileHandler
-			if type(handler) == logging.handlers.TimedRotatingFileHandler:
+		# set logger levels according to the add-on preferences
+		loggers_list = [logging.getLogger('pyLightIO'), logging.getLogger('Alice/LG')]
+		for logger in loggers_list:
+			for handler in logger.handlers:
 
-				# if the level is DEBUG
-				if bpy.context.preferences.addons[__package__].preferences.logger_level == '0':
-					handler.setLevel(logging.DEBUG)
+				# if this is the TimedRotatingFileHandler
+				if type(handler) == logging.handlers.TimedRotatingFileHandler:
 
-				# if the level is INFO
-				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
-					handler.setLevel(logging.INFO)
+					# if the level is DEBUG
+					if bpy.context.preferences.addons[__package__].preferences.logger_level == '0':
+						handler.setLevel(logging.DEBUG)
 
-				# if the level is ERROR
-				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
-					handler.setLevel(logging.ERROR)
+					# if the level is INFO
+					elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
+						handler.setLevel(logging.INFO)
 
-		# 2: Alice/LG logger
-		logger = logging.getLogger('Alice/LG')
-		for handler in logger.handlers:
-
-			# if this is the TimedRotatingFileHandler
-			if type(handler) == logging.handlers.TimedRotatingFileHandler:
-
-				# if the level is DEBUG
-				if bpy.context.preferences.addons[__package__].preferences.logger_level == '0':
-					handler.setLevel(logging.DEBUG)
-
-				# if the level is INFO
-				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
-					handler.setLevel(logging.INFO)
-
-				# if the level is ERROR
-				elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
-					handler.setLevel(logging.ERROR)
+					# if the level is ERROR
+					elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
+						handler.setLevel(logging.ERROR)
 
 
-	@staticmethod
-	def update_console_output(self, context):
-		'''Update the global vars controlling outputs to console'''
-		LookingGlassAddon.debugging_print_pylio_logger_all = self.console_output
-		LookingGlassAddon.debugging_print_internal_logger_all = self.console_output
+				# if this is the StreamHandler
+				elif type(handler) == logging.StreamHandler:
 
+					# update logger levels
+					if bpy.context.preferences.addons[__package__].preferences.console_output:
+
+						# if the level is DEBUG
+						if bpy.context.preferences.addons[__package__].preferences.logger_level == '0':
+							handler.setLevel(logging.DEBUG)
+
+						# if the level is INFO
+						elif bpy.context.preferences.addons[__package__].preferences.logger_level == '1':
+							handler.setLevel(logging.INFO)
+
+						# if the level is ERROR
+						elif bpy.context.preferences.addons[__package__].preferences.logger_level == '2':
+							handler.setLevel(logging.ERROR)
+
+					else:
+
+						# deactivate console output
+						handler.setLevel(logging.CRITICAL + 1)
 
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
