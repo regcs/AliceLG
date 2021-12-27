@@ -456,6 +456,18 @@ def register():
 
 def unregister():
 
+	# if the a service for display communication is active
+	if LookingGlassAddon.service:
+
+		# Unregister at the Holoplay Service
+		pylio.ServiceManager.remove(LookingGlassAddon.service)
+
+	# log info
+	LookingGlassAddonLogger.info("Unregister the addon:")
+
+	# log info
+	LookingGlassAddonLogger.info(" [#] Removing all registered classes.")
+
 	# if NOT all dependencies are satisfied
 	if LookingGlassAddon.check_dependecies() == False:
 
@@ -468,12 +480,6 @@ def unregister():
 		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
 
 	else:
-
-		# if the a service for display communication is active
-		if LookingGlassAddon.service:
-
-			# Unregister at the Holoplay Service
-			pylio.ServiceManager.remove(LookingGlassAddon.service)
 
 		# remove initialization helper app handler
 		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
@@ -504,5 +510,20 @@ def unregister():
 		# delete all variables
 		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings
 
+
+	# log info
+	LookingGlassAddonLogger.info(" [#] Unloading the python dependencies.")
+
 	# unload all libraries
 	LookingGlassAddon.unload_dependecies()
+
+	# log info
+	LookingGlassAddonLogger.info(" [#] Shutting down the loggers.")
+
+	# shut down both loggers (pylightio and Alice/LG)
+	logger.handlers.clear()
+	LookingGlassAddonLogger.handlers.clear()
+	logging.shutdown()
+
+	# log info
+	LookingGlassAddonLogger.info(" [#] Done.")
