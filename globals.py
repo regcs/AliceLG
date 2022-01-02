@@ -299,7 +299,7 @@ class LookingGlassAddon:
 					device.display(lightfield_image, flip_views=flip_views, invert=invert)
 
 			# if the demo quilt was requested
-			elif lightfield_image == None and render_mode == -1:
+			elif lightfield_image is None:
 
 				# let the device display the demo quilt
 				device.display(None)

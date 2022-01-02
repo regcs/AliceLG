@@ -529,10 +529,13 @@ class LookingGlassAddonUI:
 			quiltPixels = 255 * LookingGlassAddon.quiltPixels
 			quiltPixels = quiltPixels.astype(dtype=np.uint8)
 
-			# if no quilt viewer LightfieldImage exists
-			if not LookingGlassAddon.quiltViewerLightfieldImage:
-				# TODO: Free the old LightfieldImage here (need a free() method in pylio)
-				pass
+			# if no quilt viewer LightfieldImage is selected
+			if context.scene.addon_settings.quiltImage is None:
+
+				# free the view data of the lightfield image, if one was loaded
+				if LookingGlassAddon.quiltViewerLightfieldImage:
+					LookingGlassAddon.quiltViewerLightfieldImage.clear_views()
+					LookingGlassAddon.quiltViewerLightfieldImage = None
 
 			# create a LightfieldImage from the selected quilt
 			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], context.scene.addon_settings.quiltImage.channels, quilt_name = context.scene.addon_settings.quiltImage.name)
@@ -542,6 +545,14 @@ class LookingGlassAddonUI:
 
 		# if the quilt selection was deleted
 		else:
+
+			# free the view data of the lightfield image, if one was loaded
+			if LookingGlassAddon.quiltViewerLightfieldImage:
+				LookingGlassAddon.quiltViewerLightfieldImage.clear_views()
+				LookingGlassAddon.quiltViewerLightfieldImage = None
+
+			# update the lightfield displayed on the device
+			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 			# reset the variables
 			LookingGlassAddon.quiltPixels = None

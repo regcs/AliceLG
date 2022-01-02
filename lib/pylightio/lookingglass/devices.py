@@ -89,8 +89,8 @@ class LookingGlassDeviceMixin(object):
     def clear(self):
         ''' clear the device display '''
 
-        # if a service is bound and a lightfield is displayed
-        if self.service and self.lightfield:
+        # if a service is bound
+        if self.service:
 
             # clear the display
             if self.service.clear(self):

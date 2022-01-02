@@ -329,8 +329,25 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
  					# set to redraw
 					self.modal_redraw = True
 
-				# -
+				# render the views
 				self.render_view(context)
+
+				# Lightfield Viewport
+				if int(self.addon_settings.renderMode) == 0 and self.lightfield_image:
+
+					# update the lightfield displayed on the device
+					LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), self.lightfield_image)
+
+				# Quilt Viewer
+				elif int(self.addon_settings.renderMode) == 1 and LookingGlassAddon.quiltViewerLightfieldImage:
+
+					# update the lightfield displayed on the device
+					LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+
+				else:
+
+					# update the lightfield displayed on the device: show the demo quilt
+					LookingGlassAddon.update_lightfield_window(-1, None)
 
 				# running modal
 				return {'RUNNING_MODAL'}
@@ -407,7 +424,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				for DepsgraphUpdate in depsgraph.updates.values():
 					#print(" # ", DepsgraphUpdate.is_updated_geometry, DepsgraphUpdate.is_updated_shading, DepsgraphUpdate.is_updated_transform, DepsgraphUpdate.id.name)
 
-					if DepsgraphUpdate.is_updated_geometry  == True and DepsgraphUpdate.is_updated_shading == True and DepsgraphUpdate.is_updated_transform == True:
+					if DepsgraphUpdate.is_updated_geometry == True and DepsgraphUpdate.is_updated_shading == True and DepsgraphUpdate.is_updated_transform == True:
 
 						# update status variable
 						changed = False
@@ -835,14 +852,6 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				LookingGlassAddonLogger.debug("-----------------------------")
 				LookingGlassAddonLogger.debug("Copying all views took in total %.3f ms" % ((time.time() - self.start_multi_view) * 1000))
 				LookingGlassAddonLogger.debug("-----------------------------")
-
-				# update the lightfield displayed on the device
-				LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), self.lightfield_image)
-
-			else:
-
-				# update the lightfield displayed on the device: show the demo quilt
-				LookingGlassAddon.update_lightfield_window(-1, None)
 
 			# reset draw variable:
 			# This is here to prevent excessive redrawing
