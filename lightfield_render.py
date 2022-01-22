@@ -347,6 +347,7 @@ class RenderJob:
 
 				# set to view format to
 				self.scene.render.views_format = 'MULTIVIEW'
+				self.scene.render.image_settings.views_format = "INDIVIDUAL"
 
 				# deactivate 'left' and 'right' view
 				self.scene.render.views['left'].use = False
