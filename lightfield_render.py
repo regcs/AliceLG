@@ -1466,6 +1466,18 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			return {'FINISHED'}
 
 
+		# CHECK IF A VALID OUTPUT FORMAT IS SELECTED
+		################################################################
+
+		# if the selected output format is NOT a video format
+		if self.render_settings.job.scene.render.image_settings.file_format in ['AVI_JPEG', 'AVI_RAW', 'FFMPEG']:
+
+			# notify user
+			self.report({"ERROR"}, "Video file formats like '%s' are currently not supported. Please choose an image format." % self.render_settings.job.scene.render.image_settings.file_format)
+
+			# don't execute operator
+			return {'FINISHED'}
+
 
 		# CHECK IF USER OPTED TO DISCARD AN INCOMPLETE RENDER JOB
 		################################################################
