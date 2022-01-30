@@ -707,16 +707,50 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										)
 
 	# Lightfield Preview Resolution in Auto lightfield mode
-	lightfield_preview_mode: bpy.props.EnumProperty(
-										items = [('0', 'No Preview', 'Lightfield window updates are performed after (not during) user interactions.'),
-												 ('1', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
-												 ('2', 'Skipped-views Preview I', 'Skip every second view'),
-												 ('3', 'Skipped-views Preview II', 'Skip every third view'),
-												 ('4', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
-												 ],
-										default='0',
-										name="Lightfield Preview Mode",
-										update=LookingGlassAddonUI.update_lightfield_window_settings,
+	lightfield_preview_mode_low_res: bpy.props.BoolProperty(
+										name = "Low-resolution Preview",
+										description = "1024x1024 quilt, 32 views",
+										default = False,
+										update = LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+	lightfield_preview_mode_skip_views: bpy.props.BoolProperty(
+										name = "Skipped-views Preview",
+										description = "Only render every nth view as set below",
+										default = False,
+										update = LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+	lightfield_preview_mode_skip_views_factor: bpy.props.IntProperty(
+										name = "Factor",
+										description = "Only render views evenly divisible by this number when Skipped-views Preview is enabled",
+										min = 2,
+										soft_max = 4,
+										max = 10,
+										default = 2,
+										update = LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+	lightfield_preview_mode_restricted_viewcone: bpy.props.BoolProperty(
+										name = "Restricted Viewcone Preview",
+										description = "Render only a restricted viewcone with the parameters set below",
+										default = False,
+										update = LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+	lightfield_preview_mode_restricted_viewcone_centre: bpy.props.FloatProperty(
+										name = "Centre",
+										description = "Render only within the range centered around this perspective when Restricted Viewcone Preview is enabled",
+										subtype = 'PERCENTAGE',
+										min = 0,
+										max = 100,
+										default = 50,
+										update = LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+	lightfield_preview_mode_restricted_viewcone_coverage: bpy.props.FloatProperty(
+										name = "Coverage",
+										description = "Render only within this range about its centre when Restricted Viewcone Preview is enabled",
+										subtype = 'PERCENTAGE',
+										min = 0,
+										max = 100,
+										default = 33.333333,
+										update = LookingGlassAddonUI.update_lightfield_window_settings,
 										)
 
 	# pointer property that can be used to load a pre-rendered quilt image
@@ -730,7 +764,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 
 	viewport_use_preview_mode: bpy.props.BoolProperty(
 										name="Use Preview Mode",
-										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed)",
+										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed). If no preview modes are selected below, then lightfield window updates are performed after (not during) user interactions.",
 										default = True,
 										)
 
@@ -1358,9 +1392,19 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			# Preview settings
 			row_output = column.row(align = True)
-			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode", text="")
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode_low_res")
 			row_output.separator()
 			row_output.prop(context.scene.addon_settings, "viewport_use_preview_mode", text="", icon='IMAGE_ZDEPTH')
+			row_output = column.row(align = True)
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode_skip_views")
+			row_output = column.row(align = True)
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode_skip_views_factor")
+			row_output = column.row(align = True)
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode_restricted_viewcone")
+			row_output = column.row(align = True)
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode_restricted_viewcone_centre")
+			row_output = column.row(align = True)
+			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode_restricted_viewcone_coverage")
 
 
 		# if the lightfield window is in quilt viewer mode

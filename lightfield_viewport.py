@@ -78,7 +78,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	modal_redraw = True
 	depsgraph_update_time = 0
 	skip_views = 1
-	restricted_viewcone_limit = 0
+	restricted_viewcone_lower_limit = 0
+	restricted_viewcone_upper_limit = 0
 
 	# DEBUGING VARIABLES
 	start_multi_view = 0
@@ -324,7 +325,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 					# dont skip any views
 					self.skip_views = 1
-					self.restricted_viewcone_limit = 0
+					self.restricted_viewcone_lower_limit = 0
+					self.restricted_viewcone_upper_limit = 0
 
  					# set to redraw
 					self.modal_redraw = True
@@ -354,39 +356,41 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# allow an update of the Looking Glass viewport
 				self.modal_redraw = True
 
-				# if the "no preview" is activated
-				if self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '0':
+				# preview mode is enabled
+				if self.addon_settings.viewport_use_preview_mode:
 
-					# don't allow an update of the Looking Glass viewport
-					self.modal_redraw = False
+					# at least one preview type is activated
+					if self.addon_settings.lightfield_preview_mode_low_res or self.addon_settings.lightfield_preview_mode_skip_views or self.addon_settings.lightfield_preview_mode_restricted_viewcone:
+					
+						# if the "low resolution preview" is activated
+						if self.addon_settings.lightfield_preview_mode_low_res:
 
-					# we don't redraw, because changes are only updated after the user interaction finished
-					pass
+							# activate them
+							self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
 
-				# if the "low resolution preview" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '1':
+						# if the "skip views preview" is activated
+						if self.addon_settings.lightfield_preview_mode_skip_views:
 
-					# activate them
-					self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
+							# skip every second view during rendering
+							self.skip_views = self.addon_settings.lightfield_preview_mode_skip_views_factor
 
-				# if the "skip views preview I" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '2':
+						# if the "restricted viewcone preview" is activated
+						if self.addon_settings.lightfield_preview_mode_restricted_viewcone:
 
-					# skip every second view during rendering
-					self.skip_views = 2
+							# only show the selected range of all views
+							self.restricted_viewcone_lower_limit = int(self.qs[self.preset]["total_views"] * ((self.addon_settings.lightfield_preview_mode_restricted_viewcone_centre - self.addon_settings.lightfield_preview_mode_restricted_viewcone_coverage / 2) / 100))
+							self.restricted_viewcone_upper_limit = self.qs[self.preset]["total_views"] - int(self.qs[self.preset]["total_views"] * ((self.addon_settings.lightfield_preview_mode_restricted_viewcone_centre + self.addon_settings.lightfield_preview_mode_restricted_viewcone_coverage / 2) / 100))
 
-				# if the "skip views preview II" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3':
+					# otherwise, no preview type is activated
+					else:
 
-					# skip every third view during rendering
-					self.skip_views = 3
+						# don't allow an update of the Looking Glass viewport
+						self.modal_redraw = False
 
-				# if the "restricted viewcone preview" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4':
+						# we don't redraw, because changes are only updated after the user interaction finished
+						pass
 
-					# only show the center 33% of all views
-					self.restricted_viewcone_limit = int(self.qs[self.preset]["total_views"] / 3)
-
+				# otherwise, preview mode is toggled off
 				else:
 
 					# set to the currently chosen quality
@@ -714,7 +718,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			LookingGlassAddonLogger.debug(" [#] View dimensions: %i x %i" % (self.qs[self.preset]["view_width"], self.qs[self.preset]["view_height"]))
 			LookingGlassAddonLogger.debug(" [#] LightfieldImage views: %i" % len(self.lightfield_image.get_view_data()))
 			LookingGlassAddonLogger.debug(" [#] Using quilt preset: %i (%s, %i x %i)" % (self.preset, self.qs[self.preset]['description'], self.lightfield_image.metadata['quilt_width'], self.lightfield_image.metadata['quilt_height']))
-			LookingGlassAddonLogger.debug(" [#] Preview mode: %s (selected: %s)" % (self.addon_settings.viewport_use_preview_mode, self.addon_settings.lightfield_preview_mode))
+			LookingGlassAddonLogger.debug(" [#] Preview mode: %s (Low-res: %s, Skip-view: %s [%s], Restricted viewcone: %s [%s, %s])" % (self.addon_settings.viewport_use_preview_mode, self.addon_settings.lightfield_preview_mode_low_res, self.addon_settings.lightfield_preview_mode_skip_views, self.addon_settings.lightfield_preview_mode_skip_views_factor, self.addon_settings.lightfield_preview_mode_restricted_viewcone, self.addon_settings.lightfield_preview_mode_restricted_viewcone_centre, self.addon_settings.lightfield_preview_mode_restricted_viewcone_coverage))
 
 
 			# PREPARE VIEW & PROJECTION MATRIX
@@ -765,16 +769,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						LookingGlassAddonLogger.debug(" [#] [%i] Setting up view camera took %.3f ms" % (view, (time.time() - start_test) * 1000))
 						start_test = time.time()
 
-						# if the "skip views preview" is activated AND this view shall be skipped
-						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '2' or self.addon_settings.lightfield_preview_mode == '3')) and view % self.skip_views:
-
-							# clear LightfieldView array's color data (so it appears black)
-							self.lightfield_image.views[view]['view'].data[:] = 0
-
-							LookingGlassAddonLogger.debug(" [#] [%i] Clearing skipped view's numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
-
-						# if the "Restricted viewcone preview" is activated AND this view shall be skipped
-						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
+						# if the "skip views preview" or "Restricted viewcone preview" is activated AND this view shall be skipped
+						if self.addon_settings.viewport_use_preview_mode and ((self.addon_settings.lightfield_preview_mode_restricted_viewcone and (view < self.restricted_viewcone_lower_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_upper_limit or self.restricted_viewcone_lower_limit == self.qs[self.preset]["total_views"] - self.restricted_viewcone_upper_limit)) or (self.addon_settings.lightfield_preview_mode_skip_views and view % self.skip_views)):
 
 							# clear LightfieldView array's color data (so it appears black)
 							self.lightfield_image.views[view]['view'].data[:] = 0
@@ -815,12 +811,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# loop through all required views
 				for view in range(0, self.qs[self.preset]["total_views"]):
 
-					# if the "skip views preview" is activated AND this view shall be skipped
-					if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '2' or self.addon_settings.lightfield_preview_mode == '3')) and view % self.skip_views:
-
-						continue
-					# if the "Restricted viewcone preview" is activated AND this view shall be skipped
-					elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
+					# if the "skip views preview" or "Restricted viewcone preview" is activated AND this view shall be skipped
+					if self.addon_settings.viewport_use_preview_mode and ((self.addon_settings.lightfield_preview_mode_restricted_viewcone and (view < self.restricted_viewcone_lower_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_upper_limit or self.restricted_viewcone_lower_limit == self.qs[self.preset]["total_views"] - self.restricted_viewcone_upper_limit)) or (self.addon_settings.lightfield_preview_mode_skip_views and view % self.skip_views)):
 
 						continue
 					else:
