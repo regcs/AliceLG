@@ -297,8 +297,8 @@ class LookingGlass4kGen2(LookingGlassDeviceMixin, BaseDeviceType):
                                     'configVersion': '1.0',
                                     'serial': 'LKG-ADUMMY',
                                     'DPI': 283.0,
-                                    'screenH': 4320.0,
-                                    'screenW': 7680.0,
+                                    'screenH': 2160.0,
+                                    'screenW': 3840.0,
                                     'viewCone': 40.0,
                                     'aspect': 1.77777777,
                                     'invView': True
