@@ -283,6 +283,87 @@ class LookingGlassPortrait(LookingGlassDeviceMixin, BaseDeviceType):
     #       device type implementations
 
     # This type uses the LookingGlassBaseType and has no special requirements
+# 4K Gen2: 4K Gen2 Looking Glass
+class LookingGlass4kGen2(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "4k_gen2"                      # the unique identifier string of this device type
+    name = "4k Gen2 Looking Glass"        # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'configVersion': '1.0',
+                                    'serial': 'LKG-ADUMMY',
+                                    'DPI': 283.0,
+                                    'screenH': 2160.0,
+                                    'screenW': 3840.0,
+                                    'viewCone': 40.0,
+                                    'aspect': 1.77777777,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 1.77777777,
+                                    'quiltX': 4096,
+                                    'quiltY': 4096,
+                                    'tileX': 5,
+                                    'tileY': 9
+                                },
+                'hardwareVersion': '4k_gen2',
+                'hwid': 'LKG0007DUMMY',
+                'index': -2,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+
+# 8K Gen2: 8K Gen2 Looking Glass
+class LookingGlass8kGen2(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "8k_gen2"                      # the unique identifier string of this device type
+    name = "8k Gen2 Looking Glass"        # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'configVersion': '1.0',
+                                    'serial': 'LKG-BDUMMY',
+                                    'DPI': 280.0,
+                                    'screenH': 4320.0,
+                                    'screenW': 7680.0,
+                                    'viewCone': 40.0,
+                                    'aspect': 1.77777777,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 1.77777777,
+                                    'quiltX': 8192,
+                                    'quiltY': 8192,
+                                    'tileX': 5,
+                                    'tileY': 9
+                                },
+                'hardwareVersion': '8k_gen2',
+                'hwid': 'LKG0006DUMMY',
+                'index': -3,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
 
 # Standard: 8.9'' Looking Glass
 class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
@@ -313,7 +394,7 @@ class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'standard',
                 'hwid': 'LKG0001DUMMY',
-                'index': -2,
+                'index': -4,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -324,7 +405,6 @@ class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
     #       device type implementations
 
     # This type uses the LookingGlassBaseType and has no special requirements
-
 
 # Large: 15.6'' Looking Glass
 class LookingGlassLarge(LookingGlassDeviceMixin, BaseDeviceType):
@@ -355,7 +435,7 @@ class LookingGlassLarge(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'large',
                 'hwid': 'LKG0002DUMMY',
-                'index': -3,
+                'index': -5,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -396,7 +476,7 @@ class LookingGlassLargePro(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'pro',
                 'hwid': 'LKG0003DUMMY',
-                'index': -4,
+                'index': -6,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -437,7 +517,7 @@ class LookingGlass8k(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': '8k',
                 'hwid': 'LKG0004DUMMY',
-                'index': -5,
+                'index': -7,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
