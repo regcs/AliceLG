@@ -65,13 +65,14 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 			for module in LookingGlassAddon.external_dependecies:
 				if not LookingGlassAddon.is_installed(module):
 
-					# if this is pynng and we are on a M1 architecture, we install
-					# pynng from the bundled wheel
-					# TODO: This is a workaround for https://github.com/regcs/AliceLG/issues/54
-					#		As soon as 'pynng' is officially supporting M1, we can remove it
-					if module[1] == 'pynng' and platform.system() == 'Darwin' and not platform.processor() == 'i386':
+					# This is a workaround:
+					# - pynng is currently not maintained anymore
+					# - we compiled wheels ourselves and include them with Alice/LG
+					# - pynng will be obsolete in newer versions of Alice/LG
+					if module[1] == 'pynng':
 
-						subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', LookingGlassAddon.libpath + 'pynng-0.7.1-cp39-cp39-macosx_10_9_universal2.whl', '--target', LookingGlassAddon.libpath, '--no-cache'], stdout=logfile)
+						subprocess.call([python_path, '-m', 'pip', 'download', module[1], '--dest=' + os.path.join(LookingGlassAddon.libpath, 'wheels'), '--no-cache'], stdout=logfile)
+						subprocess.call([python_path, '-m', 'pip', 'install', '--find-links=' + os.path.join(LookingGlassAddon.libpath, 'wheels'), module[1], '--target', LookingGlassAddon.libpath, '--no-cache', '--no-index'], stdout=logfile)
 
 					else:
 
