@@ -1,0 +1,11 @@
+{
+  "description": "Portrait, 80 Views",
+  "view_width": 384,
+  "view_height": 512,
+  "quilt_width": 3840,
+  "quilt_height": 4096,
+  "columns": 10,
+  "rows": 8,
+  "total_views": 80,
+  "hidden": false
+}

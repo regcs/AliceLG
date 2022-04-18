@@ -1,9 +1,9 @@
 {
   "description": "Portrait, 108 Views",
-  "view_width": 352,
-  "view_height": 470,
-  "quilt_width": 4224,
-  "quilt_height": 4230,
+  "view_width": 420,
+  "view_height": 560,
+  "quilt_width": 5040,
+  "quilt_height": 5040,
   "columns": 12,
   "rows": 9,
   "total_views": 108,
