@@ -377,7 +377,6 @@ class RenderJob:
 
 				# loop through all views
 				for view in range(self.view_start, self.view_end):
-					print(view, self.view_start, self.view_end, self.total_views, len(self._camera_temp))
 
 					# COPY CAMERA
 					# +++++++++++++++++++++++++++++++++++++++++++++++

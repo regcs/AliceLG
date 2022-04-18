@@ -1219,7 +1219,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 				row_render_still = layout.row(align = True)
 				render_quilt = row_render_still.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
 				render_quilt.animation = False
-				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.render_mode == '1')
+				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
 
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
 				# Show the corresponding progress bar for the rendering process
@@ -1231,7 +1231,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 				row_render_animation = layout.row(align = True)
 				render_quilt = row_render_animation.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
 				render_quilt.animation = True
-				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.render_mode == '1')
+				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
 
 
 		# if a lockfile was detected on start-up
@@ -1251,10 +1251,10 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_render_animation = layout.row(align = False)
 			render_quilt = row_render_animation.operator("render.quilt", text="Continue", icon='RENDER_STILL')
 			render_quilt.use_lockfile = True
-			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.render_mode == '1')
+			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
 			render_quilt = row_render_animation.operator("render.quilt", text="Discard", icon='CANCEL')
 			render_quilt.use_lockfile = True
-			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.render_mode == '1')
+			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
 			render_quilt.discard_lockfile = True
 
 

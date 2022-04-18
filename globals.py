@@ -261,9 +261,9 @@ class LookingGlassAddon:
 
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
-	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):
+	def update_lightfield_window(window_mode, lightfield_image, flip_views=None, invert=None):
 		''' update the lightfield image that is displayed on the current device '''
-		''' render_mode = 0: Lightfield Viewport, render_mode = 1: Quilt Viewer, render_mode = -1: demo quilt '''
+		''' window_mode = 0: Lightfield Viewport, window_mode = 1: Quilt Viewer, window_mode = -1: demo quilt '''
 
 		# append the add-on's path to Blender's python PATH
 		sys.path.insert(0, LookingGlassAddon.path)
@@ -282,7 +282,7 @@ class LookingGlassAddon:
 
 				# VIEWPORT MODE
 				##################################################################
-				if render_mode == 0:
+				if window_mode == 0:
 
 					if flip_views is None: flip_views = False
 					if invert is None: invert = False
@@ -293,7 +293,7 @@ class LookingGlassAddon:
 				# QUILT VIEWER MODE
 				##################################################################
 				# if the quilt view mode is active AND an image is loaded
-				elif render_mode == 1:
+				elif window_mode == 1:
 
 					if flip_views is None: flip_views = True
 					if invert is None: invert = False

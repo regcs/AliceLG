@@ -165,10 +165,17 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 
 	# render mode
 	render_mode: bpy.props.EnumProperty(
+									items = [('0', 'Current Blender instance', 'The quilt is rendered in the current Blender instance.'),
+											 ('1', 'Multiple background instances', 'The quilt is rendered in multiple Blender instances running in the background.')],
+									default='0',
+									name="Render Mode",
+									)
+	# camera mode for rendering
+	camera_mode: bpy.props.EnumProperty(
 									items = [('0', 'Single Camera Mode', 'The quilt is rendered using a single moving camera.'),
 											 ('1', 'Multiview Camera Mode', 'The quilt is rendered using Blenders multiview mechanism.')],
 									default='0',
-									name="Render Mode",
+									name="Camera Mode",
 									)
 
 	# logger level
@@ -180,6 +187,7 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 									name="Logging Mode",
 									update=LookingGlassAddon.update_logger_levels,
 									)
+
 	console_output: bpy.props.BoolProperty(
 									default=False,
 									name="Log to console",
@@ -195,13 +203,22 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 	def draw(self, context):
 		layout = self.layout
 
-		# render mode
-		row_render_mode = layout.row()
-		column_1 = row_render_mode.column()
-		column_1.label(text="Render Mode:")
+		# # render mode
+		# row_render_mode = layout.row()
+		# column_1 = row_render_mode.column()
+		# column_1.label(text="Render Mode:")
+		# column_1.scale_x = 0.2
+		# column_2 = row_render_mode.column()
+		# column_2.prop(self, "render_mode", text="")
+		# column_2.scale_x = 0.8
+
+		# camera mode for rendering
+		row_camera_mode = layout.row()
+		column_1 = row_camera_mode.column()
+		column_1.label(text="Camera Mode:")
 		column_1.scale_x = 0.2
-		column_2 = row_render_mode.column()
-		column_2.prop(self, "render_mode", text="")
+		column_2 = row_camera_mode.column()
+		column_2.prop(self, "camera_mode", text="")
 		column_2.scale_x = 0.8
 
 		# logger level

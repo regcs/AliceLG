@@ -253,7 +253,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 			# initialize the RenderSettings
 			# NOTE: This  loads the last render settings from the lockfile
-			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.render_mode == '1'), blocking=LookingGlassAddon.background)
+			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.camera_mode == '1'), blocking=LookingGlassAddon.background)
 
 		else:
 
