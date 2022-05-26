@@ -290,7 +290,8 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 		else:
 
 			# invoke the camera frustum rendering operator
-			bpy.ops.render.frustum('INVOKE_DEFAULT')
+			LookingGlassAddon.RenderFrustum = RenderFrustum()
+			LookingGlassAddon.RenderFrustum.start(bpy.context)
 
 			# get the active window
 			LookingGlassAddon.BlenderWindow = bpy.context.window
@@ -364,9 +365,8 @@ def register():
 		# Looking Glass quilt rendering
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
-		# Looking Glass viewport & camera frustum
+		# Looking Glass viewport
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
-		bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
 
 		# UI elements
 		# add-on preferences
@@ -462,6 +462,9 @@ def unregister():
 		# Unregister at the Holoplay Service
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
+	# stop the frustum drawing
+	if LookingGlassAddon.RenderFrustum: LookingGlassAddon.RenderFrustum.stop()
+
 	# log info
 	LookingGlassAddonLogger.info("Unregister the addon:")
 
@@ -495,9 +498,8 @@ def unregister():
 		# Looking Glass quilt rendering
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
-		# Looking Glass viewport & camera frustum
+		# Looking Glass viewport
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 
 		# UI elements
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)

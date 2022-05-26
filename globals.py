@@ -76,7 +76,6 @@ class LookingGlassAddon:
 
 	# Was the modal operator for the frustum initialized?
 	FrustumInitialized = False
-	FrustumDrawHandler = None
 
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
