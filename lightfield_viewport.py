@@ -860,26 +860,24 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 
 # ------------ CAMERA FRUSTUM RENDERING -------------
-# Modal operator for rendering a camera frustum reprsenting the Looking Glass
+# Class for rendering a camera frustum reprsenting the Looking Glass
 # in Blenders 3D viewport
-class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
-	bl_idname = "render.frustum"
-	bl_label = "Looking Glass Frustum Rendering"
-	bl_options = {'REGISTER', 'INTERNAL'}
-
-	# variables for the frustum
-	frustum_indices_lines = None
-	frustum_indices_faces = None
-	frustum_indices_focalplane_outline = None
-	frustum_indices_focalplane_face = None
-	frustum_shader = None
-
-
+class RenderFrustum:
 
 	# Inititalize the camera frustum drawing
-	@classmethod
 	def __init__(self):
 
+		# Blender draw handler for the frustum
+		frustum_draw_handler = None
+
+		# variables for the frustum
+		frustum_indices_lines = None
+		frustum_indices_faces = None
+		frustum_indices_focalplane_outline = None
+		frustum_indices_focalplane_face = None
+		frustum_shader = None
+
+		# notify addon that frustum is activated
 		LookingGlassAddon.FrustumInitialized = True
 
 
@@ -889,74 +887,48 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 	def __del__(self):
 
 		# remove the draw handler for the frustum drawing
-		if LookingGlassAddon.FrustumDrawHandler:
-			bpy.types.SpaceView3D.draw_handler_remove(LookingGlassAddon.FrustumDrawHandler, 'WINDOW')
-			LookingGlassAddon.FrustumDrawHandler = None
+		if self.frustum_draw_handler:
+			bpy.types.SpaceView3D.draw_handler_remove(self.frustum_draw_handler, 'WINDOW')
+			self.frustum_draw_handler = None
 
-		# reset variable
+		# notify addon that frustum is deactivated
 		LookingGlassAddon.FrustumInitialized = False
 
 
 
-
-	# poll method
-	@classmethod
-	def poll(self, context):
-
-		# return True, so the operator is executed
-		return True
-
-
-
-
-	# cancel the modal operator
-	def cancel(self, context):
+	# cancel frustum drawing
+	def stop(self):
 
 		# remove the draw handler for the frustum drawing
-		if LookingGlassAddon.FrustumDrawHandler:
-			bpy.types.SpaceView3D.draw_handler_remove(LookingGlassAddon.FrustumDrawHandler, 'WINDOW')
-			LookingGlassAddon.FrustumDrawHandler = None
+		if self.frustum_draw_handler:
+			bpy.types.SpaceView3D.draw_handler_remove(self.frustum_draw_handler, 'WINDOW')
+			self.frustum_draw_handler = None
 
 		LookingGlassAddon.FrustumInitialized = False
+
+		# log info
+		LookingGlassAddonLogger.info("Camera frustum drawing handler started.")
 
 		# return None since this is expected by the operator
 		return None
 
 
 
+	# start the frustum drawing
+	def start(self, context):
 
-	def invoke(self, context, event):
-
-		# SETUP THE FRUSTUM
-		################################################################
-
-		# setup the frustum & shader
+		# setup the camera frustum & shader
 		self.setupCameraFrustumShader()
 
+		# add draw handler to display the frustum of the Looking Glass camera
+		# after everything else has been drawn in the view
+		self.frustum_draw_handler = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
 
-
-
-		# REGISTER ALL HANDLERS FOR THE FRUSTUM RENDERING
-		################################################################
-
-		# HANDLERS FOR DRAWING PURPOSES
-		# ++++++++++++++++++++++++++++++
-		# draw handler to display the frustum of the Looking Glass camera
-		LookingGlassAddon.FrustumDrawHandler = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
-
-		# add the modal handler
-		context.window_manager.modal_handler_add(self)
+		# log info
+		LookingGlassAddonLogger.info("Camera frustum drawing handler stopped.")
 
 		# keep the modal operator running
-		return {'RUNNING_MODAL'}
-
-
-
-	# modal operator for controlled redrawing of the lightfield
-	def modal(self, context, event):
-
-		# pass event through
-		return {'PASS_THROUGH'}
+		return self.frustum_draw_handler
 
 
 
@@ -1002,8 +974,6 @@ class LOOKINGGLASS_OT_render_frustum(bpy.types.Operator):
 
 		# compile the shader that will be used for drawing
 		self.frustum_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
-
-
 
 
 
