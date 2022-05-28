@@ -58,7 +58,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 	bl_idname = "render.viewport"
 	bl_label = "Looking Glass Lightfield Viewport rendering"
-	bl_options = {'REGISTER', 'INTERNAL', 'UNDO'}
+	bl_options = {'REGISTER', 'INTERNAL'}
 
 
 	# PUBLIC CLASS MEMBERS
