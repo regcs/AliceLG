@@ -56,7 +56,7 @@ except:
 # Debugging Settings
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # this is only for debugging purposes
-LookingGlassAddon.debugging_use_dummy_device = True
+LookingGlassAddon.debugging_use_dummy_device = False
 
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
@@ -294,7 +294,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			LookingGlassAddon.BlockRenderer = BlockRenderer()
 
             # setup the offscreen for drawing the block
-			LookingGlassAddon.BlockRenderer.add_block(0, 10, 10, 420, 560)
+			LookingGlassAddon.BlockRenderer.add_block(0, 60, 10, 420, 560)
 			LookingGlassAddon.BlockRenderer.set_viewport_block(0)
 			LookingGlassAddon.BlockRenderer.add_block(1, 0, 0, 420, 560)
 			LookingGlassAddon.BlockRenderer.set_imageeditor_block(1)
@@ -392,12 +392,16 @@ def register():
 		# UI elements
 		# add-on preferences
 		bpy.utils.register_class(LOOKINGGLASS_PT_preferences)
-		# add-on panels
+		# addon panels
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
+        # addon header buttons
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_blocks_preview_options)
+		bpy.utils.register_class(LOOKINGGLASS_BT_button_blocks_preview)
+		bpy.types.VIEW3D_HT_header.append(LOOKINGGLASS_BT_button_blocks_preview.draw_item)
 
 		# log info
 		LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
@@ -535,12 +539,18 @@ def unregister():
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
 
 		# UI elements
+        # preferences
 		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
+        # addon panels
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_general"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_camera"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_render"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_overlays_shading"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
+        # addon header buttons
+		bpy.types.VIEW3D_HT_header.remove(LOOKINGGLASS_BT_button_blocks_preview.draw_item)
+		bpy.utils.unregister_class(LOOKINGGLASS_BT_button_blocks_preview)
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_preview_options)
 
 		# delete all variables
 		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings
