@@ -75,8 +75,14 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
-	# Was the modal operator for the frustum initialized?
+	# Was the frustum drawer initialized?
 	FrustumInitialized = False
+	FrustumRenderer = None
+
+	# Was the block preview drawer initialized?
+	BlockInitialized = False
+	BlockRenderer = None
+	BlockViewportLightfield = None
 
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
@@ -85,6 +91,14 @@ class LookingGlassAddon:
 	# Rendering status
 	RenderInvoked = False
 	RenderAnimation = None
+
+	# keymaps and mouse position
+	keymap = None
+	keymap_items = None
+	mouse_window_x = 0
+	mouse_window_y = 0
+	mouse_region_x = 0
+	mouse_region_y = 0
 
 
 	# EXTEND PATH
@@ -276,7 +290,10 @@ class LookingGlassAddon:
 
 		# update the variable for the current Looking Glass device
 		device = pylio.DeviceManager.get_active()
+
+		# if a valid device is connected
 		if device:
+
 			# if a LightfieldImage was given
 			if lightfield_image:
 
@@ -288,7 +305,7 @@ class LookingGlassAddon:
 					if invert is None: invert = False
 
 					# let the device display the image
-					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+					if device.service: device.display(lightfield_image, flip_views=flip_views, invert=invert)
 
 				# QUILT VIEWER MODE
 				##################################################################
@@ -299,13 +316,13 @@ class LookingGlassAddon:
 					if invert is None: invert = False
 
 					# let the device display the image
-					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+					if device.service: device.display(lightfield_image, flip_views=flip_views, invert=invert)
 
 			# if the demo quilt was requested
 			elif lightfield_image is None:
 
 				# let the device display the demo quilt
-				device.display(None)
+				if device.service: device.display(None)
 
 			else:
 				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")

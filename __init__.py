@@ -56,7 +56,7 @@ except:
 # Debugging Settings
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # this is only for debugging purposes
-LookingGlassAddon.debugging_use_dummy_device = False
+LookingGlassAddon.debugging_use_dummy_device = True
 
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
@@ -289,9 +289,19 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 		else:
 
-			# invoke the camera frustum rendering operator
-			LookingGlassAddon.RenderFrustum = RenderFrustum()
-			LookingGlassAddon.RenderFrustum.start(bpy.context)
+			# create and start the frustum and the block renderer
+			LookingGlassAddon.FrustumRenderer = FrustumRenderer()
+			LookingGlassAddon.BlockRenderer = BlockRenderer()
+
+            # setup the offscreen for drawing the block
+			LookingGlassAddon.BlockRenderer.add_block(0, 10, 10, 420, 560)
+			LookingGlassAddon.BlockRenderer.set_viewport_block(0)
+			LookingGlassAddon.BlockRenderer.add_block(1, 0, 0, 420, 560)
+			LookingGlassAddon.BlockRenderer.set_imageeditor_block(1)
+
+            # start the renderers
+			LookingGlassAddon.FrustumRenderer.start(bpy.context)
+			LookingGlassAddon.BlockRenderer.start(bpy.context)
 
 			# get the active window
 			LookingGlassAddon.BlenderWindow = bpy.context.window
@@ -370,7 +380,14 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
 		# Looking Glass viewport
+		bpy.utils.register_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
+
+
+		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
+		if keyconfigs_addon:
+			LookingGlassAddon.keymap = keyconfigs_addon.keymaps.new(name="3D View", space_type='VIEW_3D')
+			LookingGlassAddon.keymap_items = LookingGlassAddon.keymap.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
 
 		# UI elements
 		# add-on preferences
@@ -466,9 +483,15 @@ def unregister():
 		# Unregister at the Holoplay Service
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
+<<<<<<< HEAD
 	# stop the frustum drawing
 	if hasattr(LookingGlassAddon, 'RenderFrustum'):
 		if LookingGlassAddon.RenderFrustum: LookingGlassAddon.RenderFrustum.stop()
+=======
+	# stop the frustum and block renderers
+	if LookingGlassAddon.FrustumRenderer: LookingGlassAddon.FrustumRenderer.stop()
+	if LookingGlassAddon.BlockRenderer: LookingGlassAddon.BlockRenderer.stop()
+>>>>>>> d0053a1 (Added: Blocks renderer backend & blocks viewport preview.)
 
 	# log info
 	LookingGlassAddonLogger.info("Unregister the addon:")
@@ -503,7 +526,12 @@ def unregister():
 		# Looking Glass quilt rendering
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
+		# remove the keymap
+		if LookingGlassAddon.keymap:
+			LookingGlassAddon.keymap.keymap_items.remove(LookingGlassAddon.keymap_items)
+
 		# Looking Glass viewport
+		bpy.utils.unregister_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
 
 		# UI elements

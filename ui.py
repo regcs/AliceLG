@@ -278,10 +278,32 @@ class LookingGlassAddonUI:
 				context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device.aspect) / context.scene.render.resolution_x
 				context.scene.render.pixel_aspect_y = 1.0
 
+
+
+		# BLOCK RENDERING
+		# get the viewport block
+		# currently selected device
+		device = pylio.DeviceManager.get_active()
+
+		if LookingGlassAddon.BlockRenderer:
+			block = LookingGlassAddon.BlockRenderer.get_viewport_block()
+		else:
+			block = None
+
+		if block and device and context.region:
+			# update state variables
+			block.set_preset(int(context.scene.addon_settings.quiltPreset))
+			block.set_aspect(device.aspect)
+			block.set_view_cone(device.viewCone)
+			block.set_alpha(0.3)
+
+			# redraw region
+			context.region.tag_redraw()
+
 		return None
 
 
-	# update function for property updates concerning camera selection
+    # update function for property updates concerning camera selection
 	def update_camera_selection(self, context):
 
 		# if no Looking Glass was detected AND debug mode is not activated
@@ -572,7 +594,14 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# a boolean to toogle the render window on or off
 	ShowLightfieldWindow: bpy.props.BoolProperty(
 											name="Lightfield Window",
-											description = "Creates a window for the lightfield rendering on the current Looking Glass device.",
+											description = "Creates a window for the lightfield rendering on the current Looking Glass device",
+											default = False,
+											)
+
+    # a boolean to toogle the block viewport preview on or off
+	ShowBlockPreview: bpy.props.BoolProperty(
+											name="Block preview",
+											description = "Displays a looking glass block preview in the Blender viewport",
 											default = False,
 											)
 
@@ -1044,6 +1073,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		column_2 = row_orientation.column(align=True)
 		row_orientationb = column_2.row(align = True)
 		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.addon_settings.ShowLightfieldWindow)
+		row_orientationb.prop(context.scene.addon_settings, "ShowBlockPreview", text="", icon='META_PLANE')
 
 		# Resolution selection of the quilt views
 		row_preset = column.row()
