@@ -1117,12 +1117,11 @@ class Block:
         self.view = 0
         self.view_cone = 40
 
-        # GPU parameters
+        # GPU and rendering
+        self.changed = True
         self.camera = None
         self.view_matrix = None
         self.projection_matrix = None
-
-        # create the offscreen this block is drawn in
         self.offscreen_canvas = gpu.types.GPUOffScreen(self.width, self.height)
         self.offscreen_view = None
 
@@ -1364,13 +1363,19 @@ class Block:
 
     # store camera for block rendering in the block data
     def set_camera(self, camera):
-        if not camera is None:
+        if  not (camera is None or self.camera == camera):
             self.camera = camera
+
+            # block has changed
+            self.changed = True
 
     # store lightfield image in the block data
     def set_lightfield_image(self, lightfield_image):
-        if not lightfield_image is None:
+        if  not (lightfield_image is None or self.lightfield_image == lightfield_image):
             self.lightfield_image = lightfield_image
+
+            # block has changed
+            self.changed = True
 
     # store dimensions in the block data
     def set_dimensions(self, width, height):
@@ -1389,6 +1394,9 @@ class Block:
             # create a new offscreen block is drawn in
             self.offscreen_canvas = gpu.types.GPUOffScreen(self.width, self.height)
 
+            # block has changed
+            self.changed = True
+
     # set the quilt preset for this Block
     def set_preset(self, preset):
 
@@ -1404,25 +1412,40 @@ class Block:
             # update shaders to include the new aspect ratio
             self.__update_shaders()
 
+            # block has changed
+            self.changed = True
+
     # store view in the block data
     def set_view(self, view):
-        if not view is None:
+        if not (view is None or self.view == view):
             self.view = view
+
+            # block has changed
+            self.changed = True
 
     # store view cone in the block data
     def set_view_cone(self, view_cone):
-        if not view_cone is None:
+        if not (view_cone is None or self.view_cone == view_cone):
             self.view_cone = view_cone
+
+            # block has changed
+            self.changed = True
 
     # store angle in the block data
     def set_angle(self, angle):
-        if not angle is None:
+        if not (angle is None or self.angle == angle):
             self.angle = angle
+
+            # block has changed
+            self.changed = True
 
     # store activity value in the block data
     def set_active(self, active):
-        if not active is None:
+        if not (active is None or self.active == active):
             self.active = active
+
+            # block has changed
+            self.changed = True
 
     # store aspect ratio of the views in the block data
     def set_aspect(self, aspect):
@@ -1431,6 +1454,9 @@ class Block:
 
             # update shaders to include the new aspect ratio
             self.__update_shaders()
+
+            # block has changed
+            self.changed = True
 
     # store border_width value in the block data
     def set_border_width(self, border_width):
@@ -1485,6 +1511,7 @@ class BlockRenderer:
 
     # drawing handlers
     __block_draw_view3d_handler = None
+    __block_depsgraph_handler = None
     __block_draw_imageeditor_handler = None
 
     # private class properties
@@ -1498,9 +1525,6 @@ class BlockRenderer:
     # active presets
     __viewport3d_preset = 0
     __imageeditor_preset = 0
-
-    # camera for block rendering
-    block_renderer_camera = None
 
     # ------------ KEYMAP OPERATOR FOR BLOCK RENDERER UPDATES -------------
     class LOOKINGGLASS_OT_update_block_renderer(bpy.types.Operator):
@@ -1608,10 +1632,12 @@ class BlockRenderer:
         # if it was successfully initialized
         if LookingGlassAddon.BlockInitialized:
 
-            # delete the temporary camera again
-            if self.block_renderer_camera: bpy.data.objects.remove(self.block_renderer_camera)
+            # remove the depsgraph handler
+            if self.__block_depsgraph_handler:
+                bpy.app.handlers.depsgraph_update_post.remove(self.__block_depsgraph_handler, 'WINDOW')
+                self.__block_depsgraph_handler = None
 
-            # remove the draw handler for the frustum drawing
+            # remove the draw handlers
             if self.__block_draw_view3d_handler:
                 bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view3d_handler, 'WINDOW')
                 self.__block_draw_view3d_handler = None
@@ -1628,10 +1654,8 @@ class BlockRenderer:
     # start the block renderer
     def start(self, context):
 
-        # # set border volor to Blenders default background color
-        # self.block_border_color = context.preferences.themes[0].user_interface.editor_outline
-        # print(self.block_border_color[0], self.block_border_color[1], self.block_border_color[2])
-        # self.block_border_color = (self.block_border_color[0], self.block_border_color[1], self.block_border_color[2], 1.0)
+        # add depsgraph update handler to react to scene changes
+        self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
 
         # add draw handler to display the frustum of the Looking Glass camera
         # after everything else has been drawn in the view
@@ -1700,8 +1724,8 @@ class BlockRenderer:
         if not self.__imageeditor_block is None:
             return self.__blocks[self.__imageeditor_block]
 
-    # set up the camera for each view and the shader of the rendering object
-    def __setupVirtualCameraForView(self, context, block, camera, viewMatrix, projectionMatrix):
+    # calculate the view and projection matrices for rendering the view
+    def __calculate_matrices_for_view_rendering(self, context, block, camera, viewMatrix, projectionMatrix):
 
         # if a camera is used for the Looking Glass
         if camera != None:
@@ -1735,6 +1759,25 @@ class BlockRenderer:
         # return the projection matrix
         return viewMatrix, projectionMatrix
 
+
+    # Application handler that continously checks for changes of the depsgraph
+    def __depsgraph_changes(self, scene, depsgraph):
+
+        # if the block renderer is actively rendering
+        if scene.addon_settings.block_viewport_show:
+
+            # if something in the scene has changed
+            if len(depsgraph.updates.values()) > 0:
+
+                # select current viewport block
+                block = self.__blocks[self.__viewport3d_block]
+                if block is None or block.preset is None or block.offscreen_view is None:
+                    return
+
+                # update the blocks status variable
+                block.changed = True
+
+
     # render the block into the viewport
     def __viewport_render(self, context):
 
@@ -1749,71 +1792,58 @@ class BlockRenderer:
                     if block is None or block.preset is None or block.offscreen_view is None:
                         return
 
-                    # PREPARE VIEW & PROJECTION MATRIX
-                    # ++++++++++++++++++++++++++++++++++++++++++++++++
+                    # if the block changed
+                    if block.changed:
 
-                    # select camera that belongs to the view
-                    camera = context.scene.addon_settings.lookingglassCamera
+                        # select camera that belongs to the view
+                        camera = context.scene.addon_settings.lookingglassCamera
 
-                    # PREPARE THE MODELVIEW AND PROJECTION MATRICES
-                    # if a camera is selected
-                    if camera != None:
-                        #
-                        # # if noc camera exists create it
-                        # if not self.block_renderer_camera:
-                        #     self.block_renderer_camera = bpy.data.objects.new("alicelg_blocks_cam", camera.data.copy())
-                        #     self.block_renderer_camera.data.clip_start = 0
-                        #
-                        #     # set the block camera
-                        #     block.set_camera(self.block_renderer_camera)
-                        #
-                        # else:
-                        #
-                        #     # set the block camera
-                        #     block.set_camera(self.block_renderer_camera)
-                        #
-                        #     # copy selected Looking Glass camera data
-                        #     block.camera.data = camera.data.copy()
+                        # PREPARE THE MODELVIEW AND PROJECTION MATRICES
+                        # if a camera is selected
+                        if camera != None:
 
-                        # get camera's modelview matrix
-                        view_matrix = camera.matrix_world.copy()
+                            # get camera's modelview matrix
+                            view_matrix = camera.matrix_world.copy()
 
-                        # correct for the camera scaling
-                        view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
-                        view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
-                        view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
+                            # correct for the camera scaling
+                            view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
+                            view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
+                            view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
 
-                        # calculate the inverted view matrix because this is what the draw_view_3D function requires
-                        camera_view_matrix = view_matrix.inverted_safe()
+                            # calculate the inverted view matrix because this is what the draw_view_3D function requires
+                            camera_view_matrix = view_matrix.inverted_safe()
 
-                        # get the camera's projection matrix
-                        camera_projection_matrix = camera.calc_matrix_camera(
-                                depsgraph=context.view_layer.depsgraph,
-                                x = block.qs[block.preset]["view_width"],
-                                y = block.qs[block.preset]["view_height"],
-                                scale_x = 1.0,
-                                scale_y = (block.qs[block.preset]["rows"] / block.qs[block.preset]["columns"]) / block.aspect,
-                            )
+                            # get the camera's projection matrix
+                            camera_projection_matrix = camera.calc_matrix_camera(
+                                    depsgraph=context.view_layer.depsgraph,
+                                    x = block.qs[block.preset]["view_width"],
+                                    y = block.qs[block.preset]["view_height"],
+                                    scale_x = 1.0,
+                                    scale_y = (block.qs[block.preset]["rows"] / block.qs[block.preset]["columns"]) / block.aspect,
+                                )
 
 
-                        # RENDER THE VIEW
-                        # ++++++++++++++++++++++++++++++++++++++++++++++++
-                        with block.offscreen_view.bind():
+                            # RENDER THE VIEW
+                            # ++++++++++++++++++++++++++++++++++++++++++++++++
+                            with block.offscreen_view.bind():
 
-                            # calculate the offset-projection of the current view
-                            view_matrix, projection_matrix = self.__setupVirtualCameraForView(context, block, camera, camera_view_matrix.copy(), camera_projection_matrix.copy())
+                                # calculate the offset-projection of the current view
+                                view_matrix, projection_matrix = self.__calculate_matrices_for_view_rendering(context, block, camera, camera_view_matrix.copy(), camera_projection_matrix.copy())
 
-                            # draw the viewport rendering to the offscreen for the current view
-                            block.offscreen_view.draw_view3d(
-                                # we use the "Scene" and the "View Layer" that is active in the Window
-                                # the user currently works in
-                                scene=context.scene,
-                                view_layer=context.view_layer,
-                                view3d=context.space_data,
-                                region=context.region,
-                                view_matrix=view_matrix,
-                                projection_matrix=projection_matrix,
-                                do_color_management = False)
+                                # draw the viewport rendering to the offscreen for the current view
+                                block.offscreen_view.draw_view3d(
+                                    # we use the "Scene" and the "View Layer" that is active in the Window
+                                    # the user currently works in
+                                    scene=context.scene,
+                                    view_layer=context.view_layer,
+                                    view3d=context.space_data,
+                                    region=context.region,
+                                    view_matrix=view_matrix,
+                                    projection_matrix=projection_matrix,
+                                    do_color_management = False)
+
+                        # reset status variable
+                        block.changed = False
 
                         # restore all viewport shading and overlay settings
                         #self.restoreViewportSettings()
