@@ -294,7 +294,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			LookingGlassAddon.BlockRenderer = BlockRenderer()
 
             # setup the offscreen for drawing the block
-			LookingGlassAddon.BlockRenderer.add_block(0, 60, 10, 420, 560)
+			LookingGlassAddon.BlockRenderer.add_block(0, 10, 10, 420, 560)
 			LookingGlassAddon.BlockRenderer.set_viewport_block(0)
 			LookingGlassAddon.BlockRenderer.add_block(1, 0, 0, 420, 560)
 			LookingGlassAddon.BlockRenderer.set_imageeditor_block(1)

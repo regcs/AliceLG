@@ -1349,6 +1349,18 @@ class Block:
                     scale_y = (self.qs[self.preset]['rows'] / self.qs[self.preset]['columns']) / self.aspect,
                 )
 
+    # test if mouse is hovering over the block
+    def is_mouse_over(self, context):
+
+        # for right positioned blocks
+        if context.scene.addon_settings.block_alignment == 'left':
+            if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+                return True
+
+        # for right positioned blocks
+        if context.scene.addon_settings.block_alignment == 'right':
+            if (LookingGlassAddon.mouse_region_x > context.area.width - self.width - self.x - 50 and LookingGlassAddon.mouse_region_x < context.area.width - self.width - self.x - 50 + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+                return True
 
     # store camera for block rendering in the block data
     def set_camera(self, camera):
@@ -1533,11 +1545,19 @@ class BlockRenderer:
                 if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.block_scaling_factor / device.aspect))
 
                 # infer the current view
-                if context.region.type != 'HEADER' and (LookingGlassAddon.mouse_region_x > context.area.width - block.width - block.x and LookingGlassAddon.mouse_region_x < context.area.width - block.width - block.x + block.width) and (LookingGlassAddon.mouse_region_y > block.y and LookingGlassAddon.mouse_region_y < block.y + block.height):
+                if context.region.type != 'HEADER' and block.is_mouse_over(context):
 
-                    # calculate the view number and angle
-                    view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width))
-                    angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width - 0.5))
+                    # for left positioned blocks
+                    if context.scene.addon_settings.block_alignment == 'left':
+                        # calculate the view number and angle
+                        view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
+                        angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
+
+                    # for right positioned blocks
+                    elif context.scene.addon_settings.block_alignment == 'right':
+                        # calculate the view number and angle
+                        view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width))
+                        angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x - 50)) / block.width - 0.5))
 
                     # update state variables
                     block.set_active(True)
@@ -1807,7 +1827,9 @@ class BlockRenderer:
 
                     # if the block is drawn in a SpaceView3D
                     if context.space_data.type == 'VIEW_3D' and context.space_data.region_3d != None:
-                        draw_texture_2d(block.offscreen_canvas.texture_color, (context.region.width - block.width - block.x, block.y), block.width, block.height)
+
+                        if context.scene.addon_settings.block_alignment == 'left': draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+                        if context.scene.addon_settings.block_alignment == 'right': draw_texture_2d(block.offscreen_canvas.texture_color, (context.area.width - block.width - block.x - 50, block.y), block.width, block.height)
 
                     gpu.state.depth_mask_set(False)
                     gpu.state.blend_set('NONE')

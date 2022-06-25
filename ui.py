@@ -987,6 +987,15 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 		update=LookingGlassAddonUI.update_blocks_setting,
 		)
 
+	# UI elements for user control
+	block_alignment: bpy.props.EnumProperty(
+										items = [('left', 'Left', 'The block is rendered on the lower left corner of the viewport'),
+												 ('right', 'Right', 'The block is rendered on the lower right corner of the viewport')],
+										default='right',
+										name="Block Alignment",
+										update=LookingGlassAddonUI.update_blocks_setting,
+										)
+
 	block_scaling_factor: bpy.props.FloatProperty(
 		name="Scaling Factor",
 		min=0,
@@ -1694,38 +1703,23 @@ class LOOKINGGLASS_PT_panel_blocks_preview_options(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		layout.label(text="Blocks Preview")
+		layout.active = context.scene.addon_settings.block_viewport_show
 
 		# define a column of UI elements
 		column = layout.column(align = True)
 
+        # Location
+		row_alignment_label = column.row(align = True)
+		row_alignment_label.label(text="Alignment")
+		row_alignment = column.row(align = True)
+		row_alignment.prop(context.scene.addon_settings, "block_alignment", expand=True)
+
 		# Block preview settings
         # Scaling factor
+		row_appearance_label = column.row(align = True)
+		row_appearance_label.label(text="Appearance")
 		row_scaling = column.row(align = True)
 		row_scaling.prop(context.scene.addon_settings, "block_scaling_factor", slider=True)
-
         # Alpha value
 		row_alpha = column.row(align = True)
 		row_alpha.prop(context.scene.addon_settings, "block_alpha", slider=True)
-
-		# # Chose the settings from the device or use a preset?
-		# row_general_options = layout.column(align = True)
-		# row_use_device = row_general_options.row(align = True)
-		# block_use_device = row_use_device.prop(context.scene.addon_settings, "block_use_device")
-        #
-		# # Render orientation
-		# row_orientation = layout.row(align = True)
-		# column_1 = row_orientation.row(align = True)
-		# column_1.label(text="Device:")
-		# column_1.scale_x = 0.3
-		# column_2 = row_orientation.row(align = True)
-		# column_2.prop(context.scene.addon_settings, "block_device_type", text="")
-		# column_2.scale_x = 0.7
-        #
-		# # Quilt preset
-		# row_preset = layout.row(align = True)
-		# column_1 = row_preset.row(align = True)
-		# column_1.label(text="Quilt:")
-		# column_1.scale_x = 0.3
-		# column_2 = row_preset.row(align = True)
-		# column_2.prop(context.scene.addon_settings, "block_quilt_preset", text="")
-		# column_2.scale_x = 0.7
