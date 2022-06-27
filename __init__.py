@@ -293,12 +293,6 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			LookingGlassAddon.FrustumRenderer = FrustumRenderer()
 			LookingGlassAddon.BlockRenderer = BlockRenderer()
 
-            # setup the offscreen for drawing the block
-			LookingGlassAddon.BlockRenderer.add_block(0, 10, 10, 420, 560)
-			LookingGlassAddon.BlockRenderer.set_viewport_block(0)
-			LookingGlassAddon.BlockRenderer.add_block(1, 0, 0, 420, 560)
-			LookingGlassAddon.BlockRenderer.set_imageeditor_block(1)
-
             # start the renderers
 			LookingGlassAddon.FrustumRenderer.start(bpy.context)
 			LookingGlassAddon.BlockRenderer.start(bpy.context)
@@ -380,9 +374,8 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
 		# Looking Glass viewport
-		bpy.utils.register_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
-
+		bpy.utils.register_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
 
 		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
 		if keyconfigs_addon:
@@ -496,17 +489,23 @@ def unregister():
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	# stop the frustum drawing
 	if hasattr(LookingGlassAddon, 'RenderFrustum'):
 		if LookingGlassAddon.RenderFrustum: LookingGlassAddon.RenderFrustum.stop()
 =======
+=======
+	# log info
+	LookingGlassAddonLogger.info("Unregister the addon:")
+
+	# log info
+	LookingGlassAddonLogger.info(" [#] Stopping frustum and block renderers.")
+
+>>>>>>> 973cbdf (Fixed: Free all resources of the blocks when renderer is stopped.)
 	# stop the frustum and block renderers
 	if LookingGlassAddon.FrustumRenderer: LookingGlassAddon.FrustumRenderer.stop()
 	if LookingGlassAddon.BlockRenderer: LookingGlassAddon.BlockRenderer.stop()
 >>>>>>> d0053a1 (Added: Blocks renderer backend & blocks viewport preview.)
-
-	# log info
-	LookingGlassAddonLogger.info("Unregister the addon:")
 
 	# log info
 	LookingGlassAddonLogger.info(" [#] Removing all registered classes.")
@@ -539,32 +538,35 @@ def unregister():
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
 		# remove the keymap
-		if LookingGlassAddon.keymap_view_3d:
-			LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d)
-
-		if LookingGlassAddon.keymap_image_editor:
-			LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor)
+		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
+		if keyconfigs_addon:
+			# 3D Viewport
+			if LookingGlassAddon.keymap_view_3d: LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d)
+			if LookingGlassAddon.keymap_view_3d: keyconfigs_addon.keymaps.remove(LookingGlassAddon.keymap_view_3d)
+			# Image editor
+			if LookingGlassAddon.keymap_image_editor: LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor)
+			if LookingGlassAddon.keymap_image_editor: keyconfigs_addon.keymaps.remove(LookingGlassAddon.keymap_image_editor)
 
 		# Looking Glass viewport
 		bpy.utils.unregister_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
 
 		# UI elements
-        # preferences
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
+        # addon header buttons
+		bpy.types.IMAGE_HT_header.remove(LOOKINGGLASS_HT_button_imageeditor_blocks.draw_item)
+		bpy.types.VIEW3D_HT_header.remove(LOOKINGGLASS_HT_button_viewport_blocks.draw_item)
+		if hasattr(bpy.types, "LOOKINGGLASS_HT_button_viewport_blocks"): bpy.utils.unregister_class(LOOKINGGLASS_HT_button_viewport_blocks)
+		if hasattr(bpy.types, "LOOKINGGLASS_HT_button_imageeditor_blocks"): bpy.utils.unregister_class(LOOKINGGLASS_HT_button_imageeditor_blocks)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_blocks_viewport_options"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_viewport_options)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_blocks_imageeditor_options"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_imageeditor_options)
         # addon panels
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_general"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_camera"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_render"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_overlays_shading"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
-        # addon header buttons
-		bpy.types.VIEW3D_HT_header.remove(LOOKINGGLASS_HT_button_viewport_blocks.draw_item)
-		bpy.utils.unregister_class(LOOKINGGLASS_HT_button_viewport_blocks)
-		bpy.types.IMAGE_HT_header.remove(LOOKINGGLASS_HT_button_imageeditor_blocks.draw_item)
-		bpy.utils.unregister_class(LOOKINGGLASS_HT_button_imageeditor_blocks)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_viewport_options)
-
+        # preferences
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
 		# delete all variables
 		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings
 

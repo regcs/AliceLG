@@ -906,7 +906,7 @@ class FrustumRenderer:
         LookingGlassAddon.FrustumInitialized = False
 
         # log info
-        LookingGlassAddonLogger.info("Camera frustum drawing handler started.")
+        LookingGlassAddonLogger.info("Camera frustum drawing handler stopped.")
 
         # return None since this is expected by the operator
         return None
@@ -924,7 +924,7 @@ class FrustumRenderer:
         self.frustum_draw_handler = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
 
         # log info
-        LookingGlassAddonLogger.info("Camera frustum drawing handler stopped.")
+        LookingGlassAddonLogger.info("Camera frustum drawing handler started.")
 
         # keep the modal operator running
         return self.frustum_draw_handler
@@ -1342,14 +1342,6 @@ class Block:
             if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
                 return True
 
-    # store camera for block rendering in the block data
-    def set_camera(self, camera):
-        if  not (camera is None or self.camera == camera):
-            self.camera = camera
-
-            # block has changed
-            self.changed = True
-
     # store lightfield image in the block data
     def set_lightfield_image(self, lightfield_image):
         if  not (lightfield_image is None or self.lightfield_image == lightfield_image):
@@ -1504,6 +1496,18 @@ class Block:
                 self.batch.draw(self.shader)
 
 
+	# free the block and all its resources
+    def free(self):
+
+        # make sure the block is not drawn
+        self.changed = False
+
+		# free shader and batch
+        del self.shader, self.batch
+
+		# free offscreens
+        if self.offscreen_view: self.offscreen_view.free()
+        if self.offscreen_canvas: self.offscreen_canvas.free()
 
 
 # Class for rendering a Looking Glass Block in Blenders 3D viewport for live preview
@@ -1512,7 +1516,8 @@ class BlockRenderer:
     # drawing handlers
     __block_draw_view3d_handler = None
     __block_depsgraph_handler = None
-    __block_draw_imageeditor_handler = None
+    __block_draw_view_imageeditor_handler = None
+    __block_draw_block_imageeditor_handler = None
     __block_imageeditor_autodetected = False
 
     # private class properties
@@ -1684,19 +1689,22 @@ class BlockRenderer:
         # if it was successfully initialized
         if LookingGlassAddon.BlockInitialized:
 
-            # remove the depsgraph handler
-            if self.__block_depsgraph_handler:
-                bpy.app.handlers.depsgraph_update_post.remove(self.__block_depsgraph_handler, 'WINDOW')
-                self.__block_depsgraph_handler = None
-
             # remove the draw handlers
             if self.__block_draw_view3d_handler:
                 bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view3d_handler, 'WINDOW')
                 self.__block_draw_view3d_handler = None
 
-            if self.__block_draw_imageeditor_handler:
-                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_imageeditor_handler, 'WINDOW')
-                self.__block_draw_imageeditor_handler = None
+            if self.__block_draw_view_imageeditor_handler:
+                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_view_imageeditor_handler, 'WINDOW')
+                self.__block_draw_view_imageeditor_handler = None
+
+            if self.__block_draw_block_imageeditor_handler:
+                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_block_imageeditor_handler, 'WINDOW')
+                self.__block_draw_block_imageeditor_handler = None
+
+			# free all blocks
+            for id, block in self.__blocks.items():
+                block.free()
 
             # notify addon that frustum is deactivated
             LookingGlassAddon.BlockInitialized = False
@@ -1706,20 +1714,26 @@ class BlockRenderer:
     # start the block renderer
     def start(self, context):
 
+        # setup the viewport and image editor block
+        self.add_block(0, 10, 10, 420, 560)
+        self.add_block(1, 0, 0, 420, 560)
+        self.set_viewport_block(0)
+        self.set_imageeditor_block(1)
+
         # add depsgraph update handler to react to scene changes
         self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
 
         # add draw handler to display the frustum of the Looking Glass camera
         # after everything else has been drawn in the view
         self.__block_draw_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render, (context,), 'WINDOW', 'POST_PIXEL')
-        self.__block_draw_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
-        self.__block_draw_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
+        self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
+        self.__block_draw_block_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
 
         # log info
         LookingGlassAddonLogger.info("Block preview started.")
 
         # keep the modal operator running
-        return (self.__block_draw_view3d_handler, self.__block_draw_imageeditor_handler)
+        return (self.__block_draw_view3d_handler, self.__block_draw_view_imageeditor_handler, self.__block_draw_block_imageeditor_handler)
 
 
 
@@ -1729,14 +1743,22 @@ class BlockRenderer:
         # if it was successfully initialized
         if LookingGlassAddon.BlockInitialized:
 
-            # remove the draw handler for the frustum drawing
+			# free all blocks
+            for id, block in self.__blocks.items():
+                block.free()
+
+            # remove the draw handlers
             if self.__block_draw_view3d_handler:
                 bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view3d_handler, 'WINDOW')
                 self.__block_draw_view3d_handler = None
 
-            if self.__block_draw_imageeditor_handler:
-                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_imageeditor_handler, 'WINDOW')
-                self.__block_draw_imageeditor_handler = None
+            if self.__block_draw_view_imageeditor_handler:
+                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_view_imageeditor_handler, 'WINDOW')
+                self.__block_draw_view_imageeditor_handler = None
+
+            if self.__block_draw_block_imageeditor_handler:
+                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_block_imageeditor_handler, 'WINDOW')
+                self.__block_draw_block_imageeditor_handler = None
 
             # notify addon that frustum is deactivated
             LookingGlassAddon.BlockInitialized = False
