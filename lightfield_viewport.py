@@ -1097,19 +1097,20 @@ class Block:
     # Inititalize the block
     def __init__(self, x, y, width, height):
 
-        # the lightfield image of the block
-        self.lightfield_image = None
+        # the texture of an image in the image editor
+        self.image_texture = None
 
         # quilt presets
         self.qs = pylio.LookingGlassQuilt.formats.get()
-        self.preset = bpy.context.scene.addon_settings.quiltPreset
+        self.preset = None
+        self.device = None
 
         # block parameters
         self.active = False
         self.x = x
         self.y = y
-        self.width = int(width * bpy.context.scene.addon_settings.block_scaling_factor)
-        self.height = int(height * bpy.context.scene.addon_settings.block_scaling_factor)
+        self.width = int(width * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
+        self.height = int(height * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
         self.border_width = 0.015
         self.border_color = (0.0086, 0.0086, 0.0086, 1.0)
         self.aspect = self.width / self.height
@@ -1203,52 +1204,37 @@ class Block:
     # this is widely based on the following stackexchange thread:
     # https://blender.stackexchange.com/questions/16472/how-can-i-get-the-cameras-projection-matrix/86570#86570
     # which is a python translation of Blenders internal projection matrix calculations
-    def __projection_matrix(self, camera, x, y, scale_x, scale_y):
+    def __projection_matrix(self, x, y, scale_x, scale_y):
 
-        def BKE_camera_sensor_size(p_sensor_fit, sensor_x, sensor_y):
-            #/* sensor size used to fit to. for auto, sensor_x is both x and y. */
-            if (p_sensor_fit == 'VERTICAL'):
-                return sensor_y;
+        # set camera parameters that we require for the block rendering
+        camera_lens = 50.0
+        camera_sensor_width = 36.0
+        camera_sensor_height = 24.0
+        camera_shift_x = 0
+        camera_shift_y = 0
+        camera_clip_start = 0.001
+        camera_clip_end = 100
 
-            return sensor_x;
+        def view_plane(winx, winy, xasp, yasp):
 
-        #/* determine sensor fit */
-        def BKE_camera_sensor_fit(p_sensor_fit, sizex, sizey):
-            if (p_sensor_fit == 'AUTO'):
-                if (sizex >= sizey):
-                    return 'HORIZONTAL'
-                else:
-                    return 'VERTICAL'
-
-            return p_sensor_fit
-
-        def view_plane(camera, winx, winy, xasp, yasp):
             #/* fields rendering */
             ycor = yasp / xasp
-            use_fields = False
-            if (use_fields):
-              ycor *= 2
 
-            if (camera.type == 'ORTHO'):
-              #/* orthographic camera */
-              #/* scale == 1.0 means exact 1 to 1 mapping */
-              pixsize = camera.ortho_scale
-            else:
-              #/* perspective camera */
-              sensor_size = BKE_camera_sensor_size(camera.sensor_fit, camera.sensor_width, camera.sensor_height)
-              pixsize = (sensor_size * 0.001) / camera.lens
+            #/* perspective camera */
+            pixsize = (camera_sensor_width * 0.001) / camera_lens
 
-            sensor_fit = BKE_camera_sensor_fit(camera.sensor_fit, xasp * winx, yasp * winy)
-
-            if (sensor_fit == 'HORIZONTAL'):
+            # for landscape devices
+            if (self.aspect >= 1):
               viewfac = winx
+
+            # for portrait devices
             else:
               viewfac = ycor * winy
 
             pixsize /= viewfac
 
             #/* extra zoom factor */
-            pixsize *= 1 #params->zoom
+            pixsize *= 1
 
             #/* compute view plane:
             # * fully centered, zbuffer fills in jittered between -.5 and +.5 */
@@ -1258,22 +1244,13 @@ class Block:
             ymax =  0.5 * ycor * winy
 
             #/* lens shift and offset */
-            dx = camera.shift_x * viewfac # + winx * params->offsetx
-            dy = camera.shift_y * viewfac # + winy * params->offsety
+            dx = camera_shift_x * viewfac
+            dy = camera_shift_y * viewfac
 
             xmin += dx
             ymin += dy
             xmax += dx
             ymax += dy
-
-            #/* fields offset */
-            #if (params->field_second):
-            #    if (params->field_odd):
-            #        ymin -= 0.5 * ycor
-            #        ymax -= 0.5 * ycor
-            #    else:
-            #        ymin += 0.5 * ycor
-            #        ymax += 0.5 * ycor
 
             #/* the window matrix is used for clipping, and not changed during OSA steps */
             #/* using an offset of +0.5 here would give clip errors on edges */
@@ -1284,9 +1261,9 @@ class Block:
 
             return xmin, xmax, ymin, ymax
 
-        left, right, bottom, top = view_plane(camera, x, y, scale_x, scale_y)
+        left, right, bottom, top = view_plane(x, y, scale_x, scale_y)
 
-        farClip, nearClip = 100, 0.001#camera.clip_end, camera.clip_start
+        farClip, nearClip = camera_clip_end, camera_clip_start
 
         Xdelta = right - left
         Ydelta = top - bottom
@@ -1331,34 +1308,38 @@ class Block:
         if context.space_data is None:
             return None
 
-        # select camera that belongs to the view
-        camera = context.scene.addon_settings.lookingglassCamera
+        # calculate the inverted view matrix because this is what the draw_view_3D function requires
+        self.view_matrix = self.__matrix_look_at(Vector((sin(radians(self.angle)) * 3.1, 0, cos(radians(self.angle)) * 3.1)), Vector((0, 0, 0)), Vector((0, 1, 0)))
 
-        if camera != None:
-
-            # calculate the inverted view matrix because this is what the draw_view_3D function requires
-            self.view_matrix = self.__matrix_look_at(Vector((sin(radians(self.angle)) * 3.1, 0, cos(radians(self.angle)) * 3.1)), Vector((0, 0, 0)), Vector((0, 1, 0)))
-
-            # get the camera's projection matrix
-            self.projection_matrix = self.__projection_matrix(
-                    camera.data,
-                    x = self.qs[self.preset]['view_width'],
-                    y = self.qs[self.preset]['view_height'],
-                    scale_x = 1.0,
-                    scale_y = (self.qs[self.preset]['rows'] / self.qs[self.preset]['columns']) / self.aspect,
-                )
+        # get the camera's projection matrix
+        self.projection_matrix = self.__projection_matrix(
+                x = self.qs[self.preset]['view_width'],
+                y = self.qs[self.preset]['view_height'],
+                scale_x = 1.0,
+                scale_y = (self.qs[self.preset]['rows'] / self.qs[self.preset]['columns']) / self.aspect,
+            )
 
     # test if mouse is hovering over the block
     def is_mouse_over(self, context):
+        if context is None or context.space_data is None:
+            return False
 
-        # for right positioned blocks
-        if context.scene.addon_settings.block_alignment == 'left':
+        # for 3D viewports
+        if context.space_data.type == 'VIEW_3D':
+            # for left positioned blocks
+            if context.scene.addon_settings.viewport_block_alignment == 'left':
+                if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+                    return True
+
+            # for right positioned blocks
+            if context.scene.addon_settings.viewport_block_alignment == 'right':
+                if (LookingGlassAddon.mouse_region_x > context.area.width - self.width - self.x - 50 and LookingGlassAddon.mouse_region_x < context.area.width - self.width - self.x - 50 + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+                    return True
+
+        # for image editors
+        elif context.space_data.type == 'IMAGE_EDITOR':
+
             if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
-                return True
-
-        # for right positioned blocks
-        if context.scene.addon_settings.block_alignment == 'right':
-            if (LookingGlassAddon.mouse_region_x > context.area.width - self.width - self.x - 50 and LookingGlassAddon.mouse_region_x < context.area.width - self.width - self.x - 50 + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
                 return True
 
     # store camera for block rendering in the block data
@@ -1397,11 +1378,30 @@ class Block:
             # block has changed
             self.changed = True
 
+    # set the device type for this Block
+    def set_device(self, device):
+
+        if not (device is None or self.device == device):
+            self.device = device
+
+            # set the aspect and view cone
+            self.aspect = device.aspect
+            self.view_cone = device.viewCone
+
+            # update shaders to include the new aspect ratio
+            self.__update_shaders()
+
+            # block has changed
+            self.changed = True
+
     # set the quilt preset for this Block
     def set_preset(self, preset):
 
         if not (preset is None or self.preset == preset):
             self.preset = preset
+
+            # get list of formats
+            self.qs = pylio.LookingGlassQuilt.formats.get()
 
             # free offscreen
             if self.offscreen_view: self.offscreen_view.free()
@@ -1484,7 +1484,7 @@ class Block:
                 framebuffer = gpu.state.active_framebuffer_get()
 
                 # clear the framebuffer
-                framebuffer.clear(color=(1.0, 0.0, 0.0, 0.0))
+                framebuffer.clear(color=(0.0, 0.0, 0.0, 0.0))
 
                 # update shader uniforms
                 self.shader.bind()
@@ -1495,7 +1495,7 @@ class Block:
                 self.shader.uniform_float("border_color", self.border_color)
                 if context.space_data.type == 'VIEW_3D':
                     if self.active: self.shader.uniform_float("alpha", 1.0)
-                    if not self.active: self.shader.uniform_float("alpha", context.scene.addon_settings.block_alpha)
+                    if not self.active: self.shader.uniform_float("alpha", context.scene.addon_settings.viewport_block_alpha)
                 if context.space_data.type == 'IMAGE_EDITOR':
                     self.shader.uniform_float("alpha", 1.0)
                 self.shader.uniform_sampler("view_texture", self.offscreen_view.texture_color)
@@ -1513,6 +1513,7 @@ class BlockRenderer:
     __block_draw_view3d_handler = None
     __block_depsgraph_handler = None
     __block_draw_imageeditor_handler = None
+    __block_imageeditor_autodetected = False
 
     # private class properties
     __blocks = {}
@@ -1537,80 +1538,131 @@ class BlockRenderer:
             if (context is None) or (event is None) or (not context is None and context.area is None):
                 return {'PASS_THROUGH'}
 
-            # if the block preview is active
-            if not context.scene.addon_settings.block_viewport_show:
+            # if the block preview is not active
+            if context.space_data.type == "VIEW_3D" and not context.scene.addon_settings.viewport_block_show:
+                return {'PASS_THROUGH'}
+
+            # if the block preview is not active
+            if context.space_data.type == "IMAGE_EDITOR" and not context.scene.addon_settings.imageeditor_block_show:
                 return {'PASS_THROUGH'}
 
             # mouse position in window
             LookingGlassAddon.mouse_window_x = event.mouse_x
             LookingGlassAddon.mouse_window_y = event.mouse_y
 
+			# if the mouse is not in this area
+            if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
+                return {'PASS_THROUGH'}
+
             # mouse position in current context region
             LookingGlassAddon.mouse_region_x = event.mouse_x - context.region.x
             LookingGlassAddon.mouse_region_y = event.mouse_y - context.region.y
 
-            # if the settings are to be taken from device selection AND a device is active
-            if context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+            # for 3D viewports
+            if context.space_data.type == "VIEW_3D":
 
-                # currently selected device
-                device = pylio.DeviceManager.get_active()
+                # if the settings are to be taken from device selection AND a device is active
+                if context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
 
-            else:
+                    # currently selected device
+                    device = pylio.DeviceManager.get_active()
 
-                # make the emulated device the active device, if one was found
-                device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.render_device_type))
+                else:
 
-            # get the viewport block
-            block = LookingGlassAddon.BlockRenderer.get_viewport_block()
-            if block and device:
+					# make the emulated device the active device, if one was found
+                    device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.render_device_type))
 
-                # update dimensions
-                if device.aspect < 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.block_scaling_factor * device.aspect), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.block_scaling_factor))
-                if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.block_scaling_factor / device.aspect))
+                # get the viewport block
+                block = LookingGlassAddon.BlockRenderer.get_viewport_block()
+                if block and device:
 
-                # infer the current view
-                if context.region.type != 'HEADER' and block.is_mouse_over(context):
+                    # update dimensions
+                    if device.aspect < 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor * device.aspect), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor))
+                    if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor / device.aspect))
 
-                    # for left positioned blocks
-                    if context.scene.addon_settings.block_alignment == 'left':
-                        # calculate the view number and angle
-                        view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
-                        angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
+                    # infer the current view
+                    if context.region.type != 'HEADER' and block.is_mouse_over(context):
 
-                    # for right positioned blocks
-                    elif context.scene.addon_settings.block_alignment == 'right':
-                        # calculate the view number and angle
-                        view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width))
-                        angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x - 50)) / block.width - 0.5))
+                        # for left positioned blocks
+                        if context.scene.addon_settings.viewport_block_alignment == 'left':
+                            # calculate the view number and angle
+                            view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
+                            angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
 
-                    # update state variables
-                    block.set_active(True)
-                    block.set_aspect(device.aspect)
-                    block.set_view_cone(device.viewCone)
-                    block.set_view(view)
-                    block.set_angle(angle)
+                        # for right positioned blocks
+                        elif context.scene.addon_settings.viewport_block_alignment == 'right':
 
-                    # redraw region
-                    context.area.tag_redraw()
+                            # calculate the view number and angle
+                            view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width))
+                            angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x - 50)) / block.width - 0.5))
 
-                    return {'PASS_THROUGH'}
+                        # update state variables
+                        block.set_active(True)
+                        block.set_device(device)
+                        block.set_view(view)
+                        block.set_angle(angle)
 
-                # has some of the parameters changed
-                if block.aspect != device.aspect or block.view_cone != device.viewCone or context.scene.addon_settings.block_alpha != 0.3:
+                        # redraw region
+                        context.area.tag_redraw()
 
-                    # if the mouse is outside the area use the center view
-                    view = floor(block.qs[block.preset]["total_views"] / 2)
-                    angle = floor(0)
+                        return {'PASS_THROUGH'}
 
-                    # update state variables
-                    block.set_active(False)
-                    block.set_aspect(device.aspect)
-                    block.set_view_cone(device.viewCone)
-                    block.set_view(view)
-                    block.set_angle(angle)
+            # for Image Editors
+            elif context.space_data.type == "IMAGE_EDITOR":
 
-                    # redraw region
-                    context.area.tag_redraw()
+				# get the selected device
+                device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
+
+                # get the image
+                image = context.space_data.image
+
+                # get the image editor block
+                block = LookingGlassAddon.BlockRenderer.get_imageeditor_block()
+                if block and device and image:
+
+                    # get image name
+                    image_name = image.name
+                    preset, quilt_format = LookingGlassAddon.BlockRenderer.detect_from_quilt_suffix(context, image_name)
+                    if preset:
+
+                        # set the preset
+                        block.set_preset(preset)
+
+	                    # update dimensions
+                        block.set_dimensions(int(device.width * context.space_data.zoom[0]), int(device.height * context.space_data.zoom[1]))
+
+	                    # infer the current view
+                        if context.region.type != 'HEADER' and block.is_mouse_over(context):
+
+	                        # calculate the view number and angle
+	                        view = floor(block.qs[preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
+	                        angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
+
+	                        # update state variables
+	                        block.set_device(device)
+	                        block.set_view(view)
+	                        block.set_angle(angle)
+
+	                        # redraw region
+	                        context.area.tag_redraw()
+
+	                        return {'PASS_THROUGH'}
+
+            # otherwise show centered view as default
+            if block and device and block.preset:
+
+                # if the mouse is outside the area use the center view
+                view = floor(block.qs[block.preset]["total_views"] / 2)
+                angle = floor(0)
+
+                # update state variables
+                block.set_active(False)
+                block.set_device(device)
+                block.set_view(view)
+                block.set_angle(angle)
+
+                # redraw region
+                context.area.tag_redraw()
 
             return {'PASS_THROUGH'}
 
@@ -1660,7 +1712,8 @@ class BlockRenderer:
         # add draw handler to display the frustum of the Looking Glass camera
         # after everything else has been drawn in the view
         self.__block_draw_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render, (context,), 'WINDOW', 'POST_PIXEL')
-        self.__block_draw_imageeditor_handler = 0#bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render, (context,), 'WINDOW', 'POST_PIXEL')
+        self.__block_draw_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
+        self.__block_draw_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
 
         # log info
         LookingGlassAddonLogger.info("Block preview started.")
@@ -1694,8 +1747,6 @@ class BlockRenderer:
         # return None since this is expected by the operator
         return None
 
-
-
     # add a block to the block renderer
     def add_block(self, id, x, y, width, height):
 
@@ -1708,6 +1759,23 @@ class BlockRenderer:
         # set the active VIEW3D block
         self.__viewport3d_block = id
 
+		# if the settings are to be taken from device selection AND a device is active
+        if bpy.context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+
+			# currently selected device
+            self.__blocks[self.__viewport3d_block].set_device(pylio.DeviceManager.get_active())
+
+			# set selected preset for this block
+            self.__blocks[self.__viewport3d_block].set_preset(int(bpy.context.scene.addon_settings.quiltPreset))
+
+        else:
+
+			# set the selected emulated device as device for this block
+            self.__blocks[self.__viewport3d_block].set_device(pylio.DeviceManager.get_device(key='index', value=int(bpy.context.scene.addon_settings.render_device_type)))
+
+			# set selected preset for this block
+            self.__blocks[self.__viewport3d_block].set_preset(int(bpy.context.scene.addon_settings.render_quilt_preset))
+
     # get the block to be rendered in the Blender viewport
     def get_viewport_block(self):
         if not self.__viewport3d_block is None:
@@ -1719,10 +1787,27 @@ class BlockRenderer:
         # set the active IMAGE_EDITOR block
         self.__imageeditor_block = id
 
+		# if the settings are to be taken from device selection AND a device is active
+        if bpy.context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+
+			# currently selected device
+            self.__blocks[self.__imageeditor_block].set_device(pylio.DeviceManager.get_active())
+
+        else:
+
+			# set the selected emulated device as device for this block
+            self.__blocks[self.__imageeditor_block].set_device(pylio.DeviceManager.get_device(key='index', value=int(bpy.context.scene.addon_settings.render_device_type)))
+
     # get the block to be rendered in the image editor
     def get_imageeditor_block(self):
         if not self.__imageeditor_block is None:
             return self.__blocks[self.__imageeditor_block]
+
+    # check if the quilt and device format for the image editor have been
+	# automatically detected
+    def is_imageeditor_detected(self):
+        if not self.__imageeditor_block is None:
+            return self.__block_imageeditor_autodetected
 
     # calculate the view and projection matrices for rendering the view
     def __calculate_matrices_for_view_rendering(self, context, block, camera, viewMatrix, projectionMatrix):
@@ -1764,7 +1849,7 @@ class BlockRenderer:
     def __depsgraph_changes(self, scene, depsgraph):
 
         # if the block renderer is actively rendering
-        if scene.addon_settings.block_viewport_show:
+        if scene.addon_settings.viewport_block_show:
 
             # if something in the scene has changed
             if len(depsgraph.updates.values()) > 0:
@@ -1784,7 +1869,7 @@ class BlockRenderer:
         # if a camera is selected AND the space is not in camera mode AND
         # the block viewport preview shall be drawn
         if self and context:
-            if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.block_viewport_show:
+            if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
                 if (context.space_data != None):
 
                     # select correct block
@@ -1858,41 +1943,181 @@ class BlockRenderer:
                     # if the block is drawn in a SpaceView3D
                     if context.space_data.type == 'VIEW_3D' and context.space_data.region_3d != None:
 
-                        if context.scene.addon_settings.block_alignment == 'left': draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
-                        if context.scene.addon_settings.block_alignment == 'right': draw_texture_2d(block.offscreen_canvas.texture_color, (context.area.width - block.width - block.x - 50, block.y), block.width, block.height)
+                        if context.scene.addon_settings.viewport_block_alignment == 'left': draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+                        if context.scene.addon_settings.viewport_block_alignment == 'right': draw_texture_2d(block.offscreen_canvas.texture_color, (context.area.width - block.width - block.x - 50, block.y), block.width, block.height)
 
                     gpu.state.depth_mask_set(False)
                     gpu.state.blend_set('NONE')
 
 
+    def detect_from_quilt_suffix(self, context, quilt_name):
+        import re
 
-    # render the block into the image editor
-    def __imageeditor_render(self, context):
+        # select correct block
+        block = self.__blocks[self.__imageeditor_block]
+
+        # values from the metadata
+        columns = None
+        rows = None
+        aspect = None
+
+        # if a quilt name was given
+        if quilt_name:
+
+            # try to extract some metadata information from the quiltname
+            try:
+
+                columns = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
+                rows = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
+                aspect = float(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
+
+            except AttributeError:
+
+                try:
+
+                    columns = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(1))
+                    rows = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(2))
+
+                except AttributeError:
+
+                    pass
+
+            # for each supported quilt format
+            for preset, qf in pylio.LookingGlassQuilt.formats.get().items():
+
+                # if the quilt
+                if not (columns is None or rows is None or aspect is None) and columns == qf['columns'] and rows == qf['rows']:
+
+					# update status variable
+                    self.__block_imageeditor_autodetected = True
+
+					# update UI
+                    if context.scene.addon_settings.imageeditor_block_quilt_preset != str(preset):
+                        context.scene.addon_settings.imageeditor_block_quilt_preset = str(preset)
+
+                    return preset, qf
+
+		# return preset and format from the settings
+        self.__block_imageeditor_autodetected = False
+        return int(context.scene.addon_settings.imageeditor_block_quilt_preset), block.qs[int(context.scene.addon_settings.imageeditor_block_quilt_preset)]
+
+
+    # render the view into the offscreen
+    def __imageeditor_render_view(self, context):
 
         # if a camera is selected AND the space is not in camera mode
         if self and context:
-            if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
+            if hasattr(context.scene, "addon_settings"):
                 if (context.space_data != None and context.space_data.type == 'IMAGE_EDITOR'):
 
-                    # if the image is a quilt
-                    if context.space_data.image != None:
-                        print("image", context.space_data.image.name)
-                        #draw_texture_2d(block.offscreen_canvas.texture_color, ((context.area.width - block.width) / 2, (context.area.height - block.height) / 2), block.width, block.height)
+                    # get the image loaded in the image editor
+                    image = context.space_data.image
+                    if not image is None and image.type != "RENDER_RESULT":
 
-                        # select correct block
+	    	            # select correct block
                         block = self.__blocks[self.__imageeditor_block]
 
-                        # update the block
-                        block.update(context)
+                        # get the selected device
+                        device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
 
-                        #gpu.state.depth_test_set('LESS_EQUAL')
-                        gpu.state.depth_mask_set(True)
-                        gpu.state.blend_set('ALPHA')
+                        # get quilt preset and format parameters
+                        preset, quilt_format = self.detect_from_quilt_suffix(context, image.name)
+                        if quilt_format:
 
-                        # if the block is drawn in a SpaceView3D
-                        if context.space_data.type == 'VIEW_3D' and context.space_data.region_3d != None:
-                            draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+	                        # update dimensions
+	                        block.set_dimensions(int(device.width * context.space_data.zoom[0]), int(device.height * context.space_data.zoom[1]))
 
-                        gpu.state.depth_mask_set(False)
-                        #gpu.state.depth_test_set('NONE')
-                        gpu.state.blend_set('NONE')
+						# if the block mode is activated
+                        if context.scene.addon_settings.imageeditor_block_show:
+
+	                        # if the block changed
+	                        if block.changed and block.offscreen_view:
+
+	                            # create a texture from the image
+	                            #if not block.image_texture:
+	                            block.image_texture = gpu.texture.from_image(image)
+
+	                            # if the texture was created
+	                            if block.image_texture:
+
+	                                # calculate view grid indices in the quilt
+	                                view_ix = block.view % block.qs[block.preset]['columns']
+	                                view_iy = floor(block.view / block.qs[block.preset]['columns'])
+
+	                                # RENDER THE VIEW
+	                                # ++++++++++++++++++++++++++++++++++++++++++++++++
+	                                with block.offscreen_view.bind():
+
+	                                    # get the current projection matrix
+	                                    viewMatrix = gpu.matrix.get_model_view_matrix()
+	                                    projectionMatrix = gpu.matrix.get_projection_matrix()
+
+	                                    with gpu.matrix.push_pop():
+
+	                                        # reset matrices -> use normalized device coordinates [-1, 1]
+	                                        gpu.matrix.load_matrix(Matrix.Identity(4))
+	                                        gpu.matrix.load_projection_matrix(Matrix.Identity(4))
+
+	                                        gpu.state.depth_test_set('GREATER_EQUAL')
+	                                        gpu.state.depth_mask_set(True)
+	                                        gpu.state.blend_set('ALPHA')
+
+	                                        # draw the viewport rendering to the offscreen for the current view
+	                                        draw_texture_2d(block.image_texture, (-1 - 2 * view_ix, -1 - 2 * view_iy), 2 * block.qs[block.preset]['columns'], 2 * block.qs[block.preset]['rows'])
+
+	                                        gpu.state.blend_set('NONE')
+	                                        gpu.state.depth_mask_set(False)
+	                                        gpu.state.depth_test_set('NONE')
+
+	                                        # reload original matrices
+	                                        gpu.matrix.load_matrix(viewMatrix)
+	                                        gpu.matrix.load_projection_matrix(projectionMatrix)
+
+	                            # reset status variable
+	                            block.changed = False
+
+						        # update the block
+	                            block.update(context)
+
+	                        # convert view2d coordinates of the image center to
+	                        # region corrdinates
+	                        view_2d_x, view_2d_y = context.region.view2d.view_to_region(0.5, 0.5)
+
+	                        # center the block
+	                        block.x = view_2d_x - block.width / 2
+	                        block.y = view_2d_y - block.height / 2
+
+    # render the block into the image editor
+    def __imageeditor_render_block(self, context):
+
+        # if a camera is selected AND the space is not in camera mode
+        if self and context:
+	        if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.imageeditor_block_show:
+	        	if not context.space_data is None:
+
+	        		# get the image loaded in the image editor
+	        		image = context.space_data.image
+	        		if not image is None and image.type != "RENDER_RESULT":
+
+	        			# select correct block
+	        			block = self.__blocks[self.__imageeditor_block]
+	        			if block:
+
+							# get active frame buffer
+					        framebuffer = gpu.state.active_framebuffer_get()
+					        with framebuffer.bind():
+
+						        # clear the framebuffer
+						        c = context.preferences.themes[0].image_editor.grid
+						        framebuffer.clear(color=(c[0] * 0.15, c[1] * 0.15, c[2] * 0.15, c[3]))
+
+						        gpu.state.depth_test_set('GREATER_EQUAL')
+						        gpu.state.depth_mask_set(True)
+						        gpu.state.blend_set('ALPHA')
+
+		                        # draw the block
+						        draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+
+						        gpu.state.blend_set('NONE')
+						        gpu.state.depth_mask_set(False)
+						        gpu.state.depth_test_set('NONE')

@@ -93,8 +93,10 @@ class LookingGlassAddon:
 	RenderAnimation = None
 
 	# keymaps and mouse position
-	keymap = None
-	keymap_items = None
+	keymap_view_3d = None
+	keymap_items_view_3d = None
+	keymap_image_editor = None
+	keymap_items_image_editor = None
 	mouse_window_x = 0
 	mouse_window_y = 0
 	mouse_region_x = 0

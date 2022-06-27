@@ -300,8 +300,8 @@ class LookingGlassAddonUI:
 		return None
 
 
-	# update function for property updates concerning block preview settings
-	def update_blocks_setting(self, context):
+	# update settings for the viewport editor blocks
+	def update_viewport_block_settings(self, context):
 
 		# set device variable
 		device = None
@@ -342,6 +342,34 @@ class LookingGlassAddonUI:
 		return None
 
 
+	# update settings for the image editor blocks
+	def update_imageeditor_block_settings(self, context):
+
+		# reset variables
+		device = None
+		block = None
+
+		# make the emulated device the active device, if one was found
+		device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
+
+        # BLOCK RENDERER
+		if LookingGlassAddon.BlockRenderer:
+			block = LookingGlassAddon.BlockRenderer.get_viewport_block()
+
+		if block and device:
+
+			# update state variables
+			block.set_active(False)
+			block.set_preset(int(context.scene.addon_settings.imageeditor_block_quilt_preset))
+			block.set_aspect(device.aspect)
+			block.set_view_cone(device.viewCone)
+
+			# redraw region
+			bpy.ops.wm.update_block_renderer('INVOKE_DEFAULT')
+
+		return None
+
+
     # update function for property updates concerning camera selection
 	def update_camera_selection(self, context):
 
@@ -355,9 +383,9 @@ class LookingGlassAddonUI:
 		# if a camera was selected
 		if context.scene.addon_settings.lookingglassCamera != None:
 
-			# if the frustum drawing operator is not invoked, but should be
-			if LookingGlassAddon.FrustumInitialized == False and context.scene.addon_settings.showFrustum == True and LookingGlassAddon.background == False:
-				bpy.ops.render.frustum('INVOKE_DEFAULT')
+			# # if the frustum drawing operator is not invoked, but should be
+			# if LookingGlassAddon.FrustumInitialized == False and context.scene.addon_settings.showFrustum == True and LookingGlassAddon.background == False:
+			# 	bpy.ops.render.frustum('INVOKE_DEFAULT')
 
 			# apply the settings to the selected camera object
 			camera = context.scene.addon_settings.lookingglassCamera
@@ -978,66 +1006,68 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										default = False,
 										)
 
-	# PANEL: BLOCKS SETTINGS
+	# PANEL: VIEWPORT BLOCKS SETTINGS
 	# a boolean to toogle the block viewport preview on or off
-	block_viewport_show: bpy.props.BoolProperty(
+	viewport_block_show: bpy.props.BoolProperty(
 		name="Block preview",
 		description = "Displays a looking glass block preview in the Blender viewport",
 		default = False,
-		update=LookingGlassAddonUI.update_blocks_setting,
+		update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
 
 	# UI elements for user control
-	block_alignment: bpy.props.EnumProperty(
+	viewport_block_alignment: bpy.props.EnumProperty(
 										items = [('left', 'Left', 'The block is rendered on the lower left corner of the viewport'),
 												 ('right', 'Right', 'The block is rendered on the lower right corner of the viewport')],
 										default='right',
 										name="Block Alignment",
-										update=LookingGlassAddonUI.update_blocks_setting,
+										update=LookingGlassAddonUI.update_viewport_block_settings,
 										)
 
-	block_scaling_factor: bpy.props.FloatProperty(
+	viewport_block_scaling_factor: bpy.props.FloatProperty(
 		name="Scaling Factor",
 		min=0,
 		max=1,
 		precision=2,
 		description="Adjust the scaling of the block preview in the viewport",
 		default = 0.25,
-        update=LookingGlassAddonUI.update_blocks_setting,
+        update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
 
-	block_alpha: bpy.props.FloatProperty(
+	viewport_block_alpha: bpy.props.FloatProperty(
 		name="Alpha",
 		min=0,
 		max=1,
 		precision=2,
 		description="Adjust the alpha value of the block preview in the viewport if mouse is not over the block",
 		default = 0.3,
-        update=LookingGlassAddonUI.update_blocks_setting,
+        update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
 
 
-	# # Use the connected device to set device settings
-	# block_use_device: bpy.props.BoolProperty(
-	# 									name="Use Device Settings",
-	# 									description="If enabled, the render settings are taken from the selected device",
-	# 									default = True,
-	# 									update=LookingGlassAddonUI.update_blocks_setting,
-	# 									)
-    #
-	# # device type for the block rendering
-	# block_device_type: bpy.props.EnumProperty(
-	# 									items = LookingGlassAddonUI.emulated_device_list_callback,
-	# 									name="Device Type",
-	# 									update = LookingGlassAddonUI.update_blocks_setting,
-	# 									)
-    #
-	# # quilt preset for the block rendering
-	# block_quilt_preset: bpy.props.EnumProperty(
-	# 								items = LookingGlassAddonUI.quilt_preset_list_callback,
-	# 								name="Quilt Preset",
-	# 								update = LookingGlassAddonUI.update_blocks_setting,
-	# 								)
+	# PANEL: IMAGE EDITIR BLOCKS SETTINGS
+	# a boolean to toogle the block viewport preview on or off
+	imageeditor_block_show: bpy.props.BoolProperty(
+		name="Block preview",
+		description = "Displays a looking glass block preview for this quilt",
+		default = False,
+		update=LookingGlassAddonUI.update_imageeditor_block_settings,
+		)
+
+	# device type for the block rendering
+	imageeditor_block_device_type: bpy.props.EnumProperty(
+									items = LookingGlassAddonUI.emulated_device_list_callback,
+									name="Device Type",
+									update = LookingGlassAddonUI.update_imageeditor_block_settings,
+									)
+
+	# quilt preset for the block rendering
+	imageeditor_block_quilt_preset: bpy.props.EnumProperty(
+									items = LookingGlassAddonUI.quilt_preset_list_callback,
+									name="Quilt Preset",
+									update = LookingGlassAddonUI.update_imageeditor_block_settings,
+									)
+
 
 # ----------------- PANEL FOR GENERAL SETTINGS --------------------
 # an operator that refreshes the list of connected Looking Glasses
@@ -1677,7 +1707,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 
 # ------------- Buttons & elements in region headers ----------------
 # Button for the blocks viewport preview
-class LOOKINGGLASS_BT_button_blocks_preview(bpy.types.Header):
+class LOOKINGGLASS_HT_button_viewport_blocks(bpy.types.Header):
 	bl_label = "Blocks viewport preview" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "HEADER"
@@ -1685,16 +1715,16 @@ class LOOKINGGLASS_BT_button_blocks_preview(bpy.types.Header):
 	def draw_item(self, context):
 		layout = self.layout
 		row = layout.row(align=True)
-		row.prop(context.scene.addon_settings, "block_viewport_show", icon='META_PLANE', text="")
+		row.prop(context.scene.addon_settings, "viewport_block_show", icon='META_PLANE', text="")
 		sub = row.row(align=True)
-		sub.active = context.scene.addon_settings.block_viewport_show
-		sub.popover(panel="LOOKINGGLASS_PT_panel_blocks_preview_options", text="")
+		sub.active = context.scene.addon_settings.viewport_block_show
+		sub.popover(panel="LOOKINGGLASS_PT_panel_blocks_viewport_options", text="")
 
 	def draw(self, context):
 		pass
 
 # panel for the block preview settings
-class LOOKINGGLASS_PT_panel_blocks_preview_options(bpy.types.Panel):
+class LOOKINGGLASS_PT_panel_blocks_viewport_options(bpy.types.Panel):
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'HEADER'
 	bl_label = "Blocks Preview"
@@ -1703,7 +1733,7 @@ class LOOKINGGLASS_PT_panel_blocks_preview_options(bpy.types.Panel):
 	def draw(self, context):
 		layout = self.layout
 		layout.label(text="Blocks Preview")
-		layout.active = context.scene.addon_settings.block_viewport_show
+		layout.active = context.scene.addon_settings.viewport_block_show
 
 		# define a column of UI elements
 		column = layout.column(align = True)
@@ -1712,14 +1742,69 @@ class LOOKINGGLASS_PT_panel_blocks_preview_options(bpy.types.Panel):
 		row_alignment_label = column.row(align = True)
 		row_alignment_label.label(text="Alignment")
 		row_alignment = column.row(align = True)
-		row_alignment.prop(context.scene.addon_settings, "block_alignment", expand=True)
+		row_alignment.prop(context.scene.addon_settings, "viewport_block_alignment", expand=True)
 
 		# Block preview settings
         # Scaling factor
 		row_appearance_label = column.row(align = True)
 		row_appearance_label.label(text="Appearance")
 		row_scaling = column.row(align = True)
-		row_scaling.prop(context.scene.addon_settings, "block_scaling_factor", slider=True)
+		row_scaling.prop(context.scene.addon_settings, "viewport_block_scaling_factor", slider=True)
         # Alpha value
 		row_alpha = column.row(align = True)
-		row_alpha.prop(context.scene.addon_settings, "block_alpha", slider=True)
+		row_alpha.prop(context.scene.addon_settings, "viewport_block_alpha", slider=True)
+
+# Button for the blocks display in the image editor
+class LOOKINGGLASS_HT_button_imageeditor_blocks(bpy.types.Header):
+	bl_label = "Blocks image editor preview" # display name in the interface.
+	bl_space_type = "IMAGE_EDITOR"
+	bl_region_type = "HEADER"
+
+	def draw_item(self, context):
+		layout = self.layout
+		row = layout.row(align=True)
+		row.prop(context.scene.addon_settings, "imageeditor_block_show", icon='META_PLANE', text="")
+		sub = row.row(align=True)
+		sub.active = context.scene.addon_settings.imageeditor_block_show
+		sub.popover(panel="LOOKINGGLASS_PT_panel_blocks_imageeditor_options", text="")
+
+	def draw(self, context):
+		pass
+
+# panel for the block display settings
+class LOOKINGGLASS_PT_panel_blocks_imageeditor_options(bpy.types.Panel):
+	bl_space_type = 'IMAGE_EDITOR'
+	bl_region_type = 'HEADER'
+	bl_label = "Display as block"
+	bl_ui_units_x = 13
+
+	def draw(self, context):
+		layout = self.layout
+		layout.label(text="Block Display")
+		layout.active = context.scene.addon_settings.imageeditor_block_show
+
+		# was the quilt and device type automatically detected
+		if LookingGlassAddon.BlockRenderer.is_imageeditor_detected():
+
+			# Info for user
+			row_info = layout.row(align = True)
+			row_info.label(text="Quilt type automatically detected.")
+
+		# Device Type
+		row_orientation = layout.row(align = True)
+		column_1 = row_orientation.row(align = True)
+		column_1.label(text="Device Type:")
+		column_1.scale_x = 0.3
+		column_2 = row_orientation.row(align = True)
+		column_2.prop(context.scene.addon_settings, "imageeditor_block_device_type", text="")
+		column_2.scale_x = 0.7
+
+		# Quilt settings
+		row_preset = layout.row(align = True)
+		row_preset.enabled = (not LookingGlassAddon.BlockRenderer.is_imageeditor_detected())
+		column_1 = row_preset.row(align = True)
+		column_1.label(text="Quilt Preset:")
+		column_1.scale_x = 0.3
+		column_2 = row_preset.row(align = True)
+		column_2.prop(context.scene.addon_settings, "imageeditor_block_quilt_preset", text="")
+		column_2.scale_x = 0.7

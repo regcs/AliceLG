@@ -386,8 +386,12 @@ def register():
 
 		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
 		if keyconfigs_addon:
-			LookingGlassAddon.keymap = keyconfigs_addon.keymaps.new(name="3D View", space_type='VIEW_3D')
-			LookingGlassAddon.keymap_items = LookingGlassAddon.keymap.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			# 3D Viewport
+			LookingGlassAddon.keymap_view_3d = keyconfigs_addon.keymaps.new(name="3D View", space_type='VIEW_3D')
+			LookingGlassAddon.keymap_items_view_3d = LookingGlassAddon.keymap_view_3d.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			# Image editor
+			LookingGlassAddon.keymap_image_editor = keyconfigs_addon.keymaps.new(name="Image", space_type='IMAGE_EDITOR')
+			LookingGlassAddon.keymap_items_image_editor = LookingGlassAddon.keymap_image_editor.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
 
 		# UI elements
 		# add-on preferences
@@ -398,10 +402,14 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
-        # addon header buttons
-		bpy.utils.register_class(LOOKINGGLASS_PT_panel_blocks_preview_options)
-		bpy.utils.register_class(LOOKINGGLASS_BT_button_blocks_preview)
-		bpy.types.VIEW3D_HT_header.append(LOOKINGGLASS_BT_button_blocks_preview.draw_item)
+        # addon header buttons: 3D viewport
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_blocks_viewport_options)
+		bpy.utils.register_class(LOOKINGGLASS_HT_button_viewport_blocks)
+		bpy.types.VIEW3D_HT_header.append(LOOKINGGLASS_HT_button_viewport_blocks.draw_item)
+        # addon header buttons: image editor
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_blocks_imageeditor_options)
+		bpy.utils.register_class(LOOKINGGLASS_HT_button_imageeditor_blocks)
+		bpy.types.IMAGE_HT_header.append(LOOKINGGLASS_HT_button_imageeditor_blocks.draw_item)
 
 		# log info
 		LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
@@ -531,8 +539,11 @@ def unregister():
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
 		# remove the keymap
-		if LookingGlassAddon.keymap:
-			LookingGlassAddon.keymap.keymap_items.remove(LookingGlassAddon.keymap_items)
+		if LookingGlassAddon.keymap_view_3d:
+			LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d)
+
+		if LookingGlassAddon.keymap_image_editor:
+			LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor)
 
 		# Looking Glass viewport
 		bpy.utils.unregister_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
@@ -548,9 +559,11 @@ def unregister():
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_overlays_shading"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
         # addon header buttons
-		bpy.types.VIEW3D_HT_header.remove(LOOKINGGLASS_BT_button_blocks_preview.draw_item)
-		bpy.utils.unregister_class(LOOKINGGLASS_BT_button_blocks_preview)
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_preview_options)
+		bpy.types.VIEW3D_HT_header.remove(LOOKINGGLASS_HT_button_viewport_blocks.draw_item)
+		bpy.utils.unregister_class(LOOKINGGLASS_HT_button_viewport_blocks)
+		bpy.types.IMAGE_HT_header.remove(LOOKINGGLASS_HT_button_imageeditor_blocks.draw_item)
+		bpy.utils.unregister_class(LOOKINGGLASS_HT_button_imageeditor_blocks)
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_viewport_options)
 
 		# delete all variables
 		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings
