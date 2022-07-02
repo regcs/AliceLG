@@ -1516,6 +1516,7 @@ class BlockRenderer:
     # drawing handlers
     __block_draw_view3d_handler = None
     __block_depsgraph_handler = None
+    __block_frame_change_handler = None
     __block_draw_view_imageeditor_handler = None
     __block_draw_block_imageeditor_handler = None
     __block_imageeditor_autodetected = False
@@ -1722,6 +1723,9 @@ class BlockRenderer:
 
         # add depsgraph update handler to react to scene changes
         self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
+
+        # add update handler to react to frame changes
+        self.__block_frame_change_handler = bpy.app.handlers.frame_change_post.append(self.__depsgraph_changes)
 
         # add draw handler to display the frustum of the Looking Glass camera
         # after everything else has been drawn in the view
