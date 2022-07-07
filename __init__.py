@@ -291,11 +291,11 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 			# create and start the frustum and the block renderer
 			LookingGlassAddon.FrustumRenderer = FrustumRenderer()
-			LookingGlassAddon.BlockRenderer = BlockRenderer()
+			LookingGlassAddon.ImageBlockRenderer = BlockRenderer()
+			LookingGlassAddon.ViewportBlockRenderer = BlockRenderer()
 
             # start the renderers
 			LookingGlassAddon.FrustumRenderer.start(bpy.context)
-			LookingGlassAddon.BlockRenderer.start(bpy.context)
 
 			# get the active window
 			LookingGlassAddon.BlenderWindow = bpy.context.window
@@ -504,8 +504,13 @@ def unregister():
 >>>>>>> 973cbdf (Fixed: Free all resources of the blocks when renderer is stopped.)
 	# stop the frustum and block renderers
 	if LookingGlassAddon.FrustumRenderer: LookingGlassAddon.FrustumRenderer.stop()
+<<<<<<< HEAD
 	if LookingGlassAddon.BlockRenderer: LookingGlassAddon.BlockRenderer.stop()
 >>>>>>> d0053a1 (Added: Blocks renderer backend & blocks viewport preview.)
+=======
+	if LookingGlassAddon.ImageBlockRenderer: LookingGlassAddon.ImageBlockRenderer.stop()
+	if LookingGlassAddon.ViewportBlockRenderer: LookingGlassAddon.ViewportBlockRenderer.stop()
+>>>>>>> ef4f8ef (Fixed: Separated ImageEditor and View3D blocks to prevent interactions.)
 
 	# log info
 	LookingGlassAddonLogger.info(" [#] Removing all registered classes.")

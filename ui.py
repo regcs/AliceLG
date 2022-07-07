@@ -280,8 +280,8 @@ class LookingGlassAddonUI:
 
 
             # BLOCK RENDERER
-			if LookingGlassAddon.BlockRenderer:
-				block = LookingGlassAddon.BlockRenderer.get_viewport_block()
+			if LookingGlassAddon.ViewportBlockRenderer:
+				block = LookingGlassAddon.ViewportBlockRenderer.get_viewport_block()
 			else:
 				block = None
 
@@ -322,22 +322,32 @@ class LookingGlassAddonUI:
 
 
             # BLOCK RENDERER
-			if LookingGlassAddon.BlockRenderer:
-				block = LookingGlassAddon.BlockRenderer.get_viewport_block()
-			else:
-				block = None
+			if device and LookingGlassAddon.ViewportBlockRenderer:
 
-			if block and device:
+				# if the block renderer should be started
+				if context.scene.addon_settings.viewport_block_show:
+					LookingGlassAddon.ViewportBlockRenderer.start(bpy.context)
 
-				# update state variables
-				block.set_active(False)
-				if context.scene.addon_settings.render_use_device == True: block.set_preset(int(context.scene.addon_settings.quiltPreset))
-				if context.scene.addon_settings.render_use_device == False: block.set_preset(int(context.scene.addon_settings.render_quilt_preset))
-				block.set_aspect(device.aspect)
-				block.set_view_cone(device.viewCone)
+				# if the block renderer should be stopped
+				if not context.scene.addon_settings.viewport_block_show:
+					LookingGlassAddon.ViewportBlockRenderer.stop()
 
-				# redraw region
-				bpy.ops.wm.update_block_renderer('INVOKE_DEFAULT')
+	            # if the block renderer is running
+				if LookingGlassAddon.ViewportBlockRenderer.is_running():
+
+					# get the viewport block
+					block = LookingGlassAddon.ViewportBlockRenderer.get_viewport_block()
+					if block:
+
+						# update state variables
+						block.set_active(False)
+						if context.scene.addon_settings.render_use_device == True: block.set_preset(int(context.scene.addon_settings.quiltPreset))
+						if context.scene.addon_settings.render_use_device == False: block.set_preset(int(context.scene.addon_settings.render_quilt_preset))
+						block.set_aspect(device.aspect)
+						block.set_view_cone(device.viewCone)
+
+						# redraw region
+						bpy.ops.wm.update_block_renderer('INVOKE_DEFAULT')
 
 		return None
 
@@ -353,19 +363,31 @@ class LookingGlassAddonUI:
 		device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
 
         # BLOCK RENDERER
-		if LookingGlassAddon.BlockRenderer:
-			block = LookingGlassAddon.BlockRenderer.get_viewport_block()
+		if device and LookingGlassAddon.ImageBlockRenderer:
 
-		if block and device:
+			# if the block renderer should be started
+			if context.scene.addon_settings.imageeditor_block_show:
+				LookingGlassAddon.ImageBlockRenderer.start(bpy.context)
 
-			# update state variables
-			block.set_active(False)
-			block.set_preset(int(context.scene.addon_settings.imageeditor_block_quilt_preset))
-			block.set_aspect(device.aspect)
-			block.set_view_cone(device.viewCone)
+			# if the block renderer should be stopped
+			if not context.scene.addon_settings.imageeditor_block_show:
+				LookingGlassAddon.ImageBlockRenderer.stop()
 
-			# redraw region
-			bpy.ops.wm.update_block_renderer('INVOKE_DEFAULT')
+            # if the block renderer is running
+			if LookingGlassAddon.ImageBlockRenderer.is_running():
+
+				# get the viewport block
+				block = LookingGlassAddon.ImageBlockRenderer.get_imageeditor_block()
+				if block:
+
+					# update state variables
+					block.set_active(False)
+					block.set_preset(int(context.scene.addon_settings.imageeditor_block_quilt_preset))
+					block.set_aspect(device.aspect)
+					block.set_view_cone(device.viewCone)
+
+					# redraw region
+					bpy.ops.wm.update_block_renderer('INVOKE_DEFAULT')
 
 		return None
 
@@ -1784,7 +1806,7 @@ class LOOKINGGLASS_PT_panel_blocks_imageeditor_options(bpy.types.Panel):
 		layout.active = context.scene.addon_settings.imageeditor_block_show
 
 		# was the quilt and device type automatically detected
-		if LookingGlassAddon.BlockRenderer.is_imageeditor_detected():
+		if LookingGlassAddon.ImageBlockRenderer.is_imageeditor_detected():
 
 			# Info for user
 			row_info = layout.row(align = True)
@@ -1801,7 +1823,7 @@ class LOOKINGGLASS_PT_panel_blocks_imageeditor_options(bpy.types.Panel):
 
 		# Quilt settings
 		row_preset = layout.row(align = True)
-		row_preset.enabled = (not LookingGlassAddon.BlockRenderer.is_imageeditor_detected())
+		row_preset.enabled = (not LookingGlassAddon.ImageBlockRenderer.is_imageeditor_detected())
 		column_1 = row_preset.row(align = True)
 		column_1.label(text="Quilt Preset:")
 		column_1.scale_x = 0.3

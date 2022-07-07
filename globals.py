@@ -80,9 +80,8 @@ class LookingGlassAddon:
 	FrustumRenderer = None
 
 	# Was the block preview drawer initialized?
-	BlockInitialized = False
-	BlockRenderer = None
-	BlockViewportLightfield = None
+	ImageBlockRenderer = None
+	ViewportBlockRenderer = None
 
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
