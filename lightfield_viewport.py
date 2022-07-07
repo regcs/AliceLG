@@ -1541,7 +1541,7 @@ class BlockRenderer:
 
         def invoke(self, context, event):
 
-            if (context is None) or (event is None) or (not context is None and context.area is None):
+            if (context is None) or (event is None) or (not context is None and context.area is None) or not hasattr(context.scene, "addon_settings"):
                 return {'PASS_THROUGH'}
 
             # if the block preview is not active
@@ -1549,7 +1549,7 @@ class BlockRenderer:
                 return {'PASS_THROUGH'}
 
             # if the block preview is not active
-            if context.space_data.type == "IMAGE_EDITOR" and not context.scene.addon_settings.imageeditor_block_show:
+            if context.space_data.type == 'IMAGE_EDITOR' and not context.scene.addon_settings.imageeditor_block_show:
                 return {'PASS_THROUGH'}
 
             # mouse position in window
