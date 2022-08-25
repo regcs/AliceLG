@@ -91,9 +91,34 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 class LOOKINGGLASS_PT_install_dependencies(AddonPreferences):
 	bl_idname = __package__
 
+	# render mode
+	render_mode: bpy.props.EnumProperty(
+									items = [('0', 'Single Camera Mode', 'The quilt is rendered using a single moving camera.'),
+											 ('1', 'Multiview Camera Mode', 'The quilt is rendered using Blenders multiview mechanism.')],
+									default='0',
+									name="Render Mode",
+									)
+
+	# logger level
+	logger_level: bpy.props.EnumProperty(
+									items = [('0', 'Debug messages', 'All messages are written to the log file. This is for detailed debugging and extended bug reports'),
+											 ('1', 'Info, Warnings, and Errors', 'All info, warning, and error messages are written to the log file. This is for standard bug reports'),
+											 ('2', 'Only Errors', 'Only error messages are written to the log file. This is for less verbose console outputs')],
+									default='1',
+									name="Logging Mode",
+									update=LookingGlassAddon.update_logger_levels,
+									)
+	console_output: bpy.props.BoolProperty(
+									default=False,
+									name="Log to console",
+									description="Additionally log outputs to std out for debugging",
+									update=LookingGlassAddon.update_logger_levels,
+									)
+
 	# need this here, since the actual logger level property is not initialized
 	# before the dependencies are installed. but we want to log all details
 	logger_level = 0
+	console_output = False
 
 	# draw function
 	def draw(self, context):
@@ -161,6 +186,10 @@ class LOOKINGGLASS_PT_preferences(AddonPreferences):
 									description="Additionally log outputs to std out for debugging",
 									update=LookingGlassAddon.update_logger_levels,
 									)
+	# need this here, since the actual logger level property is not initialized
+	# before the dependencies are installed. but we want to log all details
+	logger_level = 0
+	console_output = False
 
 	# draw function
 	def draw(self, context):

@@ -62,6 +62,7 @@ class LookingGlassAddon:
 							('cv2', 'opencv-python', ''),
 							('pylightio', 'pylightio', ''),
 							]
+	external_dependecies_installer = False
 
 	# Blender arguments
 	blender_arguments = ""
@@ -148,15 +149,18 @@ class LookingGlassAddon:
 	@classmethod
 	def unload_dependecies(cls):
 
-		# are all modules in the packages list available in the "lib" directory?
-		for module in cls.external_dependecies:
+		# if the addon is not in installer mode
+		if not LookingGlassAddon.external_dependecies_installer:
 
-			# get names
-			module_name, install_name, install_version = module
+			# are all modules in the packages list available in the "lib" directory?
+			for module in cls.external_dependecies:
 
-			# unload the module
-			del sys.modules[module_name]
-			#del module_name
+				# get names
+				module_name, install_name, install_version = module
+
+				# unload the module
+				del sys.modules[module_name]
+				#del module_name
 
 
 

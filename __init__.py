@@ -336,7 +336,7 @@ def register():
 		LookingGlassAddon.background = True
 
 	# if NOT all dependencies are satisfied
-	if LookingGlassAddon.check_dependecies() == False:
+	if not LookingGlassAddon.check_dependecies():
 
 		# register the preferences operators
 		bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
@@ -351,6 +351,10 @@ def register():
 		# NOTE: this is needed to run certain modal operators of the addon on startup
 		#		or when a new file is loaded
 		bpy.app.handlers.load_post.append(LookingGlassAddonInitHandler)
+
+		# for the addon unregistering we need to remember that we started
+		# in the dependency installer mode
+		LookingGlassAddon.external_dependecies_installer = True
 
 	else:
 
@@ -463,7 +467,8 @@ def unregister():
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
 	# stop the frustum drawing
-	if LookingGlassAddon.RenderFrustum: LookingGlassAddon.RenderFrustum.stop()
+	if hasattr(LookingGlassAddon, 'RenderFrustum'):
+		if LookingGlassAddon.RenderFrustum: LookingGlassAddon.RenderFrustum.stop()
 
 	# log info
 	LookingGlassAddonLogger.info("Unregister the addon:")
@@ -472,7 +477,7 @@ def unregister():
 	LookingGlassAddonLogger.info(" [#] Removing all registered classes.")
 
 	# if NOT all dependencies are satisfied
-	if LookingGlassAddon.check_dependecies() == False:
+	if not LookingGlassAddon.check_dependecies() or LookingGlassAddon.external_dependecies_installer:
 
 		# unregister only the preferences
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
