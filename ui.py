@@ -1062,7 +1062,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 		max=1,
 		precision=2,
 		description="Adjust the alpha value of the block preview in the viewport if mouse is not over the block",
-		default = 0.3,
+		default = 0.5,
         update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
 

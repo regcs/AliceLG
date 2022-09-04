@@ -1209,7 +1209,7 @@ class Block:
         self.y = y
         self.width = int(width * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
         self.height = int(height * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
-        self.border_width = 0.015
+        self.border_width = 0.000
         self.border_color = (0.0086, 0.0086, 0.0086, 1.0)
         self.aspect = self.width / self.height
         self.angle = 0
@@ -1253,34 +1253,53 @@ class Block:
 
         self.fragment_shader = '''
             uniform sampler2D view_texture;
-            uniform vec4 border_color;
-            uniform float border_width;
-            uniform float aspect;  // ratio of width to height
+            uniform vec2 dimensions;
             uniform float alpha;
 
             in vec2 texCoord;
             out vec4 FragColor;
 
+			float roundedBoxSDF(vec2 CenterPosition, vec2 Size, float Radius)
+			{
+			    return length(max(abs(CenterPosition)-Size+Radius,0.0))-Radius;
+			}
+
             void main()
             {
-                float border_width = border_width;
-                float maxX = 1.0 - border_width / aspect;
-                float minX = border_width / aspect;
-                float maxY = 1.0 - border_width;
-                float minY = border_width;
-                float a = aspect;
+			    // Input info
+			    vec2 boxPos; // The position of the center of the box (in normalized coordinates)
+			    vec2 boxBnd; // The half-bounds (radii) of the box (in normalzied coordinates)
+			    float radius;// Radius
 
-                if (texCoord.x < maxX && texCoord.x > minX &&
-                   texCoord.y < maxY && texCoord.y > minY) {
-                 FragColor = texture(view_texture, texCoord);
-                } else {
-                 FragColor = border_color;
-                }
 
-                // set alpha value
-                FragColor.a = alpha;
+			   	boxPos = vec2(0.5, 0.5);	// center of the screen
+			    boxBnd = vec2(0.5, 0.5);  // half of the area
+			    radius = 0.04;
+
+			    // Normalize the pixel coordinates (this is "passTexCoords" in your case)
+			    vec2 uv = texCoord;
+			    vec2 aspectRatio = vec2(dimensions.x/dimensions.y, 1.0);
+
+			    // In order to make sure visual distances are preserved, we multiply everything by aspectRatio
+			    uv *= aspectRatio;
+			    boxPos *= aspectRatio;
+			    boxBnd *= aspectRatio;
+
+			    // Output to screen
+			    float a = length(max(abs(uv - boxPos) - boxBnd + radius, 0.0)) - radius;
+
+				// Shadertoy doesn't have an alpha in this case
+			    if(a <= 0.0){
+			    	FragColor = texture(view_texture, texCoord);
+	                FragColor.a = alpha;
+			    }else{
+			        FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+			    }
+
             }
         '''
+
+
 
         # for portrait orientations
         if self.aspect < 1:
@@ -1586,12 +1605,14 @@ class Block:
                 framebuffer.clear(color=(0.0, 0.0, 0.0, 0.0))
 
                 # update shader uniforms
+                from struct import pack
                 self.shader.bind()
                 self.shader.uniform_float("modelMatrix", self.view_matrix)
                 self.shader.uniform_float("viewProjectionMatrix", self.projection_matrix)
-                self.shader.uniform_float("aspect", self.aspect)
-                self.shader.uniform_float("border_width", self.border_width)
-                self.shader.uniform_float("border_color", self.border_color)
+                #self.shader.uniform_float("aspect", self.aspect)
+                self.shader.uniform_vector_float(self.shader.uniform_from_name("dimensions"), pack("2f", self.width, self.height), 2)
+                #self.shader.uniform_float("border_width", self.border_width)
+                #self.shader.uniform_float("border_color", self.border_color)
                 if context.space_data.type == 'VIEW_3D':
                     if self.active: self.shader.uniform_float("alpha", 1.0)
                     if not self.active: self.shader.uniform_float("alpha", context.scene.addon_settings.viewport_block_alpha)
@@ -1642,9 +1663,9 @@ class BlockRenderer:
             LookingGlassAddon.mouse_window_x = event.mouse_x
             LookingGlassAddon.mouse_window_y = event.mouse_y
 
-            # # if the mouse is not in this area
-            # if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
-            #     return {'PASS_THROUGH'}
+            # if the mouse is not in this area
+            if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
+                return {'PASS_THROUGH'}
 
             # mouse position in current context region
             LookingGlassAddon.mouse_region_x = event.mouse_x - context.region.x
@@ -1868,7 +1889,7 @@ class BlockRenderer:
 
 	            # add draw handler to display the frustum of the Looking Glass camera
 	            # after everything else has been drawn in the view
-	            self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'POST_PIXEL')
+	            self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
 	            self.__block_draw_block_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
 
             # update status
@@ -2219,7 +2240,7 @@ class BlockRenderer:
                         if context.scene.addon_settings.imageeditor_block_show:
 
 	                        # if the block changed
-	                        if block.has_changed(context) and block.offscreen_view:
+	                        if block.changed and block.offscreen_view:
 
 	                            # create a texture from the image
 	                            #if not block.image_texture:
@@ -2235,6 +2256,7 @@ class BlockRenderer:
 	                                # RENDER THE VIEW
 	                                # ++++++++++++++++++++++++++++++++++++++++++++++++
 	                                with block.offscreen_view.bind():
+	                                    print("draw")
 
 	                                    # get the current projection matrix
 	                                    viewMatrix = gpu.matrix.get_model_view_matrix()
