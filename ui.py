@@ -1032,7 +1032,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# a boolean to toogle the block viewport preview on or off
 	viewport_block_show: bpy.props.BoolProperty(
 		name="Block preview",
-		description = "Displays a looking glass block preview in the Blender viewport",
+		description = "Displays a looking glass block preview in the Blender viewport (not supported for Cycles)",
 		default = False,
 		update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
@@ -1741,6 +1741,10 @@ class LOOKINGGLASS_HT_button_viewport_blocks(bpy.types.Header):
 		sub = row.row(align=True)
 		sub.active = context.scene.addon_settings.viewport_block_show
 		sub.popover(panel="LOOKINGGLASS_PT_panel_blocks_viewport_options", text="")
+
+		# if the cycles render engine is active in this viewport
+		if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
+			row.enabled = False
 
 	def draw(self, context):
 		pass

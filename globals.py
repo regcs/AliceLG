@@ -93,9 +93,11 @@ class LookingGlassAddon:
 
 	# keymaps and mouse position
 	keymap_view_3d = None
-	keymap_items_view_3d = None
+	keymap_items_view_3d_1 = None
+	keymap_items_view_3d_2 = None
 	keymap_image_editor = None
-	keymap_items_image_editor = None
+	keymap_items_image_editor_1 = None
+	keymap_items_image_editor_2 = None
 	mouse_window_x = 0
 	mouse_window_y = 0
 	mouse_region_x = 0

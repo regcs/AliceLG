@@ -122,13 +122,13 @@ class ContextOverride:
 
 		# SHADING ATTRIBUTES
 		# define some exceptions that must not be taken into
-		attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type"]
+		attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type", "color_type", "studio_light"]
 
 		# use the "space data" of the selected viewport
 		attributeList = dir(self.__override['space_data'].shading)
 		for attr in attributeList:
 
-			if not attr in attributeExceptions:
+			if not attr in attributeExceptions and hasattr(self.__override['space_data'].shading, attr):
 				#print("[SHADING]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.shading, attr))
 
 				try:
@@ -140,7 +140,7 @@ class ContextOverride:
 		attributeList = dir(self.__override['space_data'].overlay)
 		for attr in attributeList:
 
-			if not attr in attributeExceptions:
+			if not attr in attributeExceptions and hasattr(self.__override['space_data'].overlay, attr):
 				#print("[OVERLAY]", attr, " = ", getattr(self.__override['space_data'].overlay, attr))
 
 				try:
@@ -151,7 +151,7 @@ class ContextOverride:
 
 
 	# Update the viewport settings
-	def updateViewportSettings(self, space_data=None, use_context_data=False):
+	def updateViewportSettings(self, space_data=None, force_context_data=False):
 
 		# get the space data into the override
 		if space_data:
@@ -165,7 +165,7 @@ class ContextOverride:
 		####################################################################
 
 		# if the custom settings shall be used OR the given space data is invalid
-		if (self.__addon_settings.viewportMode == 'CUSTOM' and use_context_data == False) or space_data == None:
+		if (self.__addon_settings.viewportMode == 'CUSTOM' and force_context_data == False) or space_data == None:
 
 			# SHADING ATTRIBUTES
 			self.__override['space_data'].shading.type = self.__addon_settings.shadingMode
@@ -192,7 +192,7 @@ class ContextOverride:
 			self.__override['space_data'].overlay.show_face_orientation = bool(int(self.__addon_settings.viewport_show_face_orientation))
 
 		# if the settings rely on a specific viewport / SpaceView3D
-		elif (self.__addon_settings.viewportMode != 'CUSTOM' or use_context_data == True) and space_data != None:
+		elif (self.__addon_settings.viewportMode != 'CUSTOM' or force_context_data == True) and space_data != None:
 
 			# if CYCLES is activated in the current viewport
 			if space_data.shading.type == 'RENDERED' and self.__context.engine == 'CYCLES':
@@ -201,7 +201,7 @@ class ContextOverride:
 				self.__override['space_data'].shading.type = 'SOLID'
 
 				# notify user
-				self.report({"WARNING"}, "Render engine (%s) not supported in lightfield viewport. Switched to SOLID mode." % self.__context.engine)
+				self.report({"WARNING"}, "Render engine (%s) not supported in lightfield previews. Switched to SOLID mode." % self.__context.engine)
 
 		# always disable the hdri preview spheres
 		self.__override['space_data'].overlay.show_look_dev = False
@@ -211,32 +211,34 @@ class ContextOverride:
 
 		# SHADING ATTRIBUTES
 		# define some exceptions that must not be taken into
-		attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type"]
+		attributeExceptions = ["__doc__", "__module__", "__slots__", "bl_rna", "rna_type", "color_type", "studio_light", "type"]
 
 		# use the "space data" of the selected viewport
 		attributeList = dir(self.__override['space_data'].shading)
 		for attr in attributeList:
 
-			if not attr in attributeExceptions:
-				#print("[SHADING]", attr, " = ", getattr(LookingGlassAddon.BlenderViewport.shading, attr))
+			if not attr in attributeExceptions and hasattr(self.__override['space_data'].shading, attr):
+				if getattr(self.__override['space_data'].shading, attr) != self.__shading_restore_backup[attr]:
+				#print("[SHADING]", attr, " = ", self.__shading_restore_backup[attr])
 
-				try:
-					setattr(self.__override['space_data'].shading, attr, self.__shading_restore_backup[attr])
-				except Exception as e:
-					#print(" # ", e)
-					pass
+					try:
+						setattr(self.__override['space_data'].shading, attr, self.__shading_restore_backup[attr])
+					except Exception as e:
+						#print(" # ", e)
+						pass
 
 		attributeList = dir(self.__override['space_data'].overlay)
 		for attr in attributeList:
 
-			if not attr in attributeExceptions:
+			if not attr in attributeExceptions and hasattr(self.__override['space_data'].overlay, attr):
+				if getattr(self.__override['space_data'].overlay, attr) != self.__overlay_restore_backup[attr]:
 				# print("[OVERLAY]", attr, " = ", self.__overlay_restore_backup[attr])
 
-				try:
-					setattr(self.__override['space_data'].overlay, attr, self.__overlay_restore_backup[attr])
-				except Exception as e:
-					#print(" # ", e)
-					pass
+					try:
+						setattr(self.__override['space_data'].overlay, attr, self.__overlay_restore_backup[attr])
+					except Exception as e:
+						#print(" # ", e)
+						pass
 
     # CLASS PROPERTIES
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -255,6 +257,22 @@ class ContextOverride:
 
 	@region.setter
 	def region(self, value):
+		pass
+
+	@property
+	def shading_to_dict(self):
+		return self.__shading_restore_backup
+
+	@shading_to_dict.setter
+	def shading_to_dict(self, value):
+		pass
+
+	@property
+	def overlay_to_dict(self):
+		return self.__overlay_restore_backup
+
+	@overlay_to_dict.setter
+	def overlay_to_dict(self, value):
 		pass
 
 
@@ -1197,6 +1215,7 @@ class Block:
         self.angle = 0
         self.view = 0
         self.view_cone = 40
+        self.shading_type = 'SOLID'
 
         # GPU and rendering
         self.changed = True
@@ -1422,6 +1441,11 @@ class Block:
             if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
                 return True
 
+	# check if block has changed
+    def has_changed(self, context):
+        if self.changed or self.shading_type != context.space_data.shading.type:
+            return True
+
     # store lightfield image in the block data
     def set_lightfield_image(self, lightfield_image):
         if  not (lightfield_image is None or self.lightfield_image == lightfield_image):
@@ -1549,6 +1573,9 @@ class Block:
             # update matrices
             self.__update_matrices(context)
 
+			# update shading type variable
+            self.shading_type = context.space_data.shading.type
+
             # start drawing into the preview offscreen
             with self.offscreen_canvas.bind():
 
@@ -1575,7 +1602,6 @@ class Block:
                 # draw the block image
                 self.batch.draw(self.shader)
 
-
 	# free the block and all its resources
     def free(self):
 
@@ -1597,7 +1623,7 @@ class BlockRenderer:
     class LOOKINGGLASS_OT_update_block_renderer(bpy.types.Operator):
         """ This operator updates the block renderer"""
         bl_idname = "wm.update_block_renderer"
-        bl_label = "Alice/LG: Block Renderer"
+        bl_label = "Alice/LG: Block Renderer Update"
 
         def invoke(self, context, event):
 
@@ -1616,9 +1642,9 @@ class BlockRenderer:
             LookingGlassAddon.mouse_window_x = event.mouse_x
             LookingGlassAddon.mouse_window_y = event.mouse_y
 
-            # if the mouse is not in this area
-            if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
-                return {'PASS_THROUGH'}
+            # # if the mouse is not in this area
+            # if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
+            #     return {'PASS_THROUGH'}
 
             # mouse position in current context region
             LookingGlassAddon.mouse_region_x = event.mouse_x - context.region.x
@@ -1641,10 +1667,6 @@ class BlockRenderer:
                 # get the viewport block
                 block = LookingGlassAddon.ViewportBlockRenderer.get_viewport_block()
                 if block and device:
-
-                    # update dimensions
-                    if device.aspect < 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor * device.aspect), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor))
-                    if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor / device.aspect))
 
                     # infer the current view
                     if context.region.type != 'HEADER' and block.is_mouse_over(context):
@@ -1819,12 +1841,6 @@ class BlockRenderer:
             # create a context override
             self.__override = ContextOverride(context)
 
-            # add depsgraph update handler to react to scene changes
-            self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
-
-            # add update handler to react to frame changes
-            self.__block_frame_change_handler = bpy.app.handlers.frame_change_post.append(self.__depsgraph_changes)
-
 			# if this is for the viewport
             if self.__type == 'VIEW_3D':
 
@@ -1832,9 +1848,15 @@ class BlockRenderer:
 	            self.add_block(0, 10, 10, 420, 560)
 	            self.set_viewport_block(0)
 
+	            # add depsgraph update handler to react to scene changes
+	            self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
+
+	            # add update handler to react to frame changes
+	            self.__block_frame_change_handler = bpy.app.handlers.frame_change_post.append(self.__depsgraph_changes)
+
 	            # add draw handler to display the frustum of the Looking Glass camera
 	            # after everything else has been drawn in the view
-	            self.__block_draw_view_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_view, (context,), 'WINDOW', 'PRE_VIEW')
+	            self.__block_draw_view_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_view, (context,), 'WINDOW', 'POST_PIXEL')
 	            self.__block_draw_block_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_block, (context,), 'WINDOW', 'POST_PIXEL')
 
 			# if this is for the viewport
@@ -1846,7 +1868,7 @@ class BlockRenderer:
 
 	            # add draw handler to display the frustum of the Looking Glass camera
 	            # after everything else has been drawn in the view
-	            self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
+	            self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'POST_PIXEL')
 	            self.__block_draw_block_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
 
             # update status
@@ -1994,20 +2016,27 @@ class BlockRenderer:
             if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
                 if (context.space_data != None):
 
+                    # if the cycles render engine is active in this viewport
+                    if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
+                        return
+
                     # select correct block
                     block = self.get_viewport_block()
-
                     if block is None or block.preset is None or block.offscreen_view is None:
                         return
 
-                    # if the block changed & a override exists already
-                    if block.changed:
+                    # currently selected device
+                    device = block.device
 
-                        # rset the context for the override
-                        self.__override.set_context(context)
+                    # if the device exists
+                    if device:
 
-                        # update all viewport shading and overlay settings
-                        self.__override.updateViewportSettings(context.copy()['space_data'])
+                        # update dimensions
+                        if device.aspect < 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor * device.aspect), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor))
+                        if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor / device.aspect))
+
+                    # if the block changed
+                    if block.has_changed(context):
 
                         # select camera that belongs to the view
                         camera = context.scene.addon_settings.lookingglassCamera
@@ -2015,6 +2044,15 @@ class BlockRenderer:
                         # PREPARE THE MODELVIEW AND PROJECTION MATRICES
                         # if a camera is selected
                         if camera != None:
+
+                            # copy context
+                            context_copy = context.copy()
+
+                            # set the context for the override
+                            self.__override.set_context(context)
+
+                            # update all viewport shading and overlay settings
+                            self.__override.updateViewportSettings(context_copy['space_data'], force_context_data=True)
 
                             # get camera's modelview matrix
                             view_matrix = camera.matrix_world.copy()
@@ -2029,7 +2067,7 @@ class BlockRenderer:
 
                             # get the camera's projection matrix
                             camera_projection_matrix = camera.calc_matrix_camera(
-                                    depsgraph=context.view_layer.depsgraph,
+                            	    depsgraph=context.view_layer.depsgraph,
                                     x = block.qs[block.preset]["view_width"],
                                     y = block.qs[block.preset]["view_height"],
                                     scale_x = 1.0,
@@ -2050,17 +2088,17 @@ class BlockRenderer:
                                     # the user currently works in
                                     scene=context.scene,
                                     view_layer=context.view_layer,
-                                    view3d=self.__override.space_data,
+                                    view3d=context.space_data,
                                     region=context.region,
                                     view_matrix=view_matrix,
                                     projection_matrix=projection_matrix,
                                     do_color_management = False)
 
+                        # restore all viewport shading and overlay settings
+                        self.__override.restoreViewportSettings()
+
                         # reset status variable
                         block.changed = False
-
-                        # restore all viewport shading and overlay settings
-                        # self.__override.restoreViewportSettings()
 
 
 
@@ -2072,6 +2110,10 @@ class BlockRenderer:
         if self and context:
             if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
                 if (context.space_data != None):
+
+                    # if the cycles render engine is active in this viewport
+                    if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
+                        return
 
                     # select correct block
                     block = self.get_viewport_block()
@@ -2093,6 +2135,7 @@ class BlockRenderer:
 
                     gpu.state.depth_mask_set(False)
                     gpu.state.blend_set('NONE')
+                    #print("blend_set")
 
 
     def detect_from_quilt_suffix(self, context, quilt_name):
@@ -2176,7 +2219,7 @@ class BlockRenderer:
                         if context.scene.addon_settings.imageeditor_block_show:
 
 	                        # if the block changed
-	                        if block.changed and block.offscreen_view:
+	                        if block.has_changed(context) and block.offscreen_view:
 
 	                            # create a texture from the image
 	                            #if not block.image_texture:

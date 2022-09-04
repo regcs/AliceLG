@@ -56,7 +56,7 @@ except:
 # Debugging Settings
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # this is only for debugging purposes
-LookingGlassAddon.debugging_use_dummy_device = False
+LookingGlassAddon.debugging_use_dummy_device = True
 
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
@@ -381,10 +381,12 @@ def register():
 		if keyconfigs_addon:
 			# 3D Viewport
 			LookingGlassAddon.keymap_view_3d = keyconfigs_addon.keymaps.new(name="3D View", space_type='VIEW_3D')
-			LookingGlassAddon.keymap_items_view_3d = LookingGlassAddon.keymap_view_3d.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			LookingGlassAddon.keymap_items_view_3d_1 = LookingGlassAddon.keymap_view_3d.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			LookingGlassAddon.keymap_items_view_3d_2 = LookingGlassAddon.keymap_view_3d.keymap_items.new("wm.update_block_renderer", 'LEFTMOUSE', 'ANY')
 			# Image editor
 			LookingGlassAddon.keymap_image_editor = keyconfigs_addon.keymaps.new(name="Image", space_type='IMAGE_EDITOR')
-			LookingGlassAddon.keymap_items_image_editor = LookingGlassAddon.keymap_image_editor.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			LookingGlassAddon.keymap_items_image_editor_1 = LookingGlassAddon.keymap_image_editor.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			LookingGlassAddon.keymap_items_image_editor_2 = LookingGlassAddon.keymap_image_editor.keymap_items.new("wm.update_block_renderer", 'LEFTMOUSE', 'ANY')
 
 		# UI elements
 		# add-on preferences
@@ -546,10 +548,12 @@ def unregister():
 		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
 		if keyconfigs_addon:
 			# 3D Viewport
-			if LookingGlassAddon.keymap_view_3d: LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d)
+			if LookingGlassAddon.keymap_view_3d: LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d_2)
+			if LookingGlassAddon.keymap_view_3d: LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d_1)
 			if LookingGlassAddon.keymap_view_3d: keyconfigs_addon.keymaps.remove(LookingGlassAddon.keymap_view_3d)
 			# Image editor
-			if LookingGlassAddon.keymap_image_editor: LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor)
+			if LookingGlassAddon.keymap_image_editor: LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor_2)
+			if LookingGlassAddon.keymap_image_editor: LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor_1)
 			if LookingGlassAddon.keymap_image_editor: keyconfigs_addon.keymaps.remove(LookingGlassAddon.keymap_image_editor)
 
 		# Looking Glass viewport
