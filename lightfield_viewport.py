@@ -1593,7 +1593,7 @@ class Block:
             self.__update_matrices(context)
 
 			# update shading type variable
-            self.shading_type = context.space_data.shading.type
+            if hasattr(context.space_data, 'shading'): self.shading_type = context.space_data.shading.type
 
             # start drawing into the preview offscreen
             with self.offscreen_canvas.bind():
@@ -2256,7 +2256,6 @@ class BlockRenderer:
 	                                # RENDER THE VIEW
 	                                # ++++++++++++++++++++++++++++++++++++++++++++++++
 	                                with block.offscreen_view.bind():
-	                                    print("draw")
 
 	                                    # get the current projection matrix
 	                                    viewMatrix = gpu.matrix.get_model_view_matrix()
