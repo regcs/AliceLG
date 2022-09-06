@@ -79,7 +79,7 @@ class LookingGlassAddon:
 	FrustumInitialized = False
 	FrustumRenderer = None
 
-	# Was the block preview drawer initialized?
+	# Was the hologram preview drawer initialized?
 	ImageBlockRenderer = None
 	ViewportBlockRenderer = None
 

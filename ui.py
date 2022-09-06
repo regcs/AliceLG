@@ -1031,8 +1031,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# PANEL: VIEWPORT BLOCKS SETTINGS
 	# a boolean to toogle the block viewport preview on or off
 	viewport_block_show: bpy.props.BoolProperty(
-		name="Block preview",
-		description = "Displays a looking glass block preview in the Blender viewport (not supported for Cycles)",
+		name="Hologram preview",
+		description = "Displays a looking glass hologram preview in the Blender viewport (not supported for Cycles)",
 		default = False,
 		update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
@@ -1051,7 +1051,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 		min=0,
 		max=1,
 		precision=2,
-		description="Adjust the scaling of the block preview in the viewport",
+		description="Adjust the scaling of the hologram preview in the viewport",
 		default = 0.25,
         update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
@@ -1061,7 +1061,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 		min=0,
 		max=1,
 		precision=2,
-		description="Adjust the alpha value of the block preview in the viewport if mouse is not over the block",
+		description="Adjust the alpha value of the hologram preview in the viewport if mouse is not over the block",
 		default = 0.5,
         update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
@@ -1070,8 +1070,8 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	# PANEL: IMAGE EDITIR BLOCKS SETTINGS
 	# a boolean to toogle the block viewport preview on or off
 	imageeditor_block_show: bpy.props.BoolProperty(
-		name="Block preview",
-		description = "Displays a looking glass block preview for this quilt",
+		name="Hologram preview",
+		description = "Displays a looking glass hologram preview for this quilt",
 		default = False,
 		update=LookingGlassAddonUI.update_imageeditor_block_settings,
 		)
@@ -1749,7 +1749,7 @@ class LOOKINGGLASS_HT_button_viewport_blocks(bpy.types.Header):
 	def draw(self, context):
 		pass
 
-# panel for the block preview settings
+# panel for the hologram preview settings
 class LOOKINGGLASS_PT_panel_blocks_viewport_options(bpy.types.Panel):
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'HEADER'
@@ -1770,7 +1770,7 @@ class LOOKINGGLASS_PT_panel_blocks_viewport_options(bpy.types.Panel):
 		row_alignment = column.row(align = True)
 		row_alignment.prop(context.scene.addon_settings, "viewport_block_alignment", expand=True)
 
-		# Block preview settings
+		# Hologram preview settings
         # Scaling factor
 		row_appearance_label = column.row(align = True)
 		row_appearance_label.label(text="Appearance")

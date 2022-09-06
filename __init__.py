@@ -490,29 +490,16 @@ def unregister():
 		# Unregister at the Holoplay Service
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-	# stop the frustum drawing
-	if hasattr(LookingGlassAddon, 'RenderFrustum'):
-		if LookingGlassAddon.RenderFrustum: LookingGlassAddon.RenderFrustum.stop()
-=======
-=======
 	# log info
 	LookingGlassAddonLogger.info("Unregister the addon:")
 
 	# log info
 	LookingGlassAddonLogger.info(" [#] Stopping frustum and block renderers.")
 
->>>>>>> 973cbdf (Fixed: Free all resources of the blocks when renderer is stopped.)
 	# stop the frustum and block renderers
 	if LookingGlassAddon.FrustumRenderer: LookingGlassAddon.FrustumRenderer.stop()
-<<<<<<< HEAD
-	if LookingGlassAddon.BlockRenderer: LookingGlassAddon.BlockRenderer.stop()
->>>>>>> d0053a1 (Added: Blocks renderer backend & blocks viewport preview.)
-=======
 	if LookingGlassAddon.ImageBlockRenderer: LookingGlassAddon.ImageBlockRenderer.stop()
 	if LookingGlassAddon.ViewportBlockRenderer: LookingGlassAddon.ViewportBlockRenderer.stop()
->>>>>>> ef4f8ef (Fixed: Separated ImageEditor and View3D blocks to prevent interactions.)
 
 	# log info
 	LookingGlassAddonLogger.info(" [#] Removing all registered classes.")

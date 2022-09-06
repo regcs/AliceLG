@@ -1651,11 +1651,11 @@ class BlockRenderer:
             if (context is None) or (event is None) or (not context is None and context.area is None) or not hasattr(context.scene, "addon_settings"):
                 return {'PASS_THROUGH'}
 
-            # if the block preview is not active
+            # if the hologram preview is not active
             if context.space_data.type == "VIEW_3D" and not context.scene.addon_settings.viewport_block_show:
                 return {'PASS_THROUGH'}
 
-            # if the block preview is not active
+            # if the hologram preview is not active
             if context.space_data.type == 'IMAGE_EDITOR' and not context.scene.addon_settings.imageeditor_block_show:
                 return {'PASS_THROUGH'}
 
@@ -1896,7 +1896,7 @@ class BlockRenderer:
             self.__is_running = True
 
             # log info
-            LookingGlassAddonLogger.info("Block preview started.")
+            LookingGlassAddonLogger.info("Hologram preview started.")
 
         # keep the modal operator running
         return (self.__block_draw_block_view3d_handler, self.__block_draw_view_imageeditor_handler, self.__block_draw_block_imageeditor_handler)
@@ -1939,7 +1939,7 @@ class BlockRenderer:
             self.__is_running = False
 
             # log info
-            LookingGlassAddonLogger.info("Block preview stopped.")
+            LookingGlassAddonLogger.info("Hologram preview stopped.")
 
         # return None since this is expected by the operator
         return None
