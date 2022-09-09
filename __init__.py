@@ -266,12 +266,14 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# then update the selected quilt preset from the device's default quilt
 			if device and preset:
 				bpy.context.scene.addon_settings.quiltPreset = str(preset)
+				bpy.context.scene.addon_settings.render_quilt_preset = str(preset)
 
-			elif device and not preset:
+			elif not (device and preset):
 
 				# fallback solution, if the default quilt is not found:
 				# We use the Looking Glass Portrait standard quilt (48 views)
 				bpy.context.scene.addon_settings.quiltPreset = "4"
+				bpy.context.scene.addon_settings.render_quilt_preset = "4"
 
 		# check if Blender is run in background mode
 		if LookingGlassAddon.background:

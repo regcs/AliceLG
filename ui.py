@@ -232,7 +232,58 @@ class LookingGlassAddonUI:
 
 
 	# update function for property updates concerning render settings
-	def update_render_setting(self, context):
+	def update_render_setting_with_preset(self, context):
+
+		# perform all updates
+		LookingGlassAddonUI.update_render_setting_without_preset(self, context)
+
+		# if a device is selected by the user
+		if int(self.activeDisplay) != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
+		else: 						 	  pylio.DeviceManager.reset_active()
+
+		# set device variable
+		device = None
+
+		# if a camera is selected
+		if context.scene.addon_settings.lookingglassCamera != None:
+
+			# GET DEVICE INFORMATION
+			# +++++++++++++++++++++++++++++++++++++++++++++++++++++
+			# if the settings are to be taken from device selection AND a device is active
+			if context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+
+				# currently selected device
+				device = pylio.DeviceManager.get_active()
+
+			else:
+
+				# make the emulated device the active device, if one was found
+				device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.render_device_type))
+
+			# UPDATE DROPDOWNS
+			# if the loaded file does not have a lockfile
+			if not LookingGlassAddon.has_lockfile:
+
+				# try to find the suitable default quilt preset
+				if device:
+					preset = pylio.LookingGlassQuilt.formats.find(device.default_quilt_width, device.default_quilt_height, device.default_quilt_rows, device.default_quilt_columns)
+
+				# then update the selected quilt preset from the device's default quilt
+				if device and preset:
+					if bpy.context.scene.addon_settings.render_quilt_preset != str(preset):
+						bpy.context.scene.addon_settings.render_quilt_preset = str(preset)
+
+				elif not device or not preset:
+
+					# fallback solution, if the default quilt is not found:
+					# We use the Looking Glass Portrait standard quilt (48 views)
+					if bpy.context.scene.addon_settings.render_quilt_preset != "4":
+						bpy.context.scene.addon_settings.render_quilt_preset = "4"
+
+		return None
+
+	# update function for property updates concerning render settings (WITHOUT quilt preset)
+	def update_render_setting_without_preset(self, context):
 
 		# if a device is selected by the user
 		if int(self.activeDisplay) != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
@@ -277,7 +328,6 @@ class LookingGlassAddonUI:
 				# apply the correct aspect ratio
 				context.scene.render.pixel_aspect_x = (context.scene.render.resolution_y * device.aspect) / context.scene.render.resolution_x
 				context.scene.render.pixel_aspect_y = 1.0
-
 
             # BLOCK RENDERER
 			if LookingGlassAddon.ViewportBlockRenderer:
@@ -431,7 +481,7 @@ class LookingGlassAddonUI:
 			camera.data.clip_end = context.scene.addon_settings.clip_end
 
 			# update render settings
-			LookingGlassAddonUI.update_render_setting(self, context)
+			LookingGlassAddonUI.update_render_setting_without_preset(self, context)
 
 		return None
 
@@ -677,7 +727,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	activeDisplay: bpy.props.EnumProperty(
 										items = LookingGlassAddonUI.connected_device_list_callback,
 										name="Please select a Looking Glass",
-										update=LookingGlassAddonUI.update_render_setting,
+										update=LookingGlassAddonUI.update_render_setting_without_preset,
 										)
 
 	# a boolean to toogle the render window on or off
@@ -690,7 +740,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 	quiltPreset: bpy.props.EnumProperty(
 										items = LookingGlassAddonUI.quilt_preset_list_callback,
 										name="View Resolution",
-										update=LookingGlassAddonUI.update_render_setting,
+										update=LookingGlassAddonUI.update_render_setting_without_preset,
 										)
 
 
@@ -756,7 +806,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										name="Use Device Settings",
 										description="If enabled, the render settings are taken from the selected device",
 										default = True,
-										update=LookingGlassAddonUI.update_render_setting,
+										update=LookingGlassAddonUI.update_render_setting_without_preset,
 										)
 
 	# Add a suffix with metadata to the file name
@@ -764,21 +814,21 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										name="Add Metadata",
 										description="If enabled, metadata will be added to the quilt filename as a suffix. That metadata is used by Holoplay Studio and other applications in the Looking Glass ecosystem to automatically determine the correct settings for displaying or editing the quilt.",
 										default = True,
-										update=LookingGlassAddonUI.update_render_setting,
+										update=LookingGlassAddonUI.update_render_setting_without_preset,
 										)
 
 	# Orientation of the views
 	render_device_type: bpy.props.EnumProperty(
 										items = LookingGlassAddonUI.emulated_device_list_callback,
 										name="Device Type",
-										update = LookingGlassAddonUI.update_render_setting,
+										update = LookingGlassAddonUI.update_render_setting_with_preset,
 										)
 
 	# Quilt presets
 	render_quilt_preset: bpy.props.EnumProperty(
 									items = LookingGlassAddonUI.quilt_preset_list_callback,
 									name="Quilt Preset",
-									update = LookingGlassAddonUI.update_render_setting,
+									update = LookingGlassAddonUI.update_render_setting_without_preset,
 									)
 
 	# File handling
