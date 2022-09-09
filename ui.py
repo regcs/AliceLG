@@ -1753,7 +1753,7 @@ class LOOKINGGLASS_HT_button_viewport_blocks(bpy.types.Header):
 class LOOKINGGLASS_PT_panel_blocks_viewport_options(bpy.types.Panel):
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'HEADER'
-	bl_label = "Blocks Preview"
+	bl_label = "Hologram Preview"
 	bl_ui_units_x = 8
 
 	def draw(self, context):
