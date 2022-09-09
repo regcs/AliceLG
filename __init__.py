@@ -56,7 +56,7 @@ except:
 # Debugging Settings
 # ++++++++++++++++++++++++++++++++++++++++++++++++++++++
 # this is only for debugging purposes
-LookingGlassAddon.debugging_use_dummy_device = True
+LookingGlassAddon.debugging_use_dummy_device = False
 
 # console output: if set to true, the Alice/LG and pyLightIO logger messages
 # of all levels are printed to the console. If set to falls, only warnings and
