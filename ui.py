@@ -1146,7 +1146,7 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_display_list"
 	bl_label = "Refresh list"
-	bl_description = "Refreshes the list of connected Looking Glass deviced from the HoloPlay Service"
+	bl_description = "Refreshes the list of connected Looking Glass deviced from Looking Glass Bridge"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 	def execute(self, context):
@@ -1280,7 +1280,7 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 			row_preset.enabled = False
 			row_orientationb.enabled = False
 
-		# if the HoloPlay Service is not added or not ready
+		# if the Looking Glass Bridge is not added or not ready
 		if (LookingGlassAddon.service is None or not LookingGlassAddon.service.is_ready()) and not LookingGlassAddon.debugging_use_dummy_device:
 
 			# deactivate the looking glass selection and lightfield window button

@@ -19,11 +19,11 @@ This add-on was created for the use of Blender with the Looking Glass holographi
 ## System Requirements
 - Windows, Linux, or macOS
 - [Blender 2.93.6 or later](https://www.blender.org/download/)
-- [Holoplay Service App](https://lookingglassfactory.com/software)
+- [Holoplay Service / Looking Glass Bridge](https://lookingglassfactory.com/software)
 
 ## Installation
 
-1. [Download](https://lookingglassfactory.com/software) and install the Holoplay Service App on your PC or Mac.
+1. [Download](https://lookingglassfactory.com/software) and install the Holoplay Service / Looking Glass Bridge App on your PC or Mac.
 
 2. Download the [zip file of the latest release](https://github.com/regcs/AliceLG/releases/) of this add-on.
 
@@ -50,13 +50,13 @@ After the installation you find a _Looking Glass_ tab in each Blender viewport. 
 
    - **Quilt Setup & Rendering.** Controls for starting a quilt render.
 
-- **Lightfield Window.** The lightfield / hologram is displayed on your Looking Glass display via the HoloPlay Service App in a separate window. In this category you find options to switch between two different modes for the lightfield Window: _Viewport_ and _Quilt Viewer_. It has the following sub-panel:
+- **Lightfield Window.** The lightfield / hologram is displayed on your Looking Glass display via the HoloPlay Service / Looking Glass Bridge App in a separate window. In this category you find options to switch between two different modes for the lightfield Window: _Viewport_ and _Quilt Viewer_. It has the following sub-panel:
 
    - **Shading & Overlay Settings.** If the lightfield window is in _Viewport_ mode, it acts as your holographic Blender viewport. The settings for this (lightfield) viewport are defined here.
 
 ### Lightfield Window & Viewport
 
-The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → Lightfield Window_, if you have a Looking Glass connected and HoloPlay Service is running. The lightfield window can operate in two modes:
+The lightfield window is the place where the hologram is rendered. It can be opened via a click on the button: _Looking Glass → Lightfield Window_, if you have a Looking Glass connected and HoloPlay Service / Looking Glass Bridge is running. The lightfield window can operate in two modes:
 
 - **Viewport.** In viewport mode, it basically acts like a normal Blender viewport in the Looking Glass - except that it is holographic. You can choose between _Auto_ and _Manual_ refresh mode: In _Auto_ mode, the hologram is re-rendered everytime something in the scene changes, while in _Manual_ mode the hologram is only rendered if you click the refresh button. _NOTE: Due to some limitations of the rendering pipeline of Blender, this mode can be quite slow (< 5 fps). We are working on improving Blender with regard to this and, hopefully, future versions of Blender will increase the live view performance of Alice/LG._
 

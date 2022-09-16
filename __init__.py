@@ -423,19 +423,19 @@ def register():
 		LookingGlassAddonLogger.info(" [#] Done.")
 
 		# log info
-		LookingGlassAddonLogger.info("Connecting to HoloPlay Service ...")
+		LookingGlassAddonLogger.info("Connecting to Looking Glass Bridge ...")
 
-		# create a service using "HoloPlay Service" backend
-		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService, client_name = LookingGlassAddon.name)
+		# create a service using "Looking Glass Bridge" backend
+		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.LookingGlassBridge, client_name = LookingGlassAddon.name)
 
 		# if a service was added
-		if type(LookingGlassAddon.service) == pylio.lookingglass.services.HoloPlayService:
+		if type(LookingGlassAddon.service) == pylio.lookingglass.services.LookingGlassBridge:
 
 			# if the service is ready
 			if LookingGlassAddon.service.is_ready():
 
 				# log info
-				LookingGlassAddonLogger.info(" [#] Connected to HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+				LookingGlassAddonLogger.info(" [#] Connected to Looking Glass Bridge version: %s" % LookingGlassAddon.service.get_version())
 
 			else:
 
@@ -463,13 +463,13 @@ def register():
 
 			# # prepare the error string from the error code
 			# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
-			# 	errstr = "HoloPlay Service not running"
+			# 	errstr = "Looking Glass Bridge not running"
 			#
 			# elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
 			# 	errstr = "Client message could not be serialized"
 			#
 			# elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
-			# 	errstr = "Incompatible version of HoloPlay Service";
+			# 	errstr = "Incompatible version of Looking Glass Bridge";
 			#
 			# elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
 			# 	errstr = "Interprocess pipe broken"
@@ -489,7 +489,7 @@ def unregister():
 	# if the a service for display communication is active
 	if LookingGlassAddon.service:
 
-		# Unregister at the Holoplay Service
+		# Unregister at Looking Glass Bridge
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
 	# log info
