@@ -34,9 +34,15 @@ logger = logging.getLogger('pyLightIO')
 
 # DEVICE MANAGER FOR LIGHTFIELD DISPLAYS
 ###############################################
-# the device manager is the factory class for generating device instances of
-# the different device types
 class DeviceManager(object):
+    '''
+    The :class:`DeviceManager` class is the factory class for generating
+    instances of the different device types implemented based on the
+    :class:`pylightio.BaseDeviceType` class of pyLightIO. Each device manager is
+    based on a service. This service handles all device communications, while
+    the device manager provides all functions for organizing the devices
+    internally.
+    '''
 
     # DEFINE CLASS PROPERTIES AS PRIVATE MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -50,18 +56,38 @@ class DeviceManager(object):
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     @classmethod
     def get_service(cls):
-        ''' return the service used by this device manager '''
+        '''
+        Returns the service which is used by this device manager.
+        '''
         return cls.__dev_service
 
     @classmethod
     def set_service(cls, service):
-        ''' set the service used by this device manager '''
+        '''
+        Set the service to used by this device manager.
+
+        :param service: The instance of a service class, which is based on the
+            :class:`pylightio.BaseServiceType` class.
+        :type service: class:`pylightio.BaseServiceType`
+
+        :return: The new service of the device manager.
+        :rtype: :class:`pylightio.BaseServiceType`
+        '''
         cls.__dev_service = service
         return cls.__dev_service
 
     @classmethod
     def refresh(cls, emulate_remaining = True):
-        ''' refresh the device list using a given service '''
+        '''
+        Refresh the device list of the device manager. This calls the service's
+        `get_devices()` method.
+
+        :param emulate_remaining: If `True`, the device manager adds one emulated
+            device of each type to the device list.
+        :type emulate_remaining: bool, optional (default: `True`)
+        :return: No return value.
+        :rtype: None
+        '''
 
         # if the service ready
         if cls.__dev_service and cls.__dev_service.is_ready():
@@ -103,12 +129,19 @@ class DeviceManager(object):
 
             return None
 
-        logger.error("No HoloPlay Service connection. The device list could not be obtained. ")
+        logger.error("No Looking Glass Bridge connection. The device list could not be obtained. ")
 
     @classmethod
     def add_device(cls, device_type, device_configuration = None):
-        ''' add a new device '''
+        '''
+        Add a new device of type `device_type` to the device manager.
 
+        :param emulate_remaining: If `True`, the device manager adds one emulated
+            device of each type to the device list.
+        :type emulate_remaining: bool, optional (default: `True`)
+        :return: The added device.
+        :rtype: :class:`pylightio.BaseDeviceType` or subclass of it
+        '''
         # try to find the class for the specified type, if it exists
         DeviceTypeClass = [subclass for subclass in BaseDeviceType.__subclasses__() if subclass.type == device_type]
 
@@ -133,7 +166,14 @@ class DeviceManager(object):
 
     @classmethod
     def remove_device(cls, device):
-        ''' remove a previously added device '''
+        '''
+        Remove a previously added device from the device manager.
+
+        :param device: The :class:`pylightio.BaseDeviceType` to be removed.
+        :type device: :class:`pylightio.BaseDeviceType` or a subclass of it
+        :return: `True` if the device was successfully removed.
+        :rtype: bool
+        '''
 
         # if the device is in the list
         if device in cls.__dev_list:
@@ -151,9 +191,17 @@ class DeviceManager(object):
         # otherwise raise an exception
         raise ValueError("The device '%s' is not in the list." % device)
 
+        return False
+
     @classmethod
     def add_emulated(cls, filter=None):
-        ''' add an emulated device for each supported device type '''
+        '''
+        Add one emulated device for each supported device type to the device
+        manager. A `filter` can be applied to add only specific device types.
+
+        :param filter: List of :class:`pylightio.BaseDeviceType` to be added.
+        :type filter: :class:`pylightio.BaseDeviceType` or a subclass of it
+        '''
 
         # for each device type which is not in "except" list
         for DeviceType in set(BaseDeviceType.__subclasses__()) - set([DeviceType for DeviceType in cls.__subclasses__() if DeviceType.type in filter ]):
@@ -179,7 +227,9 @@ class DeviceManager(object):
 
     @classmethod
     def get_active(cls):
-        ''' return the active device (i.e., the one currently used by the user) '''
+        '''
+        Return the active device,i.e., the one currently used by the user.
+        '''
         return cls.__dev_active
 
     @classmethod
