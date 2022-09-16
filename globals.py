@@ -62,6 +62,7 @@ class LookingGlassAddon:
 							('cv2', 'opencv-python', ''),
 							('pylightio', 'pylightio', ''),
 							]
+	external_dependecies_installer = False
 
 	# Blender arguments
 	blender_arguments = ""
@@ -74,9 +75,13 @@ class LookingGlassAddon:
 	# Lockfile
 	has_lockfile = False
 
-	# Was the modal operator for the frustum initialized?
+	# Was the frustum drawer initialized?
 	FrustumInitialized = False
-	FrustumDrawHandler = None
+	FrustumRenderer = None
+
+	# Was the hologram preview drawer initialized?
+	ImageBlockRenderer = None
+	ViewportBlockRenderer = None
 
 	# The active Window and Viewport the user is currently working in
 	BlenderWindow = None
@@ -85,6 +90,18 @@ class LookingGlassAddon:
 	# Rendering status
 	RenderInvoked = False
 	RenderAnimation = None
+
+	# keymaps and mouse position
+	keymap_view_3d = None
+	keymap_items_view_3d_1 = None
+	keymap_items_view_3d_2 = None
+	keymap_image_editor = None
+	keymap_items_image_editor_1 = None
+	keymap_items_image_editor_2 = None
+	mouse_window_x = 0
+	mouse_window_y = 0
+	mouse_region_x = 0
+	mouse_region_y = 0
 
 
 	# EXTEND PATH
@@ -149,15 +166,18 @@ class LookingGlassAddon:
 	@classmethod
 	def unload_dependecies(cls):
 
-		# are all modules in the packages list available in the "lib" directory?
-		for module in cls.external_dependecies:
+		# if the addon is not in installer mode
+		if not LookingGlassAddon.external_dependecies_installer:
 
-			# get names
-			module_name, install_name, install_version = module
+			# are all modules in the packages list available in the "lib" directory?
+			for module in cls.external_dependecies:
 
-			# unload the module
-			del sys.modules[module_name]
-			#del module_name
+				# get names
+				module_name, install_name, install_version = module
+
+				# unload the module
+				del sys.modules[module_name]
+				#del module_name
 
 
 
@@ -258,9 +278,9 @@ class LookingGlassAddon:
 
 	# update the lightfield window to display a lightfield on the device
 	@staticmethod
-	def update_lightfield_window(render_mode, lightfield_image, flip_views=None, invert=None):
+	def update_lightfield_window(window_mode, lightfield_image, flip_views=None, invert=None):
 		''' update the lightfield image that is displayed on the current device '''
-		''' render_mode = 0: Lightfield Viewport, render_mode = 1: Quilt Viewer, render_mode = -1: demo quilt '''
+		''' window_mode = 0: Lightfield Viewport, window_mode = 1: Quilt Viewer, window_mode = -1: demo quilt '''
 
 		# append the add-on's path to Blender's python PATH
 		sys.path.insert(0, LookingGlassAddon.path)
@@ -273,36 +293,39 @@ class LookingGlassAddon:
 
 		# update the variable for the current Looking Glass device
 		device = pylio.DeviceManager.get_active()
+
+		# if a valid device is connected
 		if device:
+
 			# if a LightfieldImage was given
 			if lightfield_image:
 
 				# VIEWPORT MODE
 				##################################################################
-				if render_mode == 0:
+				if window_mode == 0:
 
 					if flip_views is None: flip_views = False
 					if invert is None: invert = False
 
 					# let the device display the image
-					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+					if device.service: device.display(lightfield_image, flip_views=flip_views, invert=invert)
 
 				# QUILT VIEWER MODE
 				##################################################################
 				# if the quilt view mode is active AND an image is loaded
-				elif render_mode == 1:
+				elif window_mode == 1:
 
 					if flip_views is None: flip_views = True
 					if invert is None: invert = False
 
 					# let the device display the image
-					device.display(lightfield_image, flip_views=flip_views, invert=invert)
+					if device.service: device.display(lightfield_image, flip_views=flip_views, invert=invert)
 
 			# if the demo quilt was requested
 			elif lightfield_image is None:
 
 				# let the device display the demo quilt
-				device.display(None)
+				if device.service: device.display(None)
 
 			else:
 				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")

@@ -71,6 +71,8 @@ class RenderJob:
 		self.frame = 1
 		self.subframe = 0.0
 		self.view = 0
+		self.view_start = None
+		self.view_end = None
 		self.seed = None
 		self.view_width = None
 		self.view_height = None
@@ -374,7 +376,7 @@ class RenderJob:
 				self._view_matrix_inv = self._view_matrix.inverted_safe()
 
 				# loop through all views
-				for view in range(0, self.total_views):
+				for view in range(self.view_start, self.view_end):
 
 					# COPY CAMERA
 					# +++++++++++++++++++++++++++++++++++++++++++++++
@@ -391,11 +393,11 @@ class RenderJob:
 						render_view.use = True
 
 						# add this camera to the master collection of the scene
-						self.scene.collection.objects.link(self._camera_temp[view])
+						self.scene.collection.objects.link(self._camera_temp[view - self.view_start])
 
 
 					# use this camera for rendering
-					self._camera_active = self._camera_temp[view]
+					self._camera_active = self._camera_temp[view - self.view_start]
 
 					# apply same location and perspective like the original camera
 					self._camera_active.matrix_world = self._view_matrix.copy()
@@ -761,6 +763,9 @@ class RenderSettings:
 	# scene which is rendered
 	job = None
 
+	# view parameters
+	view_start = None
+	view_end = None
 
 	# initiate the class instance
 	def __init__(self, BlenderScene, animation, use_lockfile, use_multiview, blocking):
@@ -858,6 +863,32 @@ class RenderSettings:
 						# set the current frame
 						self.scene.frame_current = int(LookingGlassAddon.addon_arguments[index])
 
+				# if a rendering frame was specified
+				if "-v" in LookingGlassAddon.addon_arguments or "--render-view" in LookingGlassAddon.addon_arguments:
+
+					# get the view index
+					try:
+						index = LookingGlassAddon.addon_arguments.index("-v") + 1
+					except ValueError:
+						index = LookingGlassAddon.addon_arguments.index("--render-view") + 1
+
+					# set the current frame
+					self.view_start = int(LookingGlassAddon.addon_arguments[index])
+					self.view_end = int(LookingGlassAddon.addon_arguments[index]) + 1
+
+				# set the view range start
+				if "--view-range" in LookingGlassAddon.addon_arguments:
+
+					# get the view index
+					index = LookingGlassAddon.addon_arguments.index("--view-range") + 1
+
+					# set the view range start
+					self.view_start = int(LookingGlassAddon.addon_arguments[index])
+
+					# set the current frame
+					self.view_end = int(LookingGlassAddon.addon_arguments[index + 1]) + 1
+
+
 			# INITIALIZATION
 			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -903,6 +934,9 @@ class RenderSettings:
 			# get all quilt presets from pylio
 			self._qs = pylio.LookingGlassQuilt.formats.get()
 
+			# set view range to default if None was given
+			if self.view_start is None: self.view_start = 0
+			if self.view_end is None: self.view_end = self._qs[int(self._quilt_preset)]["total_views"]
 
 
 			# PATH SETTINGS
@@ -960,6 +994,13 @@ class RenderSettings:
 				self.job.rows = self._qs[int(self._quilt_preset)]["rows"]
 				self.job.columns = self._qs[int(self._quilt_preset)]["columns"]
 				self.job.total_views = self._qs[int(self._quilt_preset)]["total_views"]
+
+				# set view range to render
+				self.job.view_start = self.view_start
+				self.job.view_end = self.view_end
+
+				# set start view
+				self.job.view = self.job.view_start
 
 				# if the operator was called with the animation flag set
 				if self.animation == True:
@@ -1642,7 +1683,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if this was the last view OR a multiview render
-				if self.render_settings.job.view == (self.render_settings.job.total_views - 1) or self.use_multiview:
+				if self.render_settings.job.view == (self.render_settings.job.view_end - 1) or self.use_multiview:
 					start = time.time()
 
 					# assemble the quilt from the view data
@@ -1698,7 +1739,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if self.render_settings.job.animation == False:
 
 					# if this was not the last view AND the multiview mechanism is NOT used
-					if self.render_settings.job.view < (self.render_settings.job.total_views - 1) and not self.use_multiview:
+					if self.render_settings.job.view < (self.render_settings.job.view_end - 1) and not self.use_multiview:
 
 						# increase view count
 						self.render_settings.job.view += 1
@@ -1721,7 +1762,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				elif self.render_settings.job.animation == True:
 
 					# if this was not the last view AND the multiview mechanism is NOT used
-					if self.render_settings.job.view < (self.render_settings.job.total_views - 1) and not self.use_multiview:
+					if self.render_settings.job.view < (self.render_settings.job.view_end - 1) and not self.use_multiview:
 
 						# increase view count
 						self.render_settings.job.view += 1
@@ -1730,7 +1771,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.render_settings.job._state = "INVOKE_RENDER"
 
 					# if this was the last view OR the multiview mechanism is used
-					elif self.render_settings.job.view == (self.render_settings.job.total_views - 1) or self.use_multiview:
+					elif self.render_settings.job.view == (self.render_settings.job.view_end - 1) or self.use_multiview:
 
 						# but if this was not the last frame
 						if self.render_settings.job.frame < self.render_settings.job.scene.frame_end:

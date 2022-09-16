@@ -148,6 +148,9 @@ class LookingGlassDeviceMixin(object):
 
     @property
     def defaultQuilt(self):
+        if isinstance(self.configuration['defaultQuilt'], str):
+            import json
+            return json.loads(self.configuration['defaultQuilt'])
         return self.configuration['defaultQuilt']
 
     @defaultQuilt.setter

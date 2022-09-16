@@ -21,7 +21,7 @@
 bl_info = {
 	"name": "Alice/LG",
 	"author": "Christian Stolze",
-	"version": (2, 0, 6),
+	"version": (2, 1, 0),
 	"blender": (2, 93, 6),
 	"location": "View3D > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks through the Looking Glass (lightfield displays)",
@@ -253,7 +253,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 			# initialize the RenderSettings
 			# NOTE: This  loads the last render settings from the lockfile
-			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.render_mode == '1'), blocking=LookingGlassAddon.background)
+			RenderSettings(bpy.context.scene, False, LookingGlassAddon.has_lockfile, (bpy.context.preferences.addons[__package__].preferences.camera_mode == '1'), blocking=LookingGlassAddon.background)
 
 		else:
 
@@ -266,12 +266,14 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			# then update the selected quilt preset from the device's default quilt
 			if device and preset:
 				bpy.context.scene.addon_settings.quiltPreset = str(preset)
+				bpy.context.scene.addon_settings.render_quilt_preset = str(preset)
 
-			elif device and not preset:
+			elif not (device and preset):
 
 				# fallback solution, if the default quilt is not found:
 				# We use the Looking Glass Portrait standard quilt (48 views)
 				bpy.context.scene.addon_settings.quiltPreset = "4"
+				bpy.context.scene.addon_settings.render_quilt_preset = "4"
 
 		# check if Blender is run in background mode
 		if LookingGlassAddon.background:
@@ -289,8 +291,13 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 		else:
 
-			# invoke the camera frustum rendering operator
-			bpy.ops.render.frustum('INVOKE_DEFAULT')
+			# create and start the frustum and the block renderer
+			LookingGlassAddon.FrustumRenderer = FrustumRenderer()
+			LookingGlassAddon.ImageBlockRenderer = BlockRenderer()
+			LookingGlassAddon.ViewportBlockRenderer = BlockRenderer()
+
+            # start the renderers
+			LookingGlassAddon.FrustumRenderer.start(bpy.context)
 
 			# get the active window
 			LookingGlassAddon.BlenderWindow = bpy.context.window
@@ -335,7 +342,7 @@ def register():
 		LookingGlassAddon.background = True
 
 	# if NOT all dependencies are satisfied
-	if LookingGlassAddon.check_dependecies() == False:
+	if not LookingGlassAddon.check_dependecies():
 
 		# register the preferences operators
 		bpy.utils.register_class(LOOKINGGLASS_OT_install_dependencies)
@@ -351,6 +358,10 @@ def register():
 		#		or when a new file is loaded
 		bpy.app.handlers.load_post.append(LookingGlassAddonInitHandler)
 
+		# for the addon unregistering we need to remember that we started
+		# in the dependency installer mode
+		LookingGlassAddon.external_dependecies_installer = True
+
 	else:
 
 		# register all basic operators of the addon
@@ -364,19 +375,38 @@ def register():
 		# Looking Glass quilt rendering
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
 
-		# Looking Glass viewport & camera frustum
+		# Looking Glass viewport
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
-		bpy.utils.register_class(LOOKINGGLASS_OT_render_frustum)
+		bpy.utils.register_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
+
+		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
+		if keyconfigs_addon:
+			# 3D Viewport
+			LookingGlassAddon.keymap_view_3d = keyconfigs_addon.keymaps.new(name="3D View", space_type='VIEW_3D')
+			LookingGlassAddon.keymap_items_view_3d_1 = LookingGlassAddon.keymap_view_3d.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			LookingGlassAddon.keymap_items_view_3d_2 = LookingGlassAddon.keymap_view_3d.keymap_items.new("wm.update_block_renderer", 'LEFTMOUSE', 'ANY')
+			# Image editor
+			LookingGlassAddon.keymap_image_editor = keyconfigs_addon.keymaps.new(name="Image", space_type='IMAGE_EDITOR')
+			LookingGlassAddon.keymap_items_image_editor_1 = LookingGlassAddon.keymap_image_editor.keymap_items.new("wm.update_block_renderer", 'MOUSEMOVE', 'ANY')
+			LookingGlassAddon.keymap_items_image_editor_2 = LookingGlassAddon.keymap_image_editor.keymap_items.new("wm.update_block_renderer", 'LEFTMOUSE', 'ANY')
 
 		# UI elements
 		# add-on preferences
 		bpy.utils.register_class(LOOKINGGLASS_PT_preferences)
-		# add-on panels
+		# addon panels
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_general)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_camera)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_render)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_lightfield)
 		bpy.utils.register_class(LOOKINGGLASS_PT_panel_overlays_shading)
+        # addon header buttons: 3D viewport
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_blocks_viewport_options)
+		bpy.utils.register_class(LOOKINGGLASS_HT_button_viewport_blocks)
+		bpy.types.VIEW3D_HT_header.append(LOOKINGGLASS_HT_button_viewport_blocks.draw_item)
+        # addon header buttons: image editor
+		bpy.utils.register_class(LOOKINGGLASS_PT_panel_blocks_imageeditor_options)
+		bpy.utils.register_class(LOOKINGGLASS_HT_button_imageeditor_blocks)
+		bpy.types.IMAGE_HT_header.append(LOOKINGGLASS_HT_button_imageeditor_blocks.draw_item)
 
 		# log info
 		LookingGlassAddonLogger.info(" [#] Registered add-on operators in Blender.")
@@ -393,19 +423,19 @@ def register():
 		LookingGlassAddonLogger.info(" [#] Done.")
 
 		# log info
-		LookingGlassAddonLogger.info("Connecting to HoloPlay Service ...")
+		LookingGlassAddonLogger.info("Connecting to Looking Glass Bridge ...")
 
-		# create a service using "HoloPlay Service" backend
-		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.HoloPlayService, client_name = LookingGlassAddon.name)
+		# create a service using "Looking Glass Bridge" backend
+		LookingGlassAddon.service = pylio.ServiceManager.add(pylio.lookingglass.services.LookingGlassBridge, client_name = LookingGlassAddon.name)
 
 		# if a service was added
-		if type(LookingGlassAddon.service) == pylio.lookingglass.services.HoloPlayService:
+		if type(LookingGlassAddon.service) == pylio.lookingglass.services.LookingGlassBridge:
 
 			# if the service is ready
 			if LookingGlassAddon.service.is_ready():
 
 				# log info
-				LookingGlassAddonLogger.info(" [#] Connected to HoloPlay Service version: %s" % LookingGlassAddon.service.get_version())
+				LookingGlassAddonLogger.info(" [#] Connected to Looking Glass Bridge version: %s" % LookingGlassAddon.service.get_version())
 
 			else:
 
@@ -433,13 +463,13 @@ def register():
 
 			# # prepare the error string from the error code
 			# if (errco == hpc.client_error.CLIERR_NOSERVICE.value):
-			# 	errstr = "HoloPlay Service not running"
+			# 	errstr = "Looking Glass Bridge not running"
 			#
 			# elif (errco == hpc.client_error.CLIERR_SERIALIZEERR.value):
 			# 	errstr = "Client message could not be serialized"
 			#
 			# elif (errco == hpc.client_error.CLIERR_VERSIONERR.value):
-			# 	errstr = "Incompatible version of HoloPlay Service";
+			# 	errstr = "Incompatible version of Looking Glass Bridge";
 			#
 			# elif (errco == hpc.client_error.CLIERR_PIPEERROR.value):
 			# 	errstr = "Interprocess pipe broken"
@@ -459,17 +489,25 @@ def unregister():
 	# if the a service for display communication is active
 	if LookingGlassAddon.service:
 
-		# Unregister at the Holoplay Service
+		# Unregister at Looking Glass Bridge
 		pylio.ServiceManager.remove(LookingGlassAddon.service)
 
 	# log info
 	LookingGlassAddonLogger.info("Unregister the addon:")
 
 	# log info
+	LookingGlassAddonLogger.info(" [#] Stopping frustum and block renderers.")
+
+	# stop the frustum and block renderers
+	if LookingGlassAddon.FrustumRenderer: LookingGlassAddon.FrustumRenderer.stop()
+	if LookingGlassAddon.ImageBlockRenderer: LookingGlassAddon.ImageBlockRenderer.stop()
+	if LookingGlassAddon.ViewportBlockRenderer: LookingGlassAddon.ViewportBlockRenderer.stop()
+
+	# log info
 	LookingGlassAddonLogger.info(" [#] Removing all registered classes.")
 
 	# if NOT all dependencies are satisfied
-	if LookingGlassAddon.check_dependecies() == False:
+	if not LookingGlassAddon.check_dependecies() or LookingGlassAddon.external_dependecies_installer:
 
 		# unregister only the preferences
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_install_dependencies"): bpy.utils.unregister_class(LOOKINGGLASS_PT_install_dependencies)
@@ -495,18 +533,38 @@ def unregister():
 		# Looking Glass quilt rendering
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
 
-		# Looking Glass viewport & camera frustum
+		# remove the keymap
+		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon
+		if keyconfigs_addon:
+			# 3D Viewport
+			if LookingGlassAddon.keymap_view_3d: LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d_2)
+			if LookingGlassAddon.keymap_view_3d: LookingGlassAddon.keymap_view_3d.keymap_items.remove(LookingGlassAddon.keymap_items_view_3d_1)
+			if LookingGlassAddon.keymap_view_3d: keyconfigs_addon.keymaps.remove(LookingGlassAddon.keymap_view_3d)
+			# Image editor
+			if LookingGlassAddon.keymap_image_editor: LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor_2)
+			if LookingGlassAddon.keymap_image_editor: LookingGlassAddon.keymap_image_editor.keymap_items.remove(LookingGlassAddon.keymap_items_image_editor_1)
+			if LookingGlassAddon.keymap_image_editor: keyconfigs_addon.keymaps.remove(LookingGlassAddon.keymap_image_editor)
+
+		# Looking Glass viewport
+		bpy.utils.unregister_class(BlockRenderer.LOOKINGGLASS_OT_update_block_renderer)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_viewport)
-		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_frustum)
 
 		# UI elements
-		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
+        # addon header buttons
+		bpy.types.IMAGE_HT_header.remove(LOOKINGGLASS_HT_button_imageeditor_blocks.draw_item)
+		bpy.types.VIEW3D_HT_header.remove(LOOKINGGLASS_HT_button_viewport_blocks.draw_item)
+		if hasattr(bpy.types, "LOOKINGGLASS_HT_button_viewport_blocks"): bpy.utils.unregister_class(LOOKINGGLASS_HT_button_viewport_blocks)
+		if hasattr(bpy.types, "LOOKINGGLASS_HT_button_imageeditor_blocks"): bpy.utils.unregister_class(LOOKINGGLASS_HT_button_imageeditor_blocks)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_blocks_viewport_options"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_viewport_options)
+		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_blocks_imageeditor_options"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_blocks_imageeditor_options)
+        # addon panels
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_general"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_general)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_camera"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_camera)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_render"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_render)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_lightfield"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_lightfield)
 		if hasattr(bpy.types, "LOOKINGGLASS_PT_panel_overlays_shading"): bpy.utils.unregister_class(LOOKINGGLASS_PT_panel_overlays_shading)
-
+        # preferences
+		bpy.utils.unregister_class(LOOKINGGLASS_PT_preferences)
 		# delete all variables
 		if hasattr(bpy.types.Scene, "addon_settings"): del bpy.types.Scene.addon_settings
 
