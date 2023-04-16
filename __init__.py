@@ -88,8 +88,13 @@ sys.excepthook = log_exhook
 # this function is by @ranrande from stackoverflow:
 # https://stackoverflow.com/a/67213458
 def logfile_namer(default_name):
-	base_filename, ext, date = default_name.split(".")
-	return f"{base_filename}.{date}.{ext}"
+	if len(default_name.split(".")) == 2:
+		base_filename, ext = default_name.split(".")
+		return f"{base_filename}.{ext}"
+
+	elif len(default_name.split(".")) == 3:
+		base_filename, ext, date = default_name.split(".")
+		return f"{base_filename}.{date}.{ext}"
 
 # logger for pyLightIO
 # +++++++++++++++++++++++++++++++++++++++++++++
