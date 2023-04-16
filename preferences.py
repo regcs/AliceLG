@@ -72,11 +72,11 @@ class LOOKINGGLASS_OT_install_dependencies(bpy.types.Operator):
 					if module[1] == 'pynng':
 
 						subprocess.call([python_path, '-m', 'pip', 'download', module[1], '--dest=' + os.path.join(LookingGlassAddon.libpath, 'wheels'), '--no-cache'], stdout=logfile)
-						subprocess.call([python_path, '-m', 'pip', 'install', '--find-links=' + os.path.join(LookingGlassAddon.libpath, 'wheels'), module[1], '--target', LookingGlassAddon.libpath, '--no-cache', '--no-index'], stdout=logfile)
+						subprocess.call([python_path, '-m', 'pip', 'install', '--find-links=' + os.path.join(LookingGlassAddon.libpath, 'wheels'), module[1], '--target', LookingGlassAddon.libpath, '--no-cache', '--no-index'] + module[3], stdout=logfile)
 
 					else:
 
-						subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', module[1], '--target', LookingGlassAddon.libpath, '--no-cache'], stdout=logfile)
+						subprocess.call([python_path, '-m', 'pip', 'install', '--upgrade', module[1], '--target', LookingGlassAddon.libpath, '--no-cache'] + module[3], stdout=logfile)
 
 			logfile.write("###################################" + '\n')
 			logfile.write("Installer finished: " + str(datetime.datetime.now()) + '\n')

@@ -56,11 +56,11 @@ class LookingGlassAddon:
 	presetpath = bpy.path.abspath(path + "/presets/")
 
 	# external python dependencies of the add-on
-	# NOTE: The tuple has the form (import name, install name, install version)
+	# NOTE: The tuple has the form (import name, install name, install version, install options)
 	external_dependecies = [
-							('pynng', 'pynng', ''),
-							('cv2', 'opencv-python', ''),
-							('pylightio', 'pylightio', ''),
+							('pynng', 'pynng', '', []),
+							('cv2', 'opencv-python', '', ['--no-deps']),
+							('pylightio', 'pylightio', '', []),
 							]
 	external_dependecies_installer = False
 
@@ -125,7 +125,7 @@ class LookingGlassAddon:
 		    from importlib_metadata import version
 
 		# extract info
-		module_name, install_name, install_version = module
+		module_name, install_name, install_version, install_options = module
 
 		# try to find the module in the "lib" directory
 		module_spec = (importlib.machinery.PathFinder().find_spec(module_name, [cls.libpath]))
@@ -173,7 +173,7 @@ class LookingGlassAddon:
 			for module in cls.external_dependecies:
 
 				# get names
-				module_name, install_name, install_version = module
+				module_name, install_name, install_version, install_options = module
 
 				# unload the module
 				del sys.modules[module_name]
