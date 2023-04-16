@@ -23,7 +23,8 @@
 
 # ------------------ INTERNAL MODULES --------------------
 from .globals import *
-from .ui import LookingGlassAddonSettings
+from .ui import LookingGlassAddonSettingsWM
+from .ui import LookingGlassAddonSettingsScene
 
 # ------------------- EXTERNAL MODULES -------------------
 import bpy
@@ -1040,8 +1041,18 @@ class RenderSettings:
 				data[k] = self.to_dict(v, classkey)
 			return data
 
-		# if this is the addon settings
-		elif isinstance(obj, LookingGlassAddonSettings):
+		# if this is the addon settings (WM)
+		elif isinstance(obj, LookingGlassAddonSettingsWM):
+			data = {}
+			for key in dir(obj):
+				if not callable(getattr(obj, key)) and not key.startswith('_'):
+					if key not in ['bl_rna', 'rna_type', 'blender_view3d']:
+						value = self.to_dict(getattr(obj, key))
+						data[key] = value
+			return data
+
+		# if this is the addon settings (Scene)
+		elif isinstance(obj, LookingGlassAddonSettingsScene):
 			data = {}
 			for key in dir(obj):
 				if not callable(getattr(obj, key)) and not key.startswith('_'):

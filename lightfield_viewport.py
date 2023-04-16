@@ -57,7 +57,8 @@ LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 class ContextOverride:
 
 	# ADDON SETTING DATA
-	__addon_settings = None
+	__addon_settings_window_manager = None
+	__addon_settings_scene = None
 
 	# CONTEXT DATA
 	__context = None
@@ -73,8 +74,11 @@ class ContextOverride:
 		# get the current settings of this scene
 		self.__context = context
 
+		# get the current settings of the window manager
+		self.__addon_settings_window_manager = context.window_manager.addon_settings
+
 		# get the current settings of this scene
-		self.__addon_settings = context.scene.addon_settings
+		self.__addon_settings_scene = context.scene.addon_settings
 
 		# create an override context from the invoking context
 		self.__override = context.copy()
@@ -97,7 +101,7 @@ class ContextOverride:
 
 		# calculate cameraSize from its distance to the focal plane and the FOV
 		# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-		cameraDistance = self.__addon_settings.focalPlane
+		cameraDistance = self.__addon_settings_scene.focalPlane
 		cameraSize = cameraDistance * tan(fov / 2)
 
 		# start at viewCone * 0.5 and go up to -viewCone * 0.5
@@ -165,34 +169,34 @@ class ContextOverride:
 		####################################################################
 
 		# if the custom settings shall be used OR the given space data is invalid
-		if (self.__addon_settings.viewportMode == 'CUSTOM' and force_context_data == False) or space_data == None:
+		if (self.__addon_settings_scene.viewportMode == 'CUSTOM' and force_context_data == False) or space_data == None:
 
 			# SHADING ATTRIBUTES
-			self.__override['space_data'].shading.type = self.__addon_settings.shadingMode
-			self.__override['space_data'].shading.show_xray = bool(self.__addon_settings.viewport_show_xray)
-			self.__override['space_data'].shading.xray_alpha = float(self.__addon_settings.viewport_xray_alpha)
-			self.__override['space_data'].shading.use_dof = bool(int(self.__addon_settings.viewport_use_dof))
+			self.__override['space_data'].shading.type = self.__addon_settings_scene.shadingMode
+			self.__override['space_data'].shading.show_xray = bool(self.__addon_settings_scene.viewport_show_xray)
+			self.__override['space_data'].shading.xray_alpha = float(self.__addon_settings_scene.viewport_xray_alpha)
+			self.__override['space_data'].shading.use_dof = bool(int(self.__addon_settings_scene.viewport_use_dof))
 
 			# OVERLAY ATTRIBUTES: Guides
-			self.__override['space_data'].overlay.show_floor = bool(int(self.__addon_settings.viewport_show_floor))
-			self.__override['space_data'].overlay.show_axis_x = bool(int(self.__addon_settings.viewport_show_axes[0]))
-			self.__override['space_data'].overlay.show_axis_y = bool(int(self.__addon_settings.viewport_show_axes[1]))
-			self.__override['space_data'].overlay.show_axis_z = bool(int(self.__addon_settings.viewport_show_axes[2]))
-			self.__override['space_data'].overlay.grid_scale = float(self.__addon_settings.viewport_grid_scale)
+			self.__override['space_data'].overlay.show_floor = bool(int(self.__addon_settings_scene.viewport_show_floor))
+			self.__override['space_data'].overlay.show_axis_x = bool(int(self.__addon_settings_scene.viewport_show_axes[0]))
+			self.__override['space_data'].overlay.show_axis_y = bool(int(self.__addon_settings_scene.viewport_show_axes[1]))
+			self.__override['space_data'].overlay.show_axis_z = bool(int(self.__addon_settings_scene.viewport_show_axes[2]))
+			self.__override['space_data'].overlay.grid_scale = float(self.__addon_settings_scene.viewport_grid_scale)
 			# OVERLAY ATTRIBUTES: Objects
-			self.__override['space_data'].overlay.show_extras = bool(int(self.__addon_settings.viewport_show_extras))
-			self.__override['space_data'].overlay.show_relationship_lines = bool(int(self.__addon_settings.viewport_show_relationship_lines))
-			self.__override['space_data'].overlay.show_outline_selected = bool(int(self.__addon_settings.viewport_show_outline_selected))
-			self.__override['space_data'].overlay.show_bones = bool(int(self.__addon_settings.viewport_show_bones))
-			self.__override['space_data'].overlay.show_motion_paths = bool(int(self.__addon_settings.viewport_show_motion_paths))
-			self.__override['space_data'].overlay.show_object_origins = bool(int(self.__addon_settings.viewport_show_origins))
-			self.__override['space_data'].overlay.show_object_origins_all = bool(int(self.__addon_settings.viewport_show_origins_all))
+			self.__override['space_data'].overlay.show_extras = bool(int(self.__addon_settings_scene.viewport_show_extras))
+			self.__override['space_data'].overlay.show_relationship_lines = bool(int(self.__addon_settings_scene.viewport_show_relationship_lines))
+			self.__override['space_data'].overlay.show_outline_selected = bool(int(self.__addon_settings_scene.viewport_show_outline_selected))
+			self.__override['space_data'].overlay.show_bones = bool(int(self.__addon_settings_scene.viewport_show_bones))
+			self.__override['space_data'].overlay.show_motion_paths = bool(int(self.__addon_settings_scene.viewport_show_motion_paths))
+			self.__override['space_data'].overlay.show_object_origins = bool(int(self.__addon_settings_scene.viewport_show_origins))
+			self.__override['space_data'].overlay.show_object_origins_all = bool(int(self.__addon_settings_scene.viewport_show_origins_all))
 			# OVERLAY ATTRIBUTES: Geometry
-			self.__override['space_data'].overlay.show_wireframes = bool(int(self.__addon_settings.viewport_show_wireframes))
-			self.__override['space_data'].overlay.show_face_orientation = bool(int(self.__addon_settings.viewport_show_face_orientation))
+			self.__override['space_data'].overlay.show_wireframes = bool(int(self.__addon_settings_scene.viewport_show_wireframes))
+			self.__override['space_data'].overlay.show_face_orientation = bool(int(self.__addon_settings_scene.viewport_show_face_orientation))
 
 		# if the settings rely on a specific viewport / SpaceView3D
-		elif (self.__addon_settings.viewportMode != 'CUSTOM' or force_context_data == True) and space_data != None:
+		elif (self.__addon_settings_scene.viewportMode != 'CUSTOM' or force_context_data == True) and space_data != None:
 
 			# if CYCLES is activated in the current viewport
 			if space_data.shading.type == 'RENDERED' and self.__context.engine == 'CYCLES':
@@ -363,7 +367,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 			# loop through all required views
 			#for view in range(int((self.qs[self.preset]["total_views"] + 1) / 3), self.qs[self.preset]["total_views"] - int((self.qs[self.preset]["total_views"] + 1) / 3)):
-			for view in range(0, self.qs[i]["total_views"]):
+			for view in range(0, len(self.qs[i]["viewOffscreen"])):
 
 				# free the GPUOffscreen for the view rendering
 				self.qs[i]["viewOffscreen"][view].free()
@@ -379,18 +383,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		LookingGlassAddon.BlenderViewport = None
 
 		# set the button controls for the lightfield window to False
-		self.addon_settings.ShowLightfieldWindow = False
-
-		# SCENE UPDATES
-		# ++++++++++++++++++++++++++
-		if context != None:
-
-			# iterate through all scenes
-			for scene in bpy.data.scenes:
-				if scene != None and scene.addon_settings != None:
-
-					# update the status variables
-					scene.addon_settings.ShowLightfieldWindow = False
+		if context: context.window_manager.addon_settings.ShowLightfieldWindow = False
 
 		# clear the quilt
 		self.device.clear()
@@ -412,10 +405,11 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		LookingGlassAddonLogger.info("Invoking lightfield viewport ...")
 
 		# get the current settings of this scene
-		self.addon_settings = context.scene.addon_settings
+		self.addon_settings_window_manager = context.window_manager.addon_settings
+		self.addon_settings_scene = context.scene.addon_settings
 
 		# update the variable for the current Looking Glass device
-		if int(self.addon_settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+		if int(self.addon_settings_window_manager.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 
 
@@ -480,7 +474,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# HANDLERS FOR OPERATOR CONTROL
 		# ++++++++++++++++++++++++++++++
 		# Create timer event that runs every millisecond to check if the lightfield needs to be updated
-		self.timerEvent = context.window_manager.event_timer_add(0.001, window=context.window)
+		self.timerEvent = context.window_manager.event_timer_add(0.01, window=context.window)
 
 		# add the modal handler
 		context.window_manager.modal_handler_add(self)
@@ -497,51 +491,50 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	# modal operator for controlled redrawing of the lightfield
 	def modal(self, context, event):
 
+		# update the internal variable for the settings
+		self.addon_settings_window_manager = context.window_manager.addon_settings
+		self.addon_settings_scene = context.scene.addon_settings
+
 		# if the active scene was changed
-		if context.scene.addon_settings != self.addon_settings:
-
-			# make sure the "lightfield window" button is set correctly
-			context.scene.addon_settings.ShowLightfieldWindow = self.addon_settings.ShowLightfieldWindow
-
-			# update the internal variable for the settings
-			self.addon_settings = context.scene.addon_settings
+		if context.scene.addon_settings != self.addon_settings_scene:
 
 			# update the lightfield window
 			# Lightfield Viewport
-			if int(self.addon_settings.renderMode) == 0:
-				context.scene.addon_settings.viewport_manual_refresh = True
+			if int(self.addon_settings_window_manager.renderMode) == 0:
+				context.window_manager.addon_settings.viewport_manual_refresh = True
 			# Quilt Viewer
-			elif int(self.addon_settings.renderMode) == 1:
-				LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			elif int(self.addon_settings_window_manager.renderMode) == 1:
+				LookingGlassAddon.update_lightfield_window(int(self.addon_settings_window_manager.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 		# cancel the operator, if the lightfield viewport was deactivated
-		if not self.addon_settings.ShowLightfieldWindow:
+		if not self.addon_settings_window_manager.ShowLightfieldWindow:
+
 			self.cancel(context)
 			return {'FINISHED'}
 
 		# update the variable for the current Looking Glass device
-		if int(self.addon_settings.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
+		if int(self.addon_settings_window_manager.activeDisplay) != -1: self.device = pylio.DeviceManager.get_active()
 
 
 		# Control lightfield redrawing in viewport mode
 		################################################################
 
 		# if the TIMER event for the lightfield rendering is called AND the automatic render mode is active
-		if event.type == 'TIMER':
+		if event.type == 'TIMER' or event.type == 'Z':
 
 			# if something has changed OR the user requested a manual redrawing
-			if self.modal_redraw or (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.scene.addon_settings.viewport_manual_refresh == True)):
+			if self.modal_redraw or (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.window_manager.addon_settings.viewport_manual_refresh == True)):
 
 				# update the viewport settings
 				self.updateViewportSettings(context)
 
-				if (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.scene.addon_settings.viewport_manual_refresh == True)):
+				if (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.window_manager.addon_settings.viewport_manual_refresh == True)):
 
 					# reset time of last depsgraph update
 					self.depsgraph_update_time = 0
 
 					# reset status variable for manual refreshes
-					context.scene.addon_settings.viewport_manual_refresh = False
+					context.window_manager.addon_settings.viewport_manual_refresh = False
 
 					# set to the currently chosen quality
 					self.preset = int(context.scene.addon_settings.quiltPreset)
@@ -557,16 +550,16 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				self.render_view(context)
 
 				# Lightfield Viewport
-				if int(self.addon_settings.renderMode) == 0 and self.lightfield_image:
+				if int(self.addon_settings_window_manager.renderMode) == 0 and self.lightfield_image:
 
 					# update the lightfield displayed on the device
-					LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), self.lightfield_image)
+					LookingGlassAddon.update_lightfield_window(int(self.addon_settings_window_manager.renderMode), self.lightfield_image)
 
 				# Quilt Viewer
-				elif int(self.addon_settings.renderMode) == 1 and LookingGlassAddon.quiltViewerLightfieldImage:
+				elif int(self.addon_settings_window_manager.renderMode) == 1 and LookingGlassAddon.quiltViewerLightfieldImage:
 
 					# update the lightfield displayed on the device
-					LookingGlassAddon.update_lightfield_window(int(self.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+					LookingGlassAddon.update_lightfield_window(int(self.addon_settings_window_manager.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 				else:
 
@@ -586,7 +579,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		if not LookingGlassAddon.RenderInvoked:
 
 			# if automatic live view is activated AND something in the scene has changed
-			if (int(self.addon_settings.renderMode) == 0 and int(self.addon_settings.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
+			if (int(self.addon_settings_window_manager.renderMode) == 0 and int(self.addon_settings_window_manager.lightfieldMode) == 0) and len(depsgraph.updates.values()) > 0:
 				# print("DEPSGRAPH UPDATE: ", depsgraph.updates.values())
 
 				# remember time of last depsgraph update
@@ -596,7 +589,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				self.modal_redraw = True
 
 				# if the "no preview" is activated
-				if self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '0':
+				if self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '0':
 
 					# don't allow an update of the Looking Glass viewport
 					self.modal_redraw = False
@@ -605,25 +598,25 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					pass
 
 				# if the "low resolution preview" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '1':
+				elif self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '1':
 
 					# activate them
 					self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
 
 				# if the "skip views preview I" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '2':
+				elif self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '2':
 
 					# skip every second view during rendering
 					self.skip_views = 2
 
 				# if the "skip views preview II" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '3':
+				elif self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '3':
 
 					# skip every third view during rendering
 					self.skip_views = 3
 
 				# if the "restricted viewcone preview" is activated
-				elif self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4':
+				elif self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '4':
 
 					# only show the center 33% of all views
 					self.restricted_viewcone_limit = int(self.qs[self.preset]["total_views"] / 3)
@@ -635,7 +628,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 					self.skip_views = 1
 
 			# if quilt viewer is active AND an image is selected
-			elif int(self.addon_settings.renderMode) == 1 and scene.addon_settings.quiltImage != None:
+			elif int(self.addon_settings_window_manager.renderMode) == 1 and self.addon_settings_window_manager.quiltImage != None:
 
 				# set status variable
 				changed = False
@@ -656,13 +649,13 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						break
 
 				# are there any changes in the image or color management settings?
-				if LookingGlassAddon.quiltViewAsRender != scene.addon_settings.quiltImage.use_view_as_render or LookingGlassAddon.quiltImageColorSpaceSetting.name != scene.addon_settings.quiltImage.colorspace_settings.name:
+				if LookingGlassAddon.quiltViewAsRender != self.addon_settings_window_manager.quiltImage.use_view_as_render or LookingGlassAddon.quiltImageColorSpaceSetting.name != self.addon_settings_window_manager.quiltImage.colorspace_settings.name:
 
 					# update status variable
 					changed = True
 
 				# update the quilt image, if something had changed
-				if changed == True: scene.addon_settings.quiltImage = scene.addon_settings.quiltImage
+				if changed == True: self.addon_settings_window_manager.quiltImage = self.addon_settings_window_manager.quiltImage
 
 
 	# this function is called as a draw handler to enable the Looking Glass Addon
@@ -696,7 +689,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def updateViewportSettings(self, context):
 
 		# if the settings shall be taken from a Blender viewport
-		if self.addon_settings.viewportMode == 'BLENDER':
+		if self.addon_settings_scene.viewportMode == 'BLENDER':
 
 			# check if the space still exists
 			found = False
@@ -785,7 +778,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	def render_view(self, context):
 
 		# if the quilt must be redrawn
-		if (self.addon_settings.lookingglassCamera or LookingGlassAddon.BlenderViewport):
+		if (self.addon_settings_scene.lookingglassCamera or LookingGlassAddon.BlenderViewport):
 
 			# UPDATE QUILT SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
@@ -829,14 +822,14 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			LookingGlassAddonLogger.debug(" [#] View dimensions: %i x %i" % (self.qs[self.preset]["view_width"], self.qs[self.preset]["view_height"]))
 			LookingGlassAddonLogger.debug(" [#] LightfieldImage views: %i" % len(self.lightfield_image.get_view_data()))
 			LookingGlassAddonLogger.debug(" [#] Using quilt preset: %i (%s, %i x %i)" % (self.preset, self.qs[self.preset]['description'], self.lightfield_image.metadata['quilt_width'], self.lightfield_image.metadata['quilt_height']))
-			LookingGlassAddonLogger.debug(" [#] Preview mode: %s (selected: %s)" % (self.addon_settings.viewport_use_preview_mode, self.addon_settings.lightfield_preview_mode))
+			LookingGlassAddonLogger.debug(" [#] Preview mode: %s (selected: %s)" % (self.addon_settings_window_manager.viewport_use_preview_mode, self.addon_settings_window_manager.lightfield_preview_mode))
 
 
 			# PREPARE VIEW & PROJECTION MATRIX
 			# ++++++++++++++++++++++++++++++++++++++++++++++++
 
 			# select camera that belongs to the view
-			camera = self.addon_settings.lookingglassCamera
+			camera = self.addon_settings_scene.lookingglassCamera
 
 			# PREPARE THE MODELVIEW AND PROJECTION MATRICES
 			# if a camera is selected
@@ -881,7 +874,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						start_test = time.time()
 
 						# if the "skip views preview" is activated AND this view shall be skipped
-						if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '2' or self.addon_settings.lightfield_preview_mode == '3')) and view % self.skip_views:
+						if (self.addon_settings_window_manager.viewport_use_preview_mode and (self.addon_settings_window_manager.lightfield_preview_mode == '2' or self.addon_settings_window_manager.lightfield_preview_mode == '3')) and view % self.skip_views:
 
 							# clear LightfieldView array's color data (so it appears black)
 							self.lightfield_image.views[view]['view'].data[:] = 0
@@ -889,7 +882,7 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 							LookingGlassAddonLogger.debug(" [#] [%i] Clearing skipped view's numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 						# if the "Restricted viewcone preview" is activated AND this view shall be skipped
-						elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
+						elif (self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
 
 							# clear LightfieldView array's color data (so it appears black)
 							self.lightfield_image.views[view]['view'].data[:] = 0
@@ -897,6 +890,13 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 							LookingGlassAddonLogger.debug(" [#] [%i] Clearing skipped view's numpy array took %.3f ms" % (view, (time.time() - start_test) * 1000))
 
 						else:
+
+							# if the lightfield window is not active anymore, stop
+							print("before", context, context.window_manager.addon_settings.ShowLightfieldWindow)
+							if not (context or context.window_manager.addon_settings.ShowLightfieldWindow):
+								continue
+
+							print("after", context, context.window_manager.addon_settings.ShowLightfieldWindow)
 
 							# draw the viewport rendering to the offscreen for the current view
 							self.qs[self.preset]["viewOffscreen"][view].draw_view3d(
@@ -931,11 +931,11 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				for view in range(0, self.qs[self.preset]["total_views"]):
 
 					# if the "skip views preview" is activated AND this view shall be skipped
-					if (self.addon_settings.viewport_use_preview_mode and (self.addon_settings.lightfield_preview_mode == '2' or self.addon_settings.lightfield_preview_mode == '3')) and view % self.skip_views:
+					if (self.addon_settings_window_manager.viewport_use_preview_mode and (self.addon_settings_window_manager.lightfield_preview_mode == '2' or self.addon_settings_window_manager.lightfield_preview_mode == '3')) and view % self.skip_views:
 
 						continue
 					# if the "Restricted viewcone preview" is activated AND this view shall be skipped
-					elif (self.addon_settings.viewport_use_preview_mode and self.addon_settings.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
+					elif (self.addon_settings_window_manager.viewport_use_preview_mode and self.addon_settings_window_manager.lightfield_preview_mode == '4') and (view < self.restricted_viewcone_limit or view > self.qs[self.preset]["total_views"] - self.restricted_viewcone_limit):
 
 						continue
 					else:

@@ -251,7 +251,8 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 		LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
 
 		# load the panel variables
-		bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettings)
+		bpy.types.WindowManager.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettingsWM)
+		bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettingsScene)
 
 		# if the loaded file has a lockfile
 		if LookingGlassAddon.has_lockfile:
@@ -308,13 +309,13 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			LookingGlassAddon.BlenderWindow = bpy.context.window
 
 			# if the lightfield window was active
-			if bpy.context.scene.addon_settings.ShowLightfieldWindow == True:
+			if bpy.context.window_manager.addon_settings.ShowLightfieldWindow == True:
 
 				# for each scene in the file
 				for scene in bpy.context.blend_data.scenes:
 
 					# set the lightfield window button state to 'deactivated'
-				    scene.addon_settings.ShowLightfieldWindow = False
+				    window_manager.addon_settings.ShowLightfieldWindow = False
 
 			# if no Looking Glass was detected AND debug mode is not activated
 			if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
@@ -370,7 +371,8 @@ def register():
 	else:
 
 		# register all basic operators of the addon
-		bpy.utils.register_class(LookingGlassAddonSettings)
+		bpy.utils.register_class(LookingGlassAddonSettingsWM)
+		bpy.utils.register_class(LookingGlassAddonSettingsScene)
 		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_display_list)
 		bpy.utils.register_class(LOOKINGGLASS_OT_lightfield_window)
 		bpy.utils.register_class(LOOKINGGLASS_OT_refresh_lightfield)
@@ -528,7 +530,8 @@ def unregister():
 		bpy.app.handlers.load_post.remove(LookingGlassAddonInitHandler)
 
 		# unregister all classes of the addon
-		bpy.utils.unregister_class(LookingGlassAddonSettings)
+		bpy.utils.unregister_class(LookingGlassAddonSettingsWM)
+		bpy.utils.unregister_class(LookingGlassAddonSettingsScene)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_display_list)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_refresh_lightfield)
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_lightfield_window)

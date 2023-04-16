@@ -238,7 +238,7 @@ class LookingGlassAddonUI:
 		LookingGlassAddonUI.update_render_setting_without_preset(self, context)
 
 		# if a device is selected by the user
-		if int(self.activeDisplay) != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
+		if int(context.window_manager.addon_settings.activeDisplay) != -1: pylio.DeviceManager.set_active(int(context.window_manager.addon_settings.activeDisplay))
 		else: 						 	  pylio.DeviceManager.reset_active()
 
 		# set device variable
@@ -286,7 +286,7 @@ class LookingGlassAddonUI:
 	def update_render_setting_without_preset(self, context):
 
 		# if a device is selected by the user
-		if int(self.activeDisplay) != -1: pylio.DeviceManager.set_active(int(self.activeDisplay))
+		if int(context.window_manager.addon_settings.activeDisplay) != -1: pylio.DeviceManager.set_active(int(context.window_manager.addon_settings.activeDisplay))
 		else: 						 	  pylio.DeviceManager.reset_active()
 
 		# set device variable
@@ -571,32 +571,32 @@ class LookingGlassAddonUI:
 	def update_lightfield_window_settings(self, context):
 
 		# if the lightfield viewport is in quilt viewer mode
-		if context.scene.addon_settings.renderMode == '1':
+		if context.window_manager.addon_settings.renderMode == '1':
 
 			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			LookingGlassAddon.update_lightfield_window(int(context.window_manager.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 
 	# update function for property updates concerning quilt image selection
 	def update_quilt_selection(self, context):
 
 		# if a quilt was selected
-		if context.scene.addon_settings.quiltImage != None:
+		if context.window_manager.addon_settings.quiltImage != None:
 
 			# update the setting observers
-			LookingGlassAddon.quiltViewAsRender = context.scene.addon_settings.quiltImage.use_view_as_render
-			LookingGlassAddon.quiltImageColorSpaceSetting = context.scene.addon_settings.quiltImage.colorspace_settings
+			LookingGlassAddon.quiltViewAsRender = context.window_manager.addon_settings.quiltImage.use_view_as_render
+			LookingGlassAddon.quiltImageColorSpaceSetting = context.window_manager.addon_settings.quiltImage.colorspace_settings
 
 			# if no pixel array exists
 			if LookingGlassAddon.quiltPixels is None:
 
 				# create a numpy array for the pixel data
-				LookingGlassAddon.quiltPixels = np.empty(len(context.scene.addon_settings.quiltImage.pixels), dtype=np.float32)
+				LookingGlassAddon.quiltPixels = np.empty(len(context.window_manager.addon_settings.quiltImage.pixels), dtype=np.float32)
 
 			else:
 
 				# resize the numpy array
-				LookingGlassAddon.quiltPixels.resize(len(context.scene.addon_settings.quiltImage.pixels), refcheck=False)
+				LookingGlassAddon.quiltPixels.resize(len(context.window_manager.addon_settings.quiltImage.pixels), refcheck=False)
 
 
 
@@ -612,7 +612,7 @@ class LookingGlassAddonUI:
 			#
 
 			# if the image has the "view as render" option inactive
-			if context.scene.addon_settings.quiltImage.use_view_as_render == False:
+			if context.window_manager.addon_settings.quiltImage.use_view_as_render == False:
 
 				# save the original settings
 				tempViewTransform = context.scene.view_settings.view_transform
@@ -643,7 +643,7 @@ class LookingGlassAddonUI:
 			context.scene.render.image_settings.color_mode = 'RGBA'
 
 			# save the image to the temporary directory
-			context.scene.addon_settings.quiltImage.save_render(filepath=tempFilepath, scene=context.scene)
+			context.window_manager.addon_settings.quiltImage.save_render(filepath=tempFilepath, scene=context.scene)
 
 			# restore output render settings
 			context.scene.render.use_render_cache = tempUseRenderCache
@@ -652,7 +652,7 @@ class LookingGlassAddonUI:
 			context.scene.render.image_settings.color_mode = tempColorMode
 
 			# if the image has the "view as render" option inactive
-			if context.scene.addon_settings.quiltImage.use_view_as_render == False:
+			if context.window_manager.addon_settings.quiltImage.use_view_as_render == False:
 
 				# restore the original settings
 				context.scene.view_settings.view_transform = tempViewTransform
@@ -675,8 +675,8 @@ class LookingGlassAddonUI:
 			#		for later
 			#
 			# # copy pixel data to the array and a BGL Buffer
-			# context.scene.addon_settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
-			# LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.scene.addon_settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
+			# context.window_manager.addon_settings.quiltImage.pixels.foreach_get(LookingGlassAddon.quiltPixels)
+			# LookingGlassAddon.quiltTextureBuffer = bgl.Buffer(bgl.GL_FLOAT, len(context.window_manager.addon_settings.quiltImage.pixels), LookingGlassAddon.quiltPixels)
 
 			# delete the temporary Blender image
 			bpy.data.images.remove(tempImage)
@@ -691,7 +691,7 @@ class LookingGlassAddonUI:
 			quiltPixels = quiltPixels.astype(dtype=np.uint8)
 
 			# if no quilt viewer LightfieldImage is selected
-			if context.scene.addon_settings.quiltImage is None:
+			if context.window_manager.addon_settings.quiltImage is None:
 
 				# free the view data of the lightfield image, if one was loaded
 				if LookingGlassAddon.quiltViewerLightfieldImage:
@@ -699,10 +699,10 @@ class LookingGlassAddonUI:
 					LookingGlassAddon.quiltViewerLightfieldImage = None
 
 			# create a LightfieldImage from the selected quilt
-			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.scene.addon_settings.quiltImage.size[0], context.scene.addon_settings.quiltImage.size[1], context.scene.addon_settings.quiltImage.channels, quilt_name = context.scene.addon_settings.quiltImage.name)
+			LookingGlassAddon.quiltViewerLightfieldImage = pylio.LightfieldImage.from_buffer(pylio.LookingGlassQuilt, quiltPixels, context.window_manager.addon_settings.quiltImage.size[0], context.window_manager.addon_settings.quiltImage.size[1], context.window_manager.addon_settings.quiltImage.channels, quilt_name = context.window_manager.addon_settings.quiltImage.name)
 
 			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			LookingGlassAddon.update_lightfield_window(int(context.window_manager.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 		# if the quilt selection was deleted
 		else:
@@ -713,14 +713,14 @@ class LookingGlassAddonUI:
 				LookingGlassAddon.quiltViewerLightfieldImage = None
 
 			# update the lightfield displayed on the device
-			LookingGlassAddon.update_lightfield_window(int(context.scene.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
+			LookingGlassAddon.update_lightfield_window(int(context.window_manager.addon_settings.renderMode), LookingGlassAddon.quiltViewerLightfieldImage)
 
 			# reset the variables
 			LookingGlassAddon.quiltPixels = None
 
 
-# Preferences pane for this Addon in the Blender preferences
-class LookingGlassAddonSettings(bpy.types.PropertyGroup):
+# Properties in the preferences pane for this addon - Global values
+class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 
 	# PANEL: GENERAL
 	# a list of connected Looking Glass displays
@@ -737,6 +737,68 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 											default = False,
 											)
 
+	# PANEL: LIGHTFIELD WINDOW SETTINGS
+	# UI elements for user control
+	renderMode: bpy.props.EnumProperty(
+										items = [('0', 'Viewport', 'Viewport rendering of the current scene within the Looking Glass', 'VIEW3D', 0),
+												 ('1', 'Quilt Viewer', 'Display a prerendered quilt image in the Looking Glass', 'RENDER_RESULT', 1)],
+										default='0',
+										name="Render Mode",
+										update=LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+
+	# Lightfield Viewport Modes
+	lightfieldMode: bpy.props.EnumProperty(
+										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the lightfield viewport'),
+												 ('1', 'Refresh Mode: Manual', 'Refresh the lightfield viewport manually')],
+										default='0',
+										name="Lightfield Viewport Modes",
+										update=LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+
+	# Lightfield Preview Resolution in Auto lightfield mode
+	lightfield_preview_mode: bpy.props.EnumProperty(
+										items = [('0', 'No Preview', 'Lightfield window updates are performed after (not during) user interactions.'),
+												 ('1', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
+												 ('2', 'Skipped-views Preview I', 'Skip every second view'),
+												 ('3', 'Skipped-views Preview II', 'Skip every third view'),
+												 ('4', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
+												 ],
+										default='0',
+										name="Lightfield Preview Mode",
+										update=LookingGlassAddonUI.update_lightfield_window_settings,
+										)
+
+	# pointer property that can be used to load a pre-rendered quilt image
+	quiltImage: bpy.props.PointerProperty(
+										name="Quilt",
+										type=bpy.types.Image,
+										description = "Quilt image for display in the Looking Glass",
+										update = LookingGlassAddonUI.update_quilt_selection,
+										)
+
+
+	viewport_use_preview_mode: bpy.props.BoolProperty(
+										name="Use Preview Mode",
+										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed)",
+										default = True,
+										)
+
+	viewport_manual_refresh: bpy.props.BoolProperty(
+										name="Refresh Looking Glass",
+										description="Redraw the lightfield in the Looking Glass",
+										default = False,
+										)
+
+
+
+
+
+# Properties in the preferences pane for this addon - Scene specific values
+class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
+
+	# PANEL: GENERAL
+	# a list of quilt presets
 	quiltPreset: bpy.props.EnumProperty(
 										items = LookingGlassAddonUI.quilt_preset_list_callback,
 										name="View Resolution",
@@ -857,80 +919,6 @@ class LookingGlassAddonSettings(bpy.types.PropertyGroup):
 										description="Press this button or the 'ESC' key to stop the quilt rendering.",
 										default = False,
 										)
-
-
-	# PANEL: LIGHTFIELD WINDOW SETTINGS
-	# UI elements for user control
-	renderMode: bpy.props.EnumProperty(
-										items = [('0', 'Viewport', 'Viewport rendering of the current scene within the Looking Glass', 'VIEW3D', 0),
-												 ('1', 'Quilt Viewer', 'Display a prerendered quilt image in the Looking Glass', 'RENDER_RESULT', 1)],
-										default='0',
-										name="Render Mode",
-										update=LookingGlassAddonUI.update_lightfield_window_settings,
-										)
-
-	# Lightfield Viewport Modes
-	lightfieldMode: bpy.props.EnumProperty(
-										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the lightfield viewport'),
-												 ('1', 'Refresh Mode: Manual', 'Refresh the lightfield viewport manually')],
-										default='0',
-										name="Lightfield Viewport Modes",
-										update=LookingGlassAddonUI.update_lightfield_window_settings,
-										)
-
-	# Lightfield Preview Resolution in Auto lightfield mode
-	lightfield_preview_mode: bpy.props.EnumProperty(
-										items = [('0', 'No Preview', 'Lightfield window updates are performed after (not during) user interactions.'),
-												 ('1', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
-												 ('2', 'Skipped-views Preview I', 'Skip every second view'),
-												 ('3', 'Skipped-views Preview II', 'Skip every third view'),
-												 ('4', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
-												 ],
-										default='0',
-										name="Lightfield Preview Mode",
-										update=LookingGlassAddonUI.update_lightfield_window_settings,
-										)
-
-	# pointer property that can be used to load a pre-rendered quilt image
-	quiltImage: bpy.props.PointerProperty(
-										name="Quilt",
-										type=bpy.types.Image,
-										description = "Quilt image for display in the Looking Glass",
-										update = LookingGlassAddonUI.update_quilt_selection,
-										)
-
-
-	viewport_use_preview_mode: bpy.props.BoolProperty(
-										name="Use Preview Mode",
-										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed)",
-										default = True,
-										)
-
-	viewport_manual_refresh: bpy.props.BoolProperty(
-										name="Refresh Looking Glass",
-										description="Redraw the lightfield in the Looking Glass",
-										default = False,
-										)
-
-	viewport_show_cursor: bpy.props.BoolProperty(
-										name="Lightfield Cursor",
-										description="If enabled, a lightfield mouse cursor is rendered in the lightfield window",
-										default = True,
-										)
-
-	viewport_cursor_size: bpy.props.FloatProperty(
-										name="Lightfield Cursor Size",
-										description="The size of the lightfield mouse cursor in the lightfield window",
-										default = 0.05,
-										min = 0.0,
-										max = 0.1,
-										precision = 3,
-										step = 1,
-										)
-
-	viewport_cursor_color: bpy.props.FloatVectorProperty(name="Lightfield Cursor Color",
-									subtype='COLOR',
-									default=[1.0, 0.627451, 0.156863])
 
 
 
@@ -1227,10 +1215,10 @@ class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 	def execute(self, context):
 
 		# set the property to the correct value
-		context.scene.addon_settings.ShowLightfieldWindow = (not context.scene.addon_settings.ShowLightfieldWindow)
+		context.window_manager.addon_settings.ShowLightfieldWindow = (not context.window_manager.addon_settings.ShowLightfieldWindow)
 
 		# if the bool property was set to True
-		if context.scene.addon_settings.ShowLightfieldWindow == True:
+		if context.window_manager.addon_settings.ShowLightfieldWindow == True:
 
 			# assign the current viewport for the shading & overlay settings
 			bpy.ops.lookingglass.blender_viewport_assign('EXEC_DEFAULT')
@@ -1259,14 +1247,14 @@ class LOOKINGGLASS_PT_panel_general(bpy.types.Panel):
 		row_orientation = column.row(align = True)
 		column_1 = row_orientation.column(align=True)
 		row_orientationa = column_1.row(align = True)
-		row_orientationa.prop(context.scene.addon_settings, "activeDisplay", text="")
+		row_orientationa.prop(context.window_manager.addon_settings, "activeDisplay", text="")
 		row_orientationa.operator("lookingglass.refresh_display_list", text="", icon='FILE_REFRESH')
 		row_orientation.separator()
 
 		# Lightfield window button
 		column_2 = row_orientation.column(align=True)
 		row_orientationb = column_2.row(align = True)
-		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.scene.addon_settings.ShowLightfieldWindow)
+		row_orientationb.operator("lookingglass.lightfield_window", text="", icon='WINDOW', depress=context.window_manager.addon_settings.ShowLightfieldWindow)
 
 		# Resolution selection of the quilt views
 		row_preset = column.row()
@@ -1531,7 +1519,7 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 	def execute(self, context):
 
 		# refresh the Looking Glass
-		context.scene.addon_settings.viewport_manual_refresh = True
+		context.window_manager.addon_settings.viewport_manual_refresh = True
 
 		return {'FINISHED'}
 
@@ -1548,7 +1536,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.scene.addon_settings.activeDisplay) == -1 or context.scene.addon_settings.ShowLightfieldWindow == False:
+		if int(context.window_manager.addon_settings.activeDisplay) == -1 or context.window_manager.addon_settings.ShowLightfieldWindow == False:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1567,45 +1555,45 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 		# TABS to swap between "live preview" and a "loaded quilt image"
 		row = layout.row()
-		row.prop(context.scene.addon_settings, "renderMode", expand=True)
+		row.prop(context.window_manager.addon_settings, "renderMode", expand=True)
 
 		# define a column of UI elements
 		column = layout.column(align = True)
 		column.separator()
 
 		# If no LookingGlass is selected
-		if int(context.scene.addon_settings.activeDisplay) == -1:
+		if int(context.window_manager.addon_settings.activeDisplay) == -1:
 
 			# ... then disable all UI elements except for the drop down menu and the refresh button
 			column.enabled = False
 			row.enabled = False
 
 		# if the lightfield window is in viewport mode
-		if context.scene.addon_settings.renderMode == '0':
+		if context.window_manager.addon_settings.renderMode == '0':
 
 			# Lightfield rendering mode & refresh button
 			row_orientation = column.row()
 			row_orientation.label(text="Lightfield Viewport Modes:")
 			row_preset = column.row()
-			row_preset.prop(context.scene.addon_settings, "lightfieldMode", text="")
+			row_preset.prop(context.window_manager.addon_settings, "lightfieldMode", text="")
 			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
 
 			# Preview settings
 			row_output = column.row(align = True)
-			row_output.prop(context.scene.addon_settings, "lightfield_preview_mode", text="")
+			row_output.prop(context.window_manager.addon_settings, "lightfield_preview_mode", text="")
 			row_output.separator()
-			row_output.prop(context.scene.addon_settings, "viewport_use_preview_mode", text="", icon='IMAGE_ZDEPTH')
+			row_output.prop(context.window_manager.addon_settings, "viewport_use_preview_mode", text="", icon='IMAGE_ZDEPTH')
 
 
 		# if the lightfield window is in quilt viewer mode
-		elif context.scene.addon_settings.renderMode == '1':
+		elif context.window_manager.addon_settings.renderMode == '1':
 
 			# display all settings for the quilt view mode
 			row = column.row(align = True)
 			row.label(text="Select a Quilt Image to Display:")
 
 			row = column.row(align = True)
-			row.template_ID(context.scene.addon_settings, "quiltImage", open="image.open")
+			row.template_ID(context.window_manager.addon_settings, "quiltImage", open="image.open")
 
 
 
@@ -1646,7 +1634,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 	def poll(self, context):
 
 		# if no Looking Glass is selected OR no lightfield window exists
-		if int(context.scene.addon_settings.activeDisplay) == -1 or context.scene.addon_settings.ShowLightfieldWindow == False:
+		if int(context.window_manager.addon_settings.activeDisplay) == -1 or context.window_manager.addon_settings.ShowLightfieldWindow == False:
 
 			# this panel is not needed, so return False:
 			# the panel will not be drawn
@@ -1655,14 +1643,14 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 		else:
 
 			# if the render mode is "Live View"
-			if int(context.scene.addon_settings.renderMode) == 0:
+			if int(context.window_manager.addon_settings.renderMode) == 0:
 
 				# this panel is  needed, so return True:
 				# the panel will be drawn
 				return True
 
 			# else, if the render mode is "Quilt view"
-			elif int(context.scene.addon_settings.renderMode) == 1:
+			elif int(context.window_manager.addon_settings.renderMode) == 1:
 
 				# this panel is not needed, so return False:
 				# the panel will NOT be drawn
@@ -1677,7 +1665,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 		column = layout.column(align = True)
 
 		# if the automatic render mode is active
-		if int(context.scene.addon_settings.renderMode) == 0:
+		if int(context.window_manager.addon_settings.renderMode) == 0:
 
 			# TABS to swap between "Custom Viewport" and a "Blender Viewport"
 			row = column.row(align = True)
