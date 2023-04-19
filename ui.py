@@ -577,16 +577,25 @@ class LookingGlassAddonUI:
 		camera = bpy.context.scene.addon_settings.lookingglassCamera
 		if camera:
 
-			# make sure the new value is within the clipping range
-			if value < camera.data.clip_start:
-				value = camera.data.clip_start
-			elif value > camera.data.clip_end:
-				value = camera.data.clip_end
+			# if the clipping planes are pinned to the focal plane
+			if bpy.context.scene.addon_settings.lockClippingPlanes:
+
+				# make sure the new value is within the clipping range
+				camera.data.clip_start += (value - self['focalPlane'])
+				camera.data.clip_end += (value - self['focalPlane'])
+
+			else:
+
+				# make sure the new value is within the clipping range
+				if value < camera.data.clip_start:
+					value = camera.data.clip_start
+				elif value > camera.data.clip_end:
+					value = camera.data.clip_end
 
 			# if the focal plane is sync'ed with the camera focus distance
 			if bpy.context.scene.addon_settings.toggleFocalSync:
 				camera.data.dof.focus_distance = value
-			
+
 			# set the focal plane value
 			self['focalPlane'] = value
 
@@ -951,6 +960,12 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										description="If enabled, the focus distance (depth of field) and focal plane values of the Looking Glass Camera will be kept in synchronization",
 										default = True,
 										update = LookingGlassAddonUI.update_camera_setting,
+										)
+
+	lockClippingPlanes: bpy.props.BoolProperty(
+										name="Lock Clipping Planes to Focal Plane",
+										description="If enabled, the clipping planes will move with the focal plane",
+										default = False,
 										)
 
 
@@ -1449,8 +1464,10 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 			column.separator()
 			row_clip_start = column.row(align = True)
 			row_clip_start.prop(context.scene.addon_settings, "clip_start")
+			row_clip_start.prop(context.scene.addon_settings, "lockClippingPlanes", text="", icon='PINNED')
 			row_clip_end = column.row(align = True)
 			row_clip_end.prop(context.scene.addon_settings, "clip_end")
+			row_clip_end.prop(context.scene.addon_settings, "lockClippingPlanes", text="", icon='PINNED')
 			row_focal_plane = column.row(align = True)
 			row_focal_plane.prop(context.scene.addon_settings, "focalPlane")
 			row_focal_plane.prop(context.scene.addon_settings, "toggleFocalSync", text="", icon='LINKED')
