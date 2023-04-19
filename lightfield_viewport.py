@@ -94,6 +94,12 @@ class ContextOverride:
 	# set up the camera for each view and the shader of the rendering object
 	def setupVirtualCameraForView(self, view, total_views, view_cone, aspect, viewMatrix, projectionMatrix):
 
+		# get focal plane distance depending on synchronization mode
+		if self.__addon_settings_scene.toggleFocalSync and self.__addon_settings_scene.lookingglassCamera:
+			focalPlane = self.__addon_settings_scene.lookingglassCamera.data.dof.focus_distance
+		else:
+			focalPlane = self.__addon_settings_scene.focalPlane
+
 		# The field of view set by the camera
 		# NOTE 1: - the Looking Glass Factory documentation suggests to use a FOV of 14°. We use the focal length of the Blender camera instead.
 		# NOTE 2: - we take the angle directly from the projection matrix
@@ -101,7 +107,7 @@ class ContextOverride:
 
 		# calculate cameraSize from its distance to the focal plane and the FOV
 		# NOTE: - we take an arbitrary distance of 5 m (we could also use the focal distance of the camera, but might be confusing)
-		cameraDistance = self.__addon_settings_scene.focalPlane
+		cameraDistance = focalPlane
 		cameraSize = cameraDistance * tan(fov / 2)
 
 		# start at viewCone * 0.5 and go up to -viewCone * 0.5

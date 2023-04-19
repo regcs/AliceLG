@@ -286,8 +286,8 @@ class LookingGlassAddonUI:
 	def update_render_setting_without_preset(self, context):
 
 		# if a device is selected by the user
-		if int(context.window_manager.addon_settings.activeDisplay) != -1: pylio.DeviceManager.set_active(int(context.window_manager.addon_settings.activeDisplay))
-		else: 						 	  pylio.DeviceManager.reset_active()
+		if int(context.window_manager.addon_settings.activeDisplay) != -1:	pylio.DeviceManager.set_active(int(context.window_manager.addon_settings.activeDisplay))
+		else:						 										pylio.DeviceManager.reset_active()
 
 		# set device variable
 		device = None
@@ -442,6 +442,28 @@ class LookingGlassAddonUI:
 		return None
 
 
+	# Application handler that continously checks for changes of the depsgraph
+	def synchronize_active_camera(scene, depsgraph):
+
+		# if the active camera changed AND the active camera is not the "_quilt_render_cam"
+		if scene.addon_settings.lookingglassCamera != scene.camera and scene.camera.name != "_quilt_render_cam":
+			scene.addon_settings.lookingglassCamera = scene.camera
+
+    # update function for property updates concerning camera selection
+	def update_camera_synchronization(self, context):
+
+		# if the synchronization is active, set the lookingglass camera to the active camera
+		if context.scene.addon_settings.toggleCameraSync:
+
+			if not LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.depsgraph_update_post: bpy.app.handlers.depsgraph_update_post.append(LookingGlassAddonUI.synchronize_active_camera)
+			if not LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.frame_change_post: bpy.app.handlers.frame_change_post.append(LookingGlassAddonUI.synchronize_active_camera)
+		
+		elif not context.scene.addon_settings.toggleCameraSync:
+
+			if LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.depsgraph_update_post: bpy.app.handlers.depsgraph_update_post.remove(LookingGlassAddonUI.synchronize_active_camera)
+			if LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.frame_change_post: bpy.app.handlers.frame_change_post.remove(LookingGlassAddonUI.synchronize_active_camera)
+
+
     # update function for property updates concerning camera selection
 	def update_camera_selection(self, context):
 
@@ -455,30 +477,22 @@ class LookingGlassAddonUI:
 		# if a camera was selected
 		if context.scene.addon_settings.lookingglassCamera != None:
 
-			# # if the frustum drawing operator is not invoked, but should be
-			# if LookingGlassAddon.FrustumInitialized == False and context.scene.addon_settings.showFrustum == True and LookingGlassAddon.background == False:
-			# 	bpy.ops.render.frustum('INVOKE_DEFAULT')
+			# if this camera becomes a Looking Glass camera for the first time
+			if not context.scene.addon_settings.lookingglassCamera.data.is_lightfield:
 
-			# apply the settings to the selected camera object
-			camera = context.scene.addon_settings.lookingglassCamera
+				# adjust the clipping values to default values if necessary
+				if bpy.context.scene.addon_settings.clip_start <= 0.11:
+					bpy.context.scene.addon_settings.clip_start = 4.2
 
-			# keep clip end behind the clip start
-			if context.scene.addon_settings.clip_end < context.scene.addon_settings.clip_start:
-				context.scene.addon_settings.clip_end = context.scene.addon_settings.clip_start
+				if bpy.context.scene.addon_settings.clip_end >= 99:
+					bpy.context.scene.addon_settings.clip_end = 6.5
 
-			# keep clip start in front of the clip end
-			if context.scene.addon_settings.clip_start > context.scene.addon_settings.clip_end:
-				context.scene.addon_settings.clip_start = context.scene.addon_settings.clip_end
+				if not (bpy.context.scene.addon_settings.clip_start < bpy.context.scene.addon_settings.focalPlane < bpy.context.scene.addon_settings.clip_end):
+					bpy.context.scene.addon_settings.focalPlane = 5
+				
+				# set flag
+				context.scene.addon_settings.lookingglassCamera.data.is_lightfield = True
 
-			# keep focal plane within the clipping volume
-			if context.scene.addon_settings.focalPlane < context.scene.addon_settings.clip_start:
-				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_start
-			elif context.scene.addon_settings.focalPlane > context.scene.addon_settings.clip_end:
-				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_end
-
-			# apply the clipping values to the selected camera
-			camera.data.clip_start = context.scene.addon_settings.clip_start
-			camera.data.clip_end = context.scene.addon_settings.clip_end
 
 			# update render settings
 			LookingGlassAddonUI.update_render_setting_without_preset(self, context)
@@ -486,6 +500,8 @@ class LookingGlassAddonUI:
 		return None
 
 
+	# TODO: This function was previously used to keep the focal plane in the clipping range.
+	#		It's left here in case it may be of further use later.
 	# update function for property updates concerning camera clipping in the livew view
 	def update_camera_setting(self, context):
 
@@ -495,29 +511,84 @@ class LookingGlassAddonUI:
 			# apply the settings to the selected camera object
 			camera = context.scene.addon_settings.lookingglassCamera
 
-
-			# TODO: Check if this is really helpful. Maybe remove later or refine.
-			# keep clip end behind the clip start
-			if context.scene.addon_settings.clip_end < context.scene.addon_settings.clip_start:
-				context.scene.addon_settings.clip_end = context.scene.addon_settings.clip_start
-
-			# keep clip start in front of the clip end
-			if context.scene.addon_settings.clip_start > context.scene.addon_settings.clip_end:
-				context.scene.addon_settings.clip_start = context.scene.addon_settings.clip_end
-
-			# keep focal plane within the clipping volume
-			if context.scene.addon_settings.focalPlane < context.scene.addon_settings.clip_start:
-				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_start
-			elif context.scene.addon_settings.focalPlane > context.scene.addon_settings.clip_end:
-				context.scene.addon_settings.focalPlane = context.scene.addon_settings.clip_end
-
-
-
-			# apply the clipping values to the selected camera
-			camera.data.clip_start = context.scene.addon_settings.clip_start
-			camera.data.clip_end = context.scene.addon_settings.clip_end
-
 		return None
+
+	# getter for the (camera) clipping start
+	def clip_start_getter(self):
+
+		# display the clipping settings
+		camera = bpy.context.scene.addon_settings.lookingglassCamera
+		if camera:
+			return camera.data.clip_start
+
+	# setter for the (camera) clipping start
+	def clip_start_setter(self, value):
+
+		# display the clipping settings
+		camera = bpy.context.scene.addon_settings.lookingglassCamera
+		if camera:
+
+			# update the clipping value
+			camera.data.clip_start = value
+
+			# make sure the focal plane stays within the clipping range
+			if bpy.context.scene.addon_settings.focalPlane < camera.data.clip_start:
+				bpy.context.scene.addon_settings.focalPlane = value
+
+	# getter for the (camera) clipping end
+	def clip_end_getter(self):
+
+		# display the clipping settings
+		camera = bpy.context.scene.addon_settings.lookingglassCamera
+		if camera:
+			return camera.data.clip_end
+
+	# setter for the (camera) clipping end
+	def clip_end_setter(self, value):
+
+		# display the clipping settings
+		camera = bpy.context.scene.addon_settings.lookingglassCamera
+		if camera:
+
+			# update the clipping value
+			camera.data.clip_end = value
+
+			# make sure the focal plane stays within the clipping range
+			if bpy.context.scene.addon_settings.focalPlane > camera.data.clip_end:
+				bpy.context.scene.addon_settings.focalPlane = value
+
+	# getter for the focalPlane
+	def focal_plane_getter(self):
+
+		# if the focal plane is sync'ed with the camera focus distance
+		if bpy.context.scene.addon_settings.toggleFocalSync:
+			# display the clipping settings
+			camera = bpy.context.scene.addon_settings.lookingglassCamera
+			if camera:
+				return camera.data.dof.focus_distance
+		
+		else:
+			return self.get('focalPlane', 5)
+
+	# setter for the focalPlane
+	def focal_plane_setter(self, value):
+
+		# display the clipping settings
+		camera = bpy.context.scene.addon_settings.lookingglassCamera
+		if camera:
+
+			# make sure the new value is within the clipping range
+			if value < camera.data.clip_start:
+				value = camera.data.clip_start
+			elif value > camera.data.clip_end:
+				value = camera.data.clip_end
+
+			# if the focal plane is sync'ed with the camera focus distance
+			if bpy.context.scene.addon_settings.toggleFocalSync:
+				camera.data.dof.focus_distance = value
+			
+			# set the focal plane value
+			self['focalPlane'] = value
 
 
 
@@ -814,7 +885,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										description = "Select a camera, which defines the view for your Looking Glass or quilt image",
 										poll = LookingGlassAddonUI.camera_selection_poll,
 										update = LookingGlassAddonUI.update_camera_selection,
-										#options = {'ANIMATABLE'}
+										# options = {'ANIMATABLE'}
 										)
 
 	showFocalPlane: bpy.props.BoolProperty(
@@ -829,6 +900,13 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										default = True,
 										)
 
+	toggleCameraSync: bpy.props.BoolProperty(
+										name="Synchronize with Active Camera",
+										description="If enabled, the active camera will always be used as the Looking Glass camera (e.g., useful with camera markers)",
+										default = False,
+										update = LookingGlassAddonUI.update_camera_synchronization,
+										)
+
 	clip_start: bpy.props.FloatProperty(
 										name = "Clip Start",
 										default = 4.2,
@@ -838,6 +916,8 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										step = 10,
 										description = "Far clipping plane of the Looking Glass frustum.",
 										update = LookingGlassAddonUI.update_camera_setting,
+										get = LookingGlassAddonUI.clip_start_getter,
+										set = LookingGlassAddonUI.clip_start_setter,
 										)
 
 	clip_end: bpy.props.FloatProperty(
@@ -848,6 +928,8 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										step = 10,
 										description = "Far clipping plane of the Looking Glass frustum.",
 										update = LookingGlassAddonUI.update_camera_setting,
+										get = LookingGlassAddonUI.clip_end_getter,
+										set = LookingGlassAddonUI.clip_end_setter,
 										)
 
 	# the virtual distance of the plane, which represents the focal plane of the Looking Glass
@@ -855,9 +937,19 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										name = "Focal Plane",
 										default = 5,
 										min = 0,
-										precision = 1,
+										precision = 2,
 										step = 10,
+										unit = "LENGTH",
 										description = "Virtual distance to the focal plane. (This plane is directly mapped to the LCD display of the Looking Glass)",
+										update = LookingGlassAddonUI.update_camera_setting,
+										get = LookingGlassAddonUI.focal_plane_getter,
+										set = LookingGlassAddonUI.focal_plane_setter,
+										)
+
+	toggleFocalSync: bpy.props.BoolProperty(
+										name="Synchronize with Camera Focus Distance",
+										description="If enabled, the focus distance (depth of field) and focal plane values of the Looking Glass Camera will be kept in synchronization",
+										default = True,
 										update = LookingGlassAddonUI.update_camera_setting,
 										)
 
@@ -1300,6 +1392,7 @@ class LOOKINGGLASS_OT_add_camera(bpy.types.Operator):
 		camera.data.angle_y = radians(14)
 		camera.data.clip_start = context.scene.addon_settings.clip_start
 		camera.data.clip_end = context.scene.addon_settings.clip_end
+		camera.data.dof.focus_distance = context.scene.addon_settings.focalPlane
 
 		# if currently no camera is selected
 		if context.scene.addon_settings.lookingglassCamera == None:
@@ -1333,30 +1426,49 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		# define a column of UI elements
 		column = layout.column(align = True)
 
-		row_orientation = column.row(align = True)
-		row_orientation.prop(context.scene.addon_settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
-		row_orientation.operator("object.add_lookingglass_camera", text="", icon='ADD')
-		row_orientation.separator()
-		row_orientation.prop(context.scene.addon_settings, "showFrustum", text="", icon='MESH_CUBE')
-		row_orientation.prop(context.scene.addon_settings, "showFocalPlane", text="", icon='MESH_PLANE')
+		# Camera selection
+		row_camera = column.row(align = True)
+		column_1 = row_camera.column(align=True)
+		row_camera_a = column_1.row(align = True)
+		row_camera_a.enabled = (not context.scene.addon_settings.toggleCameraSync)
+		row_camera_a.prop(context.scene.addon_settings, "lookingglassCamera", icon='VIEW_CAMERA', text="")
+		row_camera_a.operator("object.add_lookingglass_camera", text="", icon='ADD')
+		row_camera_a.separator()
 
-		column.separator()
+		# Camera options
+		column_2 = row_camera.column(align=True)
+		row_camera_b = column_2.row(align = True)
+		row_camera_b.prop(context.scene.addon_settings, "showFrustum", text="", icon='MESH_CUBE')
+		row_camera_b.prop(context.scene.addon_settings, "showFocalPlane", text="", icon='MESH_PLANE')
+		row_camera_b.prop(context.scene.addon_settings, "toggleCameraSync", text="", icon='LINKED')
 
 		# display the clipping settings
-		row_preset = column.row(align = True)
-		row_preset.prop(context.scene.addon_settings, "clip_start")
-		row_output = column.row(align = True)
-		row_output.prop(context.scene.addon_settings, "clip_end")
-		row_render_still = column.row(align = True)
-		row_render_still.prop(context.scene.addon_settings, "focalPlane")
+		camera = context.scene.addon_settings.lookingglassCamera
+		if camera:
 
-		# if no camera is Selected
-		if context.scene.addon_settings.lookingglassCamera == None:
+			column.separator()
+			row_clip_start = column.row(align = True)
+			row_clip_start.prop(context.scene.addon_settings, "clip_start")
+			row_clip_end = column.row(align = True)
+			row_clip_end.prop(context.scene.addon_settings, "clip_end")
+			row_focal_plane = column.row(align = True)
+			row_focal_plane.prop(context.scene.addon_settings, "focalPlane")
+			row_focal_plane.prop(context.scene.addon_settings, "toggleFocalSync", text="", icon='LINKED')
 
-			# disable clipping and focal plane modifieres
-			row_preset.enabled = False
-			row_output.enabled = False
-			row_render_still.enabled = False
+			# row_preset = column.row(align = True)
+			# row_preset.prop(context.scene.addon_settings, "clip_start")
+			# row_output = column.row(align = True)
+			# row_output.prop(context.scene.addon_settings, "clip_end")
+			# row_render_still = column.row(align = True)
+			# row_render_still.prop(context.scene.addon_settings, "focalPlane")
+
+		# # if no camera is Selected
+		# if context.scene.addon_settings.lookingglassCamera == None:
+
+		# 	# disable clipping and focal plane modifieres
+		# 	row_clip_start.enabled = False
+		# 	row_clip_end.enabled = False
+		# 	row_focal_plane.enabled = False
 
 # ------------- The Render Settings Panel ----------------
 # the panel for the camera settings

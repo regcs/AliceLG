@@ -232,6 +232,8 @@ else:
 
 
 
+
+
 # ----------------- ADDON INITIALIZATION --------------------
 @persistent
 def LookingGlassAddonInitHandler(dummy1, dummy2):
@@ -247,12 +249,18 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 	else:
 
-		# check if lockfile exists and set status variable
-		LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
-
-		# load the panel variables
+		# ------------ BPY EXTENSIONS ---------------
+		# EXTENSION OF BPY TYPES BY USEFULL PROPERTIES
+		# Addon settings
 		bpy.types.WindowManager.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettingsWM)
 		bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettingsScene)
+
+		# Camera settings
+		bpy.types.Camera.is_lightfield = bpy.props.BoolProperty(default=False)
+
+		# ------------ INITIALIZATION ---------------
+		# check if lockfile exists and set status variable
+		LookingGlassAddon.has_lockfile = os.path.exists(bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock"))
 
 		# if the loaded file has a lockfile
 		if LookingGlassAddon.has_lockfile:
@@ -323,6 +331,12 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 				# set the "use device" checkbox in quilt setup to False
 				# (because there is no device we could take the settings from)
 				bpy.context.scene.addon_settings.render_use_device = False
+			
+			# update the Looking Glass camera synchronization
+			# NOTE: Looks weird, but is a way to trigger update function of the property, 
+			#		which sets the app handlers if required. If not done, app handlers may stay
+			#		inactive when a file was loaded although they should be active.
+			bpy.context.scene.addon_settings.toggleCameraSync = bpy.context.scene.addon_settings.toggleCameraSync
 
 
 

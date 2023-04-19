@@ -262,6 +262,18 @@ class RenderJob:
 	# setup the camera (system) for rendering
 	def setup_camera(self):
 
+		# check, if there is an active camera marker in this frame	
+		marker_camera_found = False
+		marker_cameras = [marker for marker in bpy.context.scene.timeline_markers if marker.camera is not None]
+		if marker_cameras:
+			marker = next((marker for marker, next_marker in zip(marker_cameras, marker_cameras[1:] + [None]) if marker.frame <= self.scene.frame_current and (next_marker is None or self.scene.frame_current < next_marker.frame)), None)
+			if marker is not None:
+				marker_camera_found = True
+			elif marker_cameras[0].frame > self.scene.frame_current:
+				marker = marker_cameras[0]
+				marker_camera_found = True
+
+
 		# SINGLE-CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
 		if not self.use_multiview:
@@ -270,8 +282,13 @@ class RenderJob:
 			# NOTE: - we do it this way in case the camera is animated and its position changes each frame
 			if self.init:
 
-				# use the camera selected by the user for the Looking Glass
-				self._camera_active = self.scene.addon_settings.lookingglassCamera
+				# if a marker camera was found AND the active camera synchronization is active
+				if marker_camera_found:
+					# use the marker camera
+					self._camera_active = marker.camera
+				else:
+					# use the camera selected by the user for the Looking Glass
+					self._camera_active = self.scene.addon_settings.lookingglassCamera
 
 				# remember the origingally active camera of the scene
 				self._camera_original = self._camera_active
@@ -302,8 +319,15 @@ class RenderJob:
 				# apply location and perspective of the original camera
 				self._camera_active.matrix_world = self._view_matrix.copy()
 
-				# set the scenes active camera to this temporary camera
-				self.scene.camera = self._camera_active
+				# if a marker camera was found
+				if marker_camera_found:
+					# set the marker camera to this temporary camera
+					marker.camera = self._camera_active
+
+				# if no marker camera was found
+				elif not marker_camera_found:
+					# set the scenes active camera to this temporary camera
+					self.scene.camera = self._camera_active
 
 				# NOTE: In contrast to multiview rendering, linking is not
 				#		required for single cameras. Rendering still works,
@@ -356,8 +380,13 @@ class RenderJob:
 				self.scene.render.views['left'].use = False
 				self.scene.render.views['right'].use = False
 
-				# use the camera selected by the user for the Looking Glass
-				self._camera_active = self.scene.addon_settings.lookingglassCamera
+				# if a marker camera was found AND the active camera synchronization is active
+				if marker_camera_found:
+					# use the marker camera
+					self._camera_active = marker.camera
+				else:
+					# use the camera selected by the user for the Looking Glass
+					self._camera_active = self.scene.addon_settings.lookingglassCamera
 
 				# remember the origingally active camera of the scene
 				self._camera_original = self._camera_active
@@ -403,9 +432,6 @@ class RenderJob:
 					# apply same location and perspective like the original camera
 					self._camera_active.matrix_world = self._view_matrix.copy()
 
-					# set the scenes active camera to this temporary camera
-					self.scene.camera = self._camera_active
-
 					# CAMERA SETTINGS: APPLY POSITION AND SHIFT
 					# +++++++++++++++++++++++++++++++++++++++++++++++
 					# adjust the camera settings to the correct view point
@@ -430,6 +456,17 @@ class RenderJob:
 
 					# modify the projection matrix, relative to the camera size
 					self._camera_active.data.shift_x = self._camera_original.data.shift_x + 0.5 * offset / cameraSize
+
+				# if a marker camera was found
+				if marker_camera_found:
+					# set the marker camera and scene camera to the last temporary camera
+					marker.camera = self._camera_active
+					self.scene.camera = self._camera_active
+
+				# if no marker camera was found
+				elif not marker_camera_found:
+					# set the scenes active camera to this temporary camera
+					self.scene.camera = self._camera_active
 
 	# assemble quilt
 	def assemble_quilt(self):
@@ -586,12 +623,30 @@ class RenderJob:
 
 		LookingGlassAddonLogger.info("Cleaning up camera setup.")
 
+		# if there is an active camera marker in this frame	
+		marker_camera_found = False
+		marker_cameras = [marker for marker in bpy.context.scene.timeline_markers if marker.camera is not None]
+		if marker_cameras:
+			marker = next((marker for marker, next_marker in zip(marker_cameras, marker_cameras[1:] + [None]) if marker.frame <= self.scene.frame_current and (next_marker is None or self.scene.frame_current < next_marker.frame)), None)
+			if marker is not None:
+				marker_camera_found = True
+				# restore the original marker camera
+				marker.camera = self._camera_original
+			elif marker_cameras[0].frame > self.scene.frame_current:
+				marker = marker_cameras[0]
+				marker_camera_found = True
+				# restore the original marker camera
+				marker.camera = self._camera_original
+
 		# SINGLE-CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
 		if not self.use_multiview:
 
-			# restore the original active camera
-			self.scene.camera = self._camera_original
+			# if no marker camera was found
+			if not marker_camera_found:
+				
+				# restore the original active camera
+				self.scene.camera = self._camera_original
 
 			# delete the temporarily created camera data block
 			if bpy.data.objects.find(self._camera_temp_basename) != -1:
@@ -610,8 +665,11 @@ class RenderJob:
 		# ++++++++++++++++++++++++++++++++++
 		elif self.use_multiview:
 
-			# restore the original active camera
-			self.scene.camera = self._camera_original
+			# if no marker camera was found
+			if not marker_camera_found:
+
+				# restore the original active camera
+				self.scene.camera = self._camera_original
 
 			# loop through all views
 			for view, camera in enumerate(self._camera_temp):
@@ -641,8 +699,6 @@ class RenderJob:
 
 	# update the progress bar
 	def update_progress(self):
-
-		# get the curre
 
 		# SINGLE-CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
@@ -1800,7 +1856,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 								self.render_settings.job.delete_files(self.render_settings.job.frame)
 
 							# delete the temporarily created camera
-							# self.render_settings.job.clean_up()
+							self.render_settings.job.clean_up()
 
 							# reset the initialization step variable for the render job
 							self.render_settings.job.init = True
