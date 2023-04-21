@@ -107,7 +107,11 @@ The rendering of still holograms and holographic animations can be a time-consum
 
 ### Basic Command Line Calls
 
-As a first prerequisite, Alice/LG needs to be installed and activated on the render farm's Blender installation. To initiate a quilt rendering from the command line, there are two main calls which are understood by Alice/LG:
+As a first prerequisite, Alice/LG needs to be installed and activated on the render farm's Blender installation. If you setting up your own local render farm and need to install the dependencies of the add-on, use the following command:
+
+- `--alicelg-install`: Install the python dependencies of the add-on.
+
+To initiate a quilt rendering from the command line, there are two main calls which are understood by Alice/LG:
 
 - `--alicelg-render`: Start the rendering of a single quilt.
 - `--alicelg-render-anim`: Start the rendering of a quilt animation.

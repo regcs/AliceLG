@@ -244,8 +244,17 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 	# if NOT all dependencies are satisfied
 	if not LookingGlassAddon.check_dependecies():
 
-		#
-		bpy.ops.preferences.addon_show(module=__package__)
+		# check if Blender is run in background mode
+		if LookingGlassAddon.background:
+
+			# if the dependencies shall be installed
+			if '--alicelg-install' in LookingGlassAddon.addon_arguments:
+				bpy.ops.lookingglass.install_dependencies('EXEC_DEFAULT') 
+		
+		else:
+
+			# show the preference pane
+			bpy.ops.preferences.addon_show(module=__package__)
 
 	else:
 
@@ -371,7 +380,7 @@ def register():
 		bpy.utils.register_class(LOOKINGGLASS_PT_install_dependencies)
 
 		# log info
-		LookingGlassAddonLogger.info(" [#] Missing dependencies. Please install them in the preference pane.")
+		LookingGlassAddonLogger.info(" [#] Missing dependencies. Please install them in the preference pane or using the 'blender -- --alicelg-install' command line call.")
 
 		# run initialization helper function as app handler
 		# NOTE: this is needed to run certain modal operators of the addon on startup
