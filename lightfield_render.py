@@ -1479,7 +1479,6 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				return {'CANCELLED'}
 
 
-
 		# VALIDATE PATH AND FILENAME
 		################################################################
 
@@ -1598,6 +1597,22 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 			# notify user
 			self.report({"INFO"}, "Render job discarded.")
 			return {"CANCELLED"}
+
+
+		# CHECK COMPOSITOR AND/OR SEQUENCING IS ACTIVE
+		################################################################
+		# NOTE: For now, we output a warning, when the compositor or seqencer are active
+		if bpy.context.scene.render.use_compositing and not bpy.context.scene.render.use_sequencer:
+			# notify user
+			self.report({"WARNING"}, "The compositor is active. This might cause issues during quilt rendering.")
+		
+		elif not bpy.context.scene.render.use_compositing and bpy.context.scene.render.use_sequencer:
+			# notify user
+			self.report({"WARNING"}, "The sequencer is active. This might cause issues during quilt rendering.")
+		
+		elif bpy.context.scene.render.use_compositing and bpy.context.scene.render.use_sequencer:
+			# notify user
+			self.report({"WARNING"}, "The compositor and sequencer are active. This might cause issues during quilt rendering.")
 
 
 
