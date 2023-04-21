@@ -296,11 +296,11 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 			if bpy.data.filepath != "":
 
 				# if the a quilt shall be rendered
-				if '-alicelg-render' in LookingGlassAddon.addon_arguments:
+				if '--alicelg-render' in LookingGlassAddon.addon_arguments:
 					bpy.ops.render.quilt('EXEC_DEFAULT', use_multiview=True, blocking=True)
 
 				# if the a quilt shall be rendered
-				elif '-alicelg-render-anim' in LookingGlassAddon.addon_arguments:
+				elif '--alicelg-render-anim' in LookingGlassAddon.addon_arguments:
 					bpy.ops.render.quilt('EXEC_DEFAULT', animation=True, use_multiview=True, blocking=True)
 
 		else:

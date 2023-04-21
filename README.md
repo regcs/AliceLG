@@ -1,9 +1,9 @@
-# Alice/LG 2.0 - The Blender Add-on for Looking Glass Displays
+# Alice/LG 2.2 - The Blender Add-on for Looking Glass Displays
 
 ### Let [Alice/LG](https://github.com/regcs/AliceLG/releases) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
 ## About the Add-on
-This add-on was created for the use of Blender with the Looking Glass holographic displays. I initially developed this add-on privately in my free time because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). The version 2.0 of Alice/LG was developed in collaboration with the Looking Glass Factory.
+This add-on was created for the use of Blender with the Looking Glass holographic displays. I initially developed this add-on privately in my free time because I'm a fan of [Blender](https://www.blender.org/) as well as the amazing new holographic display technology created by the [Looking Glass Factory](https://lookingglassfactory.com/). The version 2.x of Alice/LG was developed in collaboration with the Looking Glass Factory.
 
 ## Main Features
 - integration into the common Blender workflow
@@ -109,12 +109,12 @@ The rendering of still holograms and holographic animations can be a time-consum
 
 As a first prerequisite, Alice/LG needs to be installed and activated on the render farm's Blender installation. To initiate a quilt rendering from the command line, there are two main calls which are understood by Alice/LG:
 
-- `-alicelg-render`: Start the rendering of a single quilt.
-- `-alicelg-render-anim`: Start the rendering of a quilt animation.
+- `--alicelg-render`: Start the rendering of a single quilt.
+- `--alicelg-render-anim`: Start the rendering of a quilt animation.
 
 Both arguments require that Blender is started in background mode (i.e., using the '-b' command line argument) and with a .blend-file specified, which contains all the necessary render settings. Furthermore, both arguments must be preceded by a `--`. An example, which opens the file 'my_lg_hologram.blend' and starts rendering a single quilt looks like that:
 
-`blender -b my_lg_hologram.blend -- -alicelg-render`
+`blender -b my_lg_hologram.blend -- --alicelg-render`
 
 ### Additional Parameters
 
@@ -128,11 +128,11 @@ The add-on also understands some additional parameters to fine-tune the renderin
 
 **It is important that these arguments are specified after the mandatory `--`** to notify Blender that the arguments are meant for the add-on. An example call which would start Blender in background mode, load the 'my_lg_hologram.blend' file, and render a quilt animation from frame 10 to 24 with the base file name `quilt_anim` would look like this:
 
-`blender -b my_lg_hologram.blend -- -alicelg-render-anim -o /tmp/quilt_anim.png -s 10 -e 24`
+`blender -b my_lg_hologram.blend -- --alicelg-render-anim -o /tmp/quilt_anim.png -s 10 -e 24`
 
 Another example, which would only render the frame 16 as a single quilt, would like this:
 
-`blender -b my_lg_hologram.blend -- -alicelg-render -o /tmp/quilt.png -f 16`
+`blender -b my_lg_hologram.blend -- --alicelg-render -o /tmp/quilt.png -f 16`
 
 ## License & Dependencies
 
