@@ -73,12 +73,12 @@ import logging, logging.handlers
 # +++++++++++++++++++++++++++++++++++++++++++++
 # define system exception hook for logging
 def log_exhook(exc_type, exc_value, exc_traceback):
-	if issubclass(type, KeyboardInterrupt):
-		sys.__excepthook__(exc_type, exc_value, exc_traceback)
-		return
 
-	# log that an unhandled exception occured
+	# log that an unhandled exception occured in Alice/LG's log file
 	LookingGlassAddonLogger.critical("An unhandled error occured. Here is the traceback:\n", exc_info=(exc_type, exc_value, exc_traceback))
+	
+	# then continue with the system behavior
+	sys.__excepthook__(exc_type, exc_value, exc_traceback)
 
 # overwrite the excepthook
 sys.excepthook = log_exhook
