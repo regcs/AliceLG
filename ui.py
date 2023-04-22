@@ -557,23 +557,40 @@ class LookingGlassAddonUI:
 			if bpy.context.scene.addon_settings.focalPlane > camera.data.clip_end:
 				bpy.context.scene.addon_settings.focalPlane = value
 
+
+	# TODO: This function was previously used to keep the focal plane in the clipping range.
+	#		It's left here in case it may be of further use later.
+	# update function for property updates concerning camera clipping in the livew view
+	def update_focal_sync(self, context):
+
+		# if a camera was selected
+		if context.scene.addon_settings.lookingglassCamera != None:
+
+			# apply the settings to the selected camera object
+			camera = context.scene.addon_settings.lookingglassCamera
+			if context.scene.addon_settings.toggleFocalSync:
+				camera.data.dof.focus_distance = self['focalPlane']
+
+		return None
+
 	# getter for the focalPlane
 	def focal_plane_getter(self):
 
 		# if the focal plane is sync'ed with the camera focus distance
 		if bpy.context.scene.addon_settings.toggleFocalSync:
-			# display the clipping settings
+
+			# use the focus distance of the camera
 			camera = bpy.context.scene.addon_settings.lookingglassCamera
 			if camera:
-				return camera.data.dof.focus_distance
+				if self['focalPlane'] != camera.data.dof.focus_distance:
+					bpy.context.scene.addon_settings.focalPlane = camera.data.dof.focus_distance
 		
-		else:
-			return self.get('focalPlane', 5)
+		return self.get('focalPlane', 5)
 
 	# setter for the focalPlane
 	def focal_plane_setter(self, value):
 
-		# display the clipping settings
+		# get the current camera
 		camera = bpy.context.scene.addon_settings.lookingglassCamera
 		if camera:
 
@@ -587,9 +604,10 @@ class LookingGlassAddonUI:
 			else:
 
 				# make sure the new value is within the clipping range
-				if value < camera.data.clip_start:
+				print(value)
+				if value <= camera.data.clip_start:
 					value = camera.data.clip_start
-				elif value > camera.data.clip_end:
+				elif value >= camera.data.clip_end:
 					value = camera.data.clip_end
 
 			# if the focal plane is sync'ed with the camera focus distance
@@ -922,7 +940,8 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										min = 0.000001,
 										soft_min = 0.1,
 										precision = 1,
-										step = 10,
+										step = 5,
+										unit = "LENGTH",
 										description = "Far clipping plane of the Looking Glass frustum.",
 										update = LookingGlassAddonUI.update_camera_setting,
 										get = LookingGlassAddonUI.clip_start_getter,
@@ -934,7 +953,8 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										default = 6.5,
 										min = 0,
 										precision = 1,
-										step = 10,
+										step = 5,
+										unit = "LENGTH",
 										description = "Far clipping plane of the Looking Glass frustum.",
 										update = LookingGlassAddonUI.update_camera_setting,
 										get = LookingGlassAddonUI.clip_end_getter,
@@ -947,7 +967,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										default = 5,
 										min = 0,
 										precision = 2,
-										step = 10,
+										step = 5,
 										unit = "LENGTH",
 										description = "Virtual distance to the focal plane. (This plane is directly mapped to the LCD display of the Looking Glass)",
 										update = LookingGlassAddonUI.update_camera_setting,
@@ -959,7 +979,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										name="Synchronize with Camera Focus Distance",
 										description="If enabled, the focus distance (depth of field) and focal plane values of the Looking Glass Camera will be kept in synchronization",
 										default = True,
-										update = LookingGlassAddonUI.update_camera_setting,
+										update = LookingGlassAddonUI.update_focal_sync,
 										)
 
 	lockClippingPlanes: bpy.props.BoolProperty(

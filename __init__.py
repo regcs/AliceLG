@@ -265,7 +265,7 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 		bpy.types.Scene.addon_settings = bpy.props.PointerProperty(type=LookingGlassAddonSettingsScene)
 
 		# Camera settings
-		bpy.types.Camera.is_lightfield = bpy.props.BoolProperty(default=False)
+		bpy.types.Camera.is_lightfield = bpy.props.BoolProperty(default=False, options=set(['HIDDEN']))
 
 		# ------------ INITIALIZATION ---------------
 		# check if lockfile exists and set status variable
