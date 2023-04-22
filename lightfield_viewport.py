@@ -1636,12 +1636,15 @@ class Block:
         self.changed = False
 
 		# free shader and batch
-        del self.shader, self.batch
+        if hasattr(self, "shader"): del self.shader
+        if hasattr(self, "batch"): del self.batch
 
 		# free offscreens
-        if self.offscreen_view: self.offscreen_view.free()
-        if self.offscreen_canvas: self.offscreen_canvas.free()
-
+        try: 
+            self.offscreen_view.free()
+            self.offscreen_canvas.free()
+        finally:
+            return
 
 # Class for rendering a Looking Glass Block in Blenders 3D viewport for live preview
 class BlockRenderer:

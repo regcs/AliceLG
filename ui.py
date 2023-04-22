@@ -582,7 +582,7 @@ class LookingGlassAddonUI:
 			# use the focus distance of the camera
 			camera = bpy.context.scene.addon_settings.lookingglassCamera
 			if camera:
-				if self['focalPlane'] != camera.data.dof.focus_distance:
+				if self.get('focalPlane', 5) != camera.data.dof.focus_distance:
 					bpy.context.scene.addon_settings.focalPlane = camera.data.dof.focus_distance
 		
 		return self.get('focalPlane', 5)
@@ -604,7 +604,6 @@ class LookingGlassAddonUI:
 			else:
 
 				# make sure the new value is within the clipping range
-				print(value)
 				if value <= camera.data.clip_start:
 					value = camera.data.clip_start
 				elif value >= camera.data.clip_end:

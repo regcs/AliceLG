@@ -314,10 +314,22 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 
 		else:
 
+			# stop and delete old renderers, if they still exist (e.g., after loading a new file)
+			if LookingGlassAddon.FrustumRenderer is not None: 
+				LookingGlassAddon.FrustumRenderer.stop()
+				LookingGlassAddon.FrustumRenderer = None
+			if LookingGlassAddon.ImageBlockRenderer is not None: 
+				LookingGlassAddon.ImageBlockRenderer.stop()
+				LookingGlassAddon.ImageBlockRenderer = None
+			if LookingGlassAddon.ViewportBlockRenderer is not None:
+				LookingGlassAddon.ViewportBlockRenderer.stop()
+				LookingGlassAddon.ViewportBlockRenderer = None
+
 			# create and start the frustum and the block renderer
 			LookingGlassAddon.FrustumRenderer = FrustumRenderer()
 			LookingGlassAddon.ImageBlockRenderer = BlockRenderer()
 			LookingGlassAddon.ViewportBlockRenderer = BlockRenderer()
+
 
             # start the renderers
 			LookingGlassAddon.FrustumRenderer.start(bpy.context)
