@@ -898,11 +898,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 						else:
 
 							# if the lightfield window is not active anymore, stop
-							print("before", context, context.window_manager.addon_settings.ShowLightfieldWindow)
 							if not (context or context.window_manager.addon_settings.ShowLightfieldWindow):
 								continue
-
-							print("after", context, context.window_manager.addon_settings.ShowLightfieldWindow)
 
 							# draw the viewport rendering to the offscreen for the current view
 							self.qs[self.preset]["viewOffscreen"][view].draw_view3d(
