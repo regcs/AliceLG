@@ -68,7 +68,7 @@ class ContextOverride:
 	__shading_restore_backup = {}
 	__overlay_restore_backup = {}
 
-    # Inititalize the context override
+	# Inititalize the context override
 	def __init__(self, context):
 
 		# get the current settings of this scene
@@ -250,9 +250,9 @@ class ContextOverride:
 						#print(" # ", e)
 						pass
 
-    # CLASS PROPERTIES
-    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    # (A) context override properties
+	# CLASS PROPERTIES
+	# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	# (A) context override properties
 	@property
 	def space_data(self):
 		return self.__override['space_data']
@@ -803,12 +803,12 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 				# delete the current LightfieldImage
 				if self.lightfield_image: self.lightfield_image = None
 
-                # TODO: Actually we would use "RGB" and a numpy array with 3
+				# TODO: Actually we would use "RGB" and a numpy array with 3
 				#		color channels, because that would be more efficient.
 				#		But we can't read in RGB mode to gpu.types.Buffer
-                #       due to Blender's default OpenGL settings:
+				#	   due to Blender's default OpenGL settings:
 				#
-                #       https://developer.blender.org/T91828
+				#	   https://developer.blender.org/T91828
 				#
 				#		If we don't so it that way, it causes crashes:
 				#
@@ -968,229 +968,229 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 # in Blenders 3D viewport
 class FrustumRenderer:
 
-    # Inititalize the camera frustum drawing
-    def __init__(self):
+	# Inititalize the camera frustum drawing
+	def __init__(self):
 
-        # Blender draw handler for the frustum
-        self.frustum_draw_handler = None
+		# Blender draw handler for the frustum
+		self.frustum_draw_handler = None
 
-        # variables for the frustum
-        self.frustum_indices_lines = None
-        self.frustum_indices_faces = None
-        self.frustum_indices_focalplane_outline = None
-        self.frustum_indices_focalplane_face = None
-        self.frustum_shader = None
+		# variables for the frustum
+		self.frustum_indices_lines = None
+		self.frustum_indices_faces = None
+		self.frustum_indices_focalplane_outline = None
+		self.frustum_indices_focalplane_face = None
+		self.frustum_shader = None
 
-        # notify addon that frustum is activated
-        LookingGlassAddon.FrustumInitialized = True
-
-
-
-    # deinititalize the camera frustum drawing
-    def __del__(self):
-
-        # remove the draw handler for the frustum drawing
-        if self.frustum_draw_handler:
-            bpy.types.SpaceView3D.draw_handler_remove(self.frustum_draw_handler, 'WINDOW')
-            self.frustum_draw_handler = None
-
-        # notify addon that frustum is deactivated
-        LookingGlassAddon.FrustumInitialized = False
+		# notify addon that frustum is activated
+		LookingGlassAddon.FrustumInitialized = True
 
 
 
-    # cancel frustum drawing
-    def stop(self):
+	# deinititalize the camera frustum drawing
+	def __del__(self):
 
-        # remove the draw handler for the frustum drawing
-        if self.frustum_draw_handler:
-            bpy.types.SpaceView3D.draw_handler_remove(self.frustum_draw_handler, 'WINDOW')
-            self.frustum_draw_handler = None
+		# remove the draw handler for the frustum drawing
+		if self.frustum_draw_handler:
+			bpy.types.SpaceView3D.draw_handler_remove(self.frustum_draw_handler, 'WINDOW')
+			self.frustum_draw_handler = None
 
-        LookingGlassAddon.FrustumInitialized = False
-
-        # log info
-        LookingGlassAddonLogger.info("Camera frustum drawing handler stopped.")
-
-        # return None since this is expected by the operator
-        return None
+		# notify addon that frustum is deactivated
+		LookingGlassAddon.FrustumInitialized = False
 
 
 
-    # start the frustum drawing
-    def start(self, context):
+	# cancel frustum drawing
+	def stop(self):
 
-        # setup the camera frustum & shader
-        self.setupCameraFrustumShader()
+		# remove the draw handler for the frustum drawing
+		if self.frustum_draw_handler:
+			bpy.types.SpaceView3D.draw_handler_remove(self.frustum_draw_handler, 'WINDOW')
+			self.frustum_draw_handler = None
 
-        # add draw handler to display the frustum of the Looking Glass camera
-        # after everything else has been drawn in the view
-        self.frustum_draw_handler = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
+		LookingGlassAddon.FrustumInitialized = False
 
-        # log info
-        LookingGlassAddonLogger.info("Camera frustum drawing handler started.")
+		# log info
+		LookingGlassAddonLogger.info("Camera frustum drawing handler stopped.")
 
-        # keep the modal operator running
-        return self.frustum_draw_handler
-
-
-
-    # setup the camera frustum shader
-    def setupCameraFrustumShader(self):
-
-        # we predefine the indices because these never change
-        self.frustum_indices_lines = (
-            (0, 1), (0, 3), (1, 2), (3, 2),
-            (4, 5), (4, 7), (5, 6), (7, 6),
-            (0, 4), (1, 5), (3, 7), (2, 6))
-
-        self.frustum_indices_faces = (
-                # front
-                (0, 1, 2),
-                (2, 3, 0),
-                # right
-                (1, 5, 6),
-                (6, 2, 1),
-                # back
-                (7, 6, 5),
-                (5, 4, 7),
-                # left
-                (4, 0, 3),
-                (3, 7, 4),
-                # bottom
-                (4, 5, 1),
-                (1, 0, 4),
-                # top
-                (3, 2, 6),
-                (6, 7, 3)
-            )
-
-        self.frustum_indices_focalplane_outline = (
-            (8, 9), (9, 10), (10, 11), (11, 8))
-
-        self.frustum_indices_focalplane_face = (
-                # focal plane
-                (8, 9, 10),
-                (10, 11, 8)
-            )
-
-
-        # compile the shader that will be used for drawing
-        self.frustum_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+		# return None since this is expected by the operator
+		return None
 
 
 
-    # drawing function, which draws the camera frustum in the active SpaceView3D
-    def drawCameraFrustum(self, context):
+	# start the frustum drawing
+	def start(self, context):
 
-        # if a camera is selected AND the space is not in camera mode
-        if self and context:
-            if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
-                if (context.space_data != None and context.space_data.region_3d != None) and context.space_data.region_3d.view_perspective != 'CAMERA':
+		# setup the camera frustum & shader
+		self.setupCameraFrustumShader()
 
-                    # currently selected camera
-                    camera = context.scene.addon_settings.lookingglassCamera
+		# add draw handler to display the frustum of the Looking Glass camera
+		# after everything else has been drawn in the view
+		self.frustum_draw_handler = bpy.types.SpaceView3D.draw_handler_add(self.drawCameraFrustum, (context,), 'WINDOW', 'POST_VIEW')
 
-                    # if the camera is visible
-                    if camera.hide_get() == False:
+		# log info
+		LookingGlassAddonLogger.info("Camera frustum drawing handler started.")
 
-                        # get modelview matrix
-                        view_matrix = camera.matrix_world.copy()
+		# keep the modal operator running
+		return self.frustum_draw_handler
 
-                        # correct for the camera scaling
-                        view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
-                        view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
-                        view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
 
-                        # we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
-                        # based on the intercept theorems
-                        view_frame = camera.data.view_frame(scene=context.scene)
-                        view_frame_upper_right = view_frame[0]
-                        view_frame_lower_right = view_frame[1]
-                        view_frame_lower_left = view_frame[2]
-                        view_frame_upper_left = view_frame[3]
-                        view_frame_distance = abs(view_frame_upper_right[2])
 
-                        # get the clipping settings
-                        clipStart = camera.data.clip_start
-                        clipEnd = camera.data.clip_end
-                        focalPlane = context.scene.addon_settings.focalPlane
+	# setup the camera frustum shader
+	def setupCameraFrustumShader(self):
 
-                        # TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
-                        # define the vertices of the camera frustum in camera coordinates
-                        # NOTE: - the z-value is negative, because the Blender camera always looks into negative z-direction
-                        coords_local = [
-                                        # near clipping plane
-                                        (view_frame_lower_right[0] / view_frame_distance * clipStart, view_frame_lower_right[1] / view_frame_distance * clipStart, -clipStart), (view_frame_lower_left[0] / view_frame_distance * clipStart, view_frame_lower_left[1] / view_frame_distance * clipStart, -clipStart),
-                                        (view_frame_upper_left[0] / view_frame_distance * clipStart, view_frame_upper_left[1] / view_frame_distance * clipStart, -clipStart), (view_frame_upper_right[0] / view_frame_distance * clipStart, view_frame_upper_right[1] / view_frame_distance * clipStart, -clipStart),
-                                        # far clipping plane
-                                        (view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
-                                        (view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
-                                        # focal plane
-                                        (view_frame_lower_right[0] / view_frame_distance * focalPlane, view_frame_lower_right[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_lower_left[0] / view_frame_distance * focalPlane, view_frame_lower_left[1] / view_frame_distance * focalPlane, -focalPlane),
-                                        (view_frame_upper_left[0] / view_frame_distance * focalPlane, view_frame_upper_left[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_upper_right[0] / view_frame_distance * focalPlane, view_frame_upper_right[1] / view_frame_distance * focalPlane, -focalPlane),
-                                        ]
+		# we predefine the indices because these never change
+		self.frustum_indices_lines = (
+			(0, 1), (0, 3), (1, 2), (3, 2),
+			(4, 5), (4, 7), (5, 6), (7, 6),
+			(0, 4), (1, 5), (3, 7), (2, 6))
 
-                        # if the camera fustum shall be drawn
-                        if context.scene.addon_settings.showFrustum == True:
-                            batch_lines = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_lines)
-                            batch_faces = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_faces)
+		self.frustum_indices_faces = (
+				# front
+				(0, 1, 2),
+				(2, 3, 0),
+				# right
+				(1, 5, 6),
+				(6, 2, 1),
+				# back
+				(7, 6, 5),
+				(5, 4, 7),
+				# left
+				(4, 0, 3),
+				(3, 7, 4),
+				# bottom
+				(4, 5, 1),
+				(1, 0, 4),
+				# top
+				(3, 2, 6),
+				(6, 7, 3)
+			)
 
-                        # if the focal plane shall be drawn
-                        if context.scene.addon_settings.showFocalPlane == True:
-                            batch_focalplane_outline = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_focalplane_outline)
-                            batch_focalplane_face = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_focalplane_face)
+		self.frustum_indices_focalplane_outline = (
+			(8, 9), (9, 10), (10, 11), (11, 8))
 
-                        # draw everything
-                        self.frustum_shader.bind()
+		self.frustum_indices_focalplane_face = (
+				# focal plane
+				(8, 9, 10),
+				(10, 11, 8)
+			)
 
-                        # get the current projection matrix
-                        viewMatrix = gpu.matrix.get_model_view_matrix()
-                        projectionMatrix = gpu.matrix.get_projection_matrix()
 
-                        # load the model view matrix, which transforms the local camera coordinates to world coordinates.
-                        # this makes sure that the frustum is always drawn relative to the camera location
-                        gpu.matrix.reset()
-                        gpu.matrix.load_matrix(viewMatrix @ view_matrix)
-                        gpu.matrix.load_projection_matrix(projectionMatrix)
+		# compile the shader that will be used for drawing
+		self.frustum_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
-                        gpu.state.depth_test_set('LESS_EQUAL')
-                        gpu.state.depth_mask_set(True)
 
-                        # if the camera fustum shall be drawn
-                        if context.scene.addon_settings.showFrustum == True:
-                            # draw outline
-                            self.frustum_shader.uniform_float("color", (0.3, 0, 0, 1))
-                            batch_lines.draw(self.frustum_shader)
 
-                        # if the focal plane shall be drawn
-                        if context.scene.addon_settings.showFocalPlane == True:
-                            # draw focal plane outline
-                            self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
-                            batch_focalplane_outline.draw(self.frustum_shader)
+	# drawing function, which draws the camera frustum in the active SpaceView3D
+	def drawCameraFrustum(self, context):
 
-                        gpu.state.depth_mask_set(False)
-                        gpu.state.blend_set('ALPHA')
+		# if a camera is selected AND the space is not in camera mode
+		if self and context:
+			if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects]:
+				if (context.space_data != None and context.space_data.region_3d != None) and context.space_data.region_3d.view_perspective != 'CAMERA':
 
-                        # if the camera fustum shall be drawn
-                        if context.scene.addon_settings.showFrustum == True:
-                            # fill faces
-                            self.frustum_shader.uniform_float("color", (0.5, 0.5, 0.5, 0.05))
-                            batch_faces.draw(self.frustum_shader)
+					# currently selected camera
+					camera = context.scene.addon_settings.lookingglassCamera
 
-                        # if the focal plane shall be drawn
-                        if context.scene.addon_settings.showFocalPlane == True:
-                            # draw focal plane face
-                            self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
-                            batch_focalplane_face.draw(self.frustum_shader)
+					# if the camera is visible
+					if camera.hide_get() == False:
 
-                        gpu.state.depth_test_set('NONE')
-                        gpu.state.blend_set('NONE')
+						# get modelview matrix
+						view_matrix = camera.matrix_world.copy()
 
-                        # reset the matrices to their original state
-                        gpu.matrix.reset()
-                        gpu.matrix.load_matrix(viewMatrix)
-                        gpu.matrix.load_projection_matrix(projectionMatrix)
+						# correct for the camera scaling
+						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
+						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
+						view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
+
+						# we obtain the viewframe of the camera to calculate the focal and clipping world_clip_planes_calc_clip_distance
+						# based on the intercept theorems
+						view_frame = camera.data.view_frame(scene=context.scene)
+						view_frame_upper_right = view_frame[0]
+						view_frame_lower_right = view_frame[1]
+						view_frame_lower_left = view_frame[2]
+						view_frame_upper_left = view_frame[3]
+						view_frame_distance = abs(view_frame_upper_right[2])
+
+						# get the clipping settings
+						clipStart = camera.data.clip_start
+						clipEnd = camera.data.clip_end
+						focalPlane = context.scene.addon_settings.focalPlane
+
+						# TODO: Find a way to predefine the vertex buffers and batches so that these don't need to be created in every frame
+						# define the vertices of the camera frustum in camera coordinates
+						# NOTE: - the z-value is negative, because the Blender camera always looks into negative z-direction
+						coords_local = [
+										# near clipping plane
+										(view_frame_lower_right[0] / view_frame_distance * clipStart, view_frame_lower_right[1] / view_frame_distance * clipStart, -clipStart), (view_frame_lower_left[0] / view_frame_distance * clipStart, view_frame_lower_left[1] / view_frame_distance * clipStart, -clipStart),
+										(view_frame_upper_left[0] / view_frame_distance * clipStart, view_frame_upper_left[1] / view_frame_distance * clipStart, -clipStart), (view_frame_upper_right[0] / view_frame_distance * clipStart, view_frame_upper_right[1] / view_frame_distance * clipStart, -clipStart),
+										# far clipping plane
+										(view_frame_lower_right[0] / view_frame_distance * clipEnd, view_frame_lower_right[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_lower_left[0] / view_frame_distance * clipEnd, view_frame_lower_left[1] / view_frame_distance * clipEnd, -clipEnd),
+										(view_frame_upper_left[0] / view_frame_distance * clipEnd, view_frame_upper_left[1] / view_frame_distance * clipEnd, -clipEnd), (view_frame_upper_right[0] / view_frame_distance * clipEnd, view_frame_upper_right[1] / view_frame_distance * clipEnd, -clipEnd),
+										# focal plane
+										(view_frame_lower_right[0] / view_frame_distance * focalPlane, view_frame_lower_right[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_lower_left[0] / view_frame_distance * focalPlane, view_frame_lower_left[1] / view_frame_distance * focalPlane, -focalPlane),
+										(view_frame_upper_left[0] / view_frame_distance * focalPlane, view_frame_upper_left[1] / view_frame_distance * focalPlane, -focalPlane), (view_frame_upper_right[0] / view_frame_distance * focalPlane, view_frame_upper_right[1] / view_frame_distance * focalPlane, -focalPlane),
+										]
+
+						# if the camera fustum shall be drawn
+						if context.scene.addon_settings.showFrustum == True:
+							batch_lines = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_lines)
+							batch_faces = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_faces)
+
+						# if the focal plane shall be drawn
+						if context.scene.addon_settings.showFocalPlane == True:
+							batch_focalplane_outline = batch_for_shader(self.frustum_shader, 'LINES', {"pos": coords_local}, indices=self.frustum_indices_focalplane_outline)
+							batch_focalplane_face = batch_for_shader(self.frustum_shader, 'TRIS', {"pos": coords_local}, indices=self.frustum_indices_focalplane_face)
+
+						# draw everything
+						self.frustum_shader.bind()
+
+						# get the current projection matrix
+						viewMatrix = gpu.matrix.get_model_view_matrix()
+						projectionMatrix = gpu.matrix.get_projection_matrix()
+
+						# load the model view matrix, which transforms the local camera coordinates to world coordinates.
+						# this makes sure that the frustum is always drawn relative to the camera location
+						gpu.matrix.reset()
+						gpu.matrix.load_matrix(viewMatrix @ view_matrix)
+						gpu.matrix.load_projection_matrix(projectionMatrix)
+
+						gpu.state.depth_test_set('LESS_EQUAL')
+						gpu.state.depth_mask_set(True)
+
+						# if the camera fustum shall be drawn
+						if context.scene.addon_settings.showFrustum == True:
+							# draw outline
+							self.frustum_shader.uniform_float("color", (0.3, 0, 0, 1))
+							batch_lines.draw(self.frustum_shader)
+
+						# if the focal plane shall be drawn
+						if context.scene.addon_settings.showFocalPlane == True:
+							# draw focal plane outline
+							self.frustum_shader.uniform_float("color", (1, 1, 1, 1))
+							batch_focalplane_outline.draw(self.frustum_shader)
+
+						gpu.state.depth_mask_set(False)
+						gpu.state.blend_set('ALPHA')
+
+						# if the camera fustum shall be drawn
+						if context.scene.addon_settings.showFrustum == True:
+							# fill faces
+							self.frustum_shader.uniform_float("color", (0.5, 0.5, 0.5, 0.05))
+							batch_faces.draw(self.frustum_shader)
+
+						# if the focal plane shall be drawn
+						if context.scene.addon_settings.showFocalPlane == True:
+							# draw focal plane face
+							self.frustum_shader.uniform_float("color", (0.1, 0.1, 0.1, 0.25))
+							batch_focalplane_face.draw(self.frustum_shader)
+
+						gpu.state.depth_test_set('NONE')
+						gpu.state.blend_set('NONE')
+
+						# reset the matrices to their original state
+						gpu.matrix.reset()
+						gpu.matrix.load_matrix(viewMatrix)
+						gpu.matrix.load_projection_matrix(projectionMatrix)
 
 
 
@@ -1198,1144 +1198,1230 @@ class FrustumRenderer:
 # Class for blocks. Instances store all the data of a Block.
 class Block:
 
-    # Inititalize the block
-    def __init__(self, x, y, width, height):
+	# Inititalize the block
+	def __init__(self, x, y, width, height):
 
-        # the texture of an image in the image editor
-        self.image_texture = None
+		# the texture of an image in the image editor
+		self.image_texture = None
 
-        # quilt presets
-        self.qs = pylio.LookingGlassQuilt.formats.get()
-        self.preset = None
-        self.device = None
+		# quilt presets
+		self.qs = pylio.LookingGlassQuilt.formats.get()
+		self.preset = None
+		self.device = None
 
-        # block parameters
-        self.active = False
-        self.x = x
-        self.y = y
-        self.width = int(width * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
-        self.height = int(height * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
-        self.border_width = 0.000
-        self.border_color = (0.0086, 0.0086, 0.0086, 1.0)
-        self.aspect = self.width / self.height
-        self.angle = 0
-        self.view = 0
-        self.view_cone = 40
-        self.shading_type = 'SOLID'
+		# block parameters
+		self.active = False
+		self.x = x
+		self.y = y
+		self.width = int(width * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
+		self.height = int(height * bpy.context.scene.addon_settings.viewport_block_scaling_factor)
+		self.border_width = 0.000
+		self.border_color = (0.0086, 0.0086, 0.0086, 1.0)
+		self.aspect = self.width / self.height
+		self.angle = 0
+		self.view = 0
+		self.view_cone = 40
+		self.shading_type = 'SOLID'
 
-        # GPU and rendering
-        self.changed = True
-        self.camera = None
-        self.view_matrix = None
-        self.projection_matrix = None
-        self.offscreen_canvas = gpu.types.GPUOffScreen(self.width, self.height)
-        self.offscreen_view = None
+		# GPU and rendering
+		self.changed = True
+		self.camera = None
+		self.view_matrix = None
+		self.projection_matrix = None
+		self.offscreen_canvas = gpu.types.GPUOffScreen(self.width, self.height)
+		self.offscreen_view = None
 
-        # create shaders
-        self.__update_shaders()
+		# create shaders
+		self.__update_shaders()
 
 
 
-    # create a view matrix from a virtual camera position, target vector, and up
-    # vector
-    def __update_shaders(self):
+	# create a view matrix from a virtual camera position, target vector, and up
+	# vector
+	def __update_shaders(self):
+		
+		# in Blender versions prior to BGL deprecation:
+		if bpy.app.version < (3, 4, 0):
 
-        # define shaders
-        self.vertex_shader = '''
-            uniform mat4 modelMatrix;
-            uniform mat4 viewProjectionMatrix;
+			# define shaders
+			self.vertex_shader = '''
+				uniform mat4 modelMatrix;
+				uniform mat4 viewProjectionMatrix;
 
-            in vec2 position;
-            in vec2 uv;
+				in vec2 position;
+				in vec2 uv;
 
-            out vec2 texCoord;
+				out vec2 texCoord;
 
-            void main()
-            {
-                texCoord = uv;
-                gl_Position = viewProjectionMatrix * modelMatrix * vec4(position, 0.0, 1.0);
-            }
-        '''
+				void main()
+				{
+					texCoord = uv;
+					gl_Position = viewProjectionMatrix * modelMatrix * vec4(position, 0.0, 1.0);
+				}
+			'''
 
-        self.fragment_shader = '''
-            uniform sampler2D view_texture;
-            uniform vec2 dimensions;
-            uniform float alpha;
+			self.fragment_shader = '''
+				uniform sampler2D view_texture;
+				uniform vec2 dimensions;
+				uniform float alpha;
 
-            in vec2 texCoord;
-            out vec4 FragColor;
+				in vec2 texCoord;
+				out vec4 FragColor;
 
-			float roundedBoxSDF(vec2 CenterPosition, vec2 Size, float Radius)
+				void main()
+				{
+					// Input info
+					vec2 boxPos; // The position of the center of the box (in normalized coordinates)
+					vec2 boxBnd; // The half-bounds (radii) of the box (in normalzied coordinates)
+					float radius;// Radius
+
+
+					boxPos = vec2(0.5, 0.5);	// center of the screen
+					boxBnd = vec2(0.5, 0.5);  // half of the area
+					radius = 0.04;
+
+					// Normalize the pixel coordinates (this is "passTexCoords" in your case)
+					vec2 uv = texCoord;
+					vec2 aspectRatio = vec2(dimensions.x/dimensions.y, 1.0);
+
+					// In order to make sure visual distances are preserved, we multiply everything by aspectRatio
+					uv *= aspectRatio;
+					boxPos *= aspectRatio;
+					boxBnd *= aspectRatio;
+
+					// Output to screen
+					float a = length(max(abs(uv - boxPos) - boxBnd + radius, 0.0)) - radius;
+
+					// Shadertoy doesn't have an alpha in this case
+					if(a <= 0.0){
+						FragColor = texture(view_texture, texCoord);
+						FragColor.a = alpha;
+					}else{
+						FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+					}
+
+				}
+			'''
+
+			# compile hologram preview / blocks shader
+			self.shader = gpu.types.GPUShader(self.vertex_shader, self.fragment_shader)
+
+		# from Blender 3.4 on we need to use the GPU module to create shaders,
+		# which is the new way to compile cross-platform shaders
+		else:
+
+			# The shader info stores all th
+			hologram_preview_shader_info = gpu.types.GPUShaderCreateInfo()
+
+			# Defines vertex shader inputs and uniforms that are now called constants
+			hologram_preview_shader_info.vertex_in(0, 'VEC2', "position")
+			hologram_preview_shader_info.vertex_in(1, 'VEC2', "uv")
+			hologram_preview_shader_info.push_constant('MAT4', "modelMatrix")
+			hologram_preview_shader_info.push_constant('MAT4', "viewProjectionMatrix")
+			
+			# Defines fragment shader inputs and uniforms that are now called constants
+			hologram_preview_shader_info.sampler(0, 'FLOAT_2D', "view_texture")
+			hologram_preview_shader_info.push_constant('VEC2', "dimensions")
+			hologram_preview_shader_info.push_constant('FLOAT', "alpha")
+
+			# Define as Interface the attributes that will be transferred from the vertex shader to the fragment shader. 
+			# Before they would be both a vertex shader output and fragment shader input.
+			# An interface can be flat(), no_perspective() or smooth()
+			# Warning: You need to give a string to the GPUStageInterfaceInfo() or the shader will not work. Any string will work.
+			hologram_preview_shader_interface = gpu.types.GPUStageInterfaceInfo("shader_hologram_preview")	
+			hologram_preview_shader_interface.smooth('VEC2', "texCoord")
+			hologram_preview_shader_info.vertex_out(hologram_preview_shader_interface)
+
+			# fragment shader output
+			hologram_preview_shader_info.fragment_out(0, 'VEC4', 'FragColor')
+
+			# define shaders
+			hologram_preview_shader_info.vertex_source(
+				'''
+				void main()
+				{
+					texCoord = uv;
+					gl_Position = viewProjectionMatrix * modelMatrix * vec4(position, 0.0, 1.0);
+				}
+				'''
+			)
+
+			hologram_preview_shader_info.fragment_source(
+				'''
+				void main()
+				{
+					// Input info
+					vec2 boxPos; // The position of the center of the box (in normalized coordinates)
+					vec2 boxBnd; // The half-bounds (radii) of the box (in normalzied coordinates)
+					float radius;// Radius
+
+					boxPos = vec2(0.5, 0.5);	// center of the screen
+					boxBnd = vec2(0.5, 0.5);  // half of the area
+					radius = 0.04;
+
+					// Normalize the pixel coordinates (this is "passTexCoords" in your case)
+					vec2 uv = texCoord;
+					vec2 aspectRatio = vec2(dimensions.x/dimensions.y, 1.0);
+
+					// In order to make sure visual distances are preserved, we multiply everything by aspectRatio
+					uv *= aspectRatio;
+					boxPos *= aspectRatio;
+					boxBnd *= aspectRatio;
+
+					// Output to screen
+					float a = length(max(abs(uv - boxPos) - boxBnd + radius, 0.0)) - radius;
+
+					// Shadertoy doesn't have an alpha in this case
+					if(a <= 0.0){
+						FragColor = texture(view_texture, texCoord);
+						FragColor.a = alpha;
+					}else{
+						FragColor = vec4(0.0, 0.0, 0.0, 0.0);
+					}
+
+				}
+				'''
+			)
+
+			# compile hologram preview / blocks shader
+			self.shader = gpu.shader.create_from_info(hologram_preview_shader_info)
+			del hologram_preview_shader_info
+			del hologram_preview_shader_interface
+
+		# for portrait orientations
+		if self.aspect < 1:
+			position_vertices = ((-self.aspect, -1), (self.aspect, -1), (self.aspect, 1), (-self.aspect, 1))
+
+		# for portrait orientations
+		elif self.aspect >= 1:
+			position_vertices = ((-1, -1/self.aspect), (1, -1/self.aspect), (1, 1/self.aspect), (-1, 1/self.aspect))
+
+		# compile block shader
+		self.batch = batch_for_shader(
+			self.shader, 'TRI_FAN',
 			{
-			    return length(max(abs(CenterPosition)-Size+Radius,0.0))-Radius;
-			}
+				"position": position_vertices,
+				"uv": ((0, 0), (1, 0), (1, 1), (0, 1)),
+			},
+		)
 
-            void main()
-            {
-			    // Input info
-			    vec2 boxPos; // The position of the center of the box (in normalized coordinates)
-			    vec2 boxBnd; // The half-bounds (radii) of the box (in normalzied coordinates)
-			    float radius;// Radius
+	# this is widely based on the following stackexchange thread:
+	# https://blender.stackexchange.com/questions/16472/how-can-i-get-the-cameras-projection-matrix/86570#86570
+	# which is a python translation of Blenders internal projection matrix calculations
+	def __projection_matrix(self, x, y, scale_x, scale_y):
 
+		# set camera parameters that we require for the block rendering
+		camera_lens = 50.0
+		camera_sensor_width = 36.0
+		camera_sensor_height = 24.0
+		camera_shift_x = 0
+		camera_shift_y = 0
+		camera_clip_start = 0.001
+		camera_clip_end = 100
 
-			   	boxPos = vec2(0.5, 0.5);	// center of the screen
-			    boxBnd = vec2(0.5, 0.5);  // half of the area
-			    radius = 0.04;
+		def view_plane(winx, winy, xasp, yasp):
 
-			    // Normalize the pixel coordinates (this is "passTexCoords" in your case)
-			    vec2 uv = texCoord;
-			    vec2 aspectRatio = vec2(dimensions.x/dimensions.y, 1.0);
+			#/* fields rendering */
+			ycor = yasp / xasp
 
-			    // In order to make sure visual distances are preserved, we multiply everything by aspectRatio
-			    uv *= aspectRatio;
-			    boxPos *= aspectRatio;
-			    boxBnd *= aspectRatio;
+			#/* perspective camera */
+			pixsize = (camera_sensor_width * 0.001) / camera_lens
 
-			    // Output to screen
-			    float a = length(max(abs(uv - boxPos) - boxBnd + radius, 0.0)) - radius;
+			# for landscape devices
+			if (self.aspect >= 1):
+			  viewfac = winx
 
-				// Shadertoy doesn't have an alpha in this case
-			    if(a <= 0.0){
-			    	FragColor = texture(view_texture, texCoord);
-	                FragColor.a = alpha;
-			    }else{
-			        FragColor = vec4(0.0, 0.0, 0.0, 0.0);
-			    }
+			# for portrait devices
+			else:
+			  viewfac = ycor * winy
 
-            }
-        '''
+			pixsize /= viewfac
 
+			#/* extra zoom factor */
+			pixsize *= 1
 
+			#/* compute view plane:
+			# * fully centered, zbuffer fills in jittered between -.5 and +.5 */
+			xmin = -0.5 * winx
+			ymin = -0.5 * ycor * winy
+			xmax =  0.5 * winx
+			ymax =  0.5 * ycor * winy
 
-        # for portrait orientations
-        if self.aspect < 1:
-            position_vertices = ((-self.aspect, -1), (self.aspect, -1), (self.aspect, 1), (-self.aspect, 1))
+			#/* lens shift and offset */
+			dx = camera_shift_x * viewfac
+			dy = camera_shift_y * viewfac
 
-        # for portrait orientations
-        elif self.aspect >= 1:
-            position_vertices = ((-1, -1/self.aspect), (1, -1/self.aspect), (1, 1/self.aspect), (-1, 1/self.aspect))
+			xmin += dx
+			ymin += dy
+			xmax += dx
+			ymax += dy
 
-        # compile block shader
-        self.shader = gpu.types.GPUShader(self.vertex_shader, self.fragment_shader)
-        self.batch = batch_for_shader(
-            self.shader, 'TRI_FAN',
-            {
-                "position": position_vertices,
-                "uv": ((0, 0), (1, 0), (1, 1), (0, 1)),
-            },
-        )
+			#/* the window matrix is used for clipping, and not changed during OSA steps */
+			#/* using an offset of +0.5 here would give clip errors on edges */
+			xmin *= pixsize
+			xmax *= pixsize
+			ymin *= pixsize
+			ymax *= pixsize
 
-    # this is widely based on the following stackexchange thread:
-    # https://blender.stackexchange.com/questions/16472/how-can-i-get-the-cameras-projection-matrix/86570#86570
-    # which is a python translation of Blenders internal projection matrix calculations
-    def __projection_matrix(self, x, y, scale_x, scale_y):
+			return xmin, xmax, ymin, ymax
 
-        # set camera parameters that we require for the block rendering
-        camera_lens = 50.0
-        camera_sensor_width = 36.0
-        camera_sensor_height = 24.0
-        camera_shift_x = 0
-        camera_shift_y = 0
-        camera_clip_start = 0.001
-        camera_clip_end = 100
+		left, right, bottom, top = view_plane(x, y, scale_x, scale_y)
 
-        def view_plane(winx, winy, xasp, yasp):
+		farClip, nearClip = camera_clip_end, camera_clip_start
 
-            #/* fields rendering */
-            ycor = yasp / xasp
+		Xdelta = right - left
+		Ydelta = top - bottom
+		Zdelta = farClip - nearClip
 
-            #/* perspective camera */
-            pixsize = (camera_sensor_width * 0.001) / camera_lens
+		mat = [[0]*4 for i in range(4)]
 
-            # for landscape devices
-            if (self.aspect >= 1):
-              viewfac = winx
+		mat[0][0] = nearClip * 2 / Xdelta
+		mat[1][1] = nearClip * 2 / Ydelta
+		mat[2][0] = (right + left) / Xdelta #/* note: negate Z  */
+		mat[2][1] = (top + bottom) / Ydelta
+		mat[2][2] = -(farClip + nearClip) / Zdelta
+		mat[2][3] = -1
+		mat[3][2] = (-2 * nearClip * farClip) / Zdelta
 
-            # for portrait devices
-            else:
-              viewfac = ycor * winy
+		return sum([c for c in mat], [])
 
-            pixsize /= viewfac
+	# create a view matrix from a virtual camera position, target vector, and up
+	# vector
+	def __matrix_look_at(self, camera_location, camera_target, camera_up):
 
-            #/* extra zoom factor */
-            pixsize *= 1
+		# calculate coordinate vectors
+		camera_direction = (camera_location - camera_target).normalized()
+		camera_right = camera_up.cross(camera_direction).normalized()
+		camera_up = camera_direction.cross(camera_right).normalized()
 
-            #/* compute view plane:
-            # * fully centered, zbuffer fills in jittered between -.5 and +.5 */
-            xmin = -0.5 * winx
-            ymin = -0.5 * ycor * winy
-            xmax =  0.5 * winx
-            ymax =  0.5 * ycor * winy
+		# rotation matrix
+		matrix_rotation = Matrix()
+		matrix_rotation[0][:3] = camera_right[:]
+		matrix_rotation[1][:3] = camera_up[:]
+		matrix_rotation[2][:3] = camera_direction[:]
 
-            #/* lens shift and offset */
-            dx = camera_shift_x * viewfac
-            dy = camera_shift_y * viewfac
+		# translation matrix
+		matrix_translation = Matrix.Translation(-camera_location)
 
-            xmin += dx
-            ymin += dy
-            xmax += dx
-            ymax += dy
+		# calculate and return view matrix ("lookat" matrix)
+		return matrix_rotation @ matrix_translation
 
-            #/* the window matrix is used for clipping, and not changed during OSA steps */
-            #/* using an offset of +0.5 here would give clip errors on edges */
-            xmin *= pixsize
-            xmax *= pixsize
-            ymin *= pixsize
-            ymax *= pixsize
+	# update the view and perspective matrices
+	def __update_matrices(self, context):
 
-            return xmin, xmax, ymin, ymax
+		if context.space_data is None:
+			return None
 
-        left, right, bottom, top = view_plane(x, y, scale_x, scale_y)
+		# calculate the inverted view matrix because this is what the draw_view_3D function requires
+		self.view_matrix = self.__matrix_look_at(Vector((sin(radians(self.angle)) * 3.1, 0, cos(radians(self.angle)) * 3.1)), Vector((0, 0, 0)), Vector((0, 1, 0)))
 
-        farClip, nearClip = camera_clip_end, camera_clip_start
+		# get the camera's projection matrix
+		self.projection_matrix = self.__projection_matrix(
+				x = self.qs[self.preset]['view_width'],
+				y = self.qs[self.preset]['view_height'],
+				scale_x = 1.0,
+				scale_y = (self.qs[self.preset]['rows'] / self.qs[self.preset]['columns']) / self.aspect,
+			)
 
-        Xdelta = right - left
-        Ydelta = top - bottom
-        Zdelta = farClip - nearClip
+	# test if mouse is hovering over the block
+	def is_mouse_over(self, context):
+		if context is None or context.space_data is None:
+			return False
 
-        mat = [[0]*4 for i in range(4)]
+		# for 3D viewports
+		if context.space_data.type == 'VIEW_3D':
+			# for left positioned blocks
+			if context.scene.addon_settings.viewport_block_alignment == 'left':
+				if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+					return True
 
-        mat[0][0] = nearClip * 2 / Xdelta
-        mat[1][1] = nearClip * 2 / Ydelta
-        mat[2][0] = (right + left) / Xdelta #/* note: negate Z  */
-        mat[2][1] = (top + bottom) / Ydelta
-        mat[2][2] = -(farClip + nearClip) / Zdelta
-        mat[2][3] = -1
-        mat[3][2] = (-2 * nearClip * farClip) / Zdelta
+			# for right positioned blocks
+			if context.scene.addon_settings.viewport_block_alignment == 'right':
+				if (LookingGlassAddon.mouse_region_x > context.area.width - self.width - self.x - 50 and LookingGlassAddon.mouse_region_x < context.area.width - self.width - self.x - 50 + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+					return True
 
-        return sum([c for c in mat], [])
+		# for image editors
+		elif context.space_data.type == 'IMAGE_EDITOR':
 
-    # create a view matrix from a virtual camera position, target vector, and up
-    # vector
-    def __matrix_look_at(self, camera_location, camera_target, camera_up):
-
-        # calculate coordinate vectors
-        camera_direction = (camera_location - camera_target).normalized()
-        camera_right = camera_up.cross(camera_direction).normalized()
-        camera_up = camera_direction.cross(camera_right).normalized()
-
-        # rotation matrix
-        matrix_rotation = Matrix()
-        matrix_rotation[0][:3] = camera_right[:]
-        matrix_rotation[1][:3] = camera_up[:]
-        matrix_rotation[2][:3] = camera_direction[:]
-
-        # translation matrix
-        matrix_translation = Matrix.Translation(-camera_location)
-
-        # calculate and return view matrix ("lookat" matrix)
-        return matrix_rotation @ matrix_translation
-
-    # update the view and perspective matrices
-    def __update_matrices(self, context):
-
-        if context.space_data is None:
-            return None
-
-        # calculate the inverted view matrix because this is what the draw_view_3D function requires
-        self.view_matrix = self.__matrix_look_at(Vector((sin(radians(self.angle)) * 3.1, 0, cos(radians(self.angle)) * 3.1)), Vector((0, 0, 0)), Vector((0, 1, 0)))
-
-        # get the camera's projection matrix
-        self.projection_matrix = self.__projection_matrix(
-                x = self.qs[self.preset]['view_width'],
-                y = self.qs[self.preset]['view_height'],
-                scale_x = 1.0,
-                scale_y = (self.qs[self.preset]['rows'] / self.qs[self.preset]['columns']) / self.aspect,
-            )
-
-    # test if mouse is hovering over the block
-    def is_mouse_over(self, context):
-        if context is None or context.space_data is None:
-            return False
-
-        # for 3D viewports
-        if context.space_data.type == 'VIEW_3D':
-            # for left positioned blocks
-            if context.scene.addon_settings.viewport_block_alignment == 'left':
-                if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
-                    return True
-
-            # for right positioned blocks
-            if context.scene.addon_settings.viewport_block_alignment == 'right':
-                if (LookingGlassAddon.mouse_region_x > context.area.width - self.width - self.x - 50 and LookingGlassAddon.mouse_region_x < context.area.width - self.width - self.x - 50 + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
-                    return True
-
-        # for image editors
-        elif context.space_data.type == 'IMAGE_EDITOR':
-
-            if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
-                return True
+			if (LookingGlassAddon.mouse_region_x > self.x and LookingGlassAddon.mouse_region_x < self.x + self.width) and (LookingGlassAddon.mouse_region_y > self.y and LookingGlassAddon.mouse_region_y < self.y + self.height):
+				return True
 
 	# check if block has changed
-    def has_changed(self, context):
-        if self.changed or self.shading_type != context.space_data.shading.type:
-            return True
+	def has_changed(self, context):
+		if self.changed or self.shading_type != context.space_data.shading.type:
+			return True
 
-    # store lightfield image in the block data
-    def set_lightfield_image(self, lightfield_image):
-        if  not (lightfield_image is None or self.lightfield_image == lightfield_image):
-            self.lightfield_image = lightfield_image
+	# store lightfield image in the block data
+	def set_lightfield_image(self, lightfield_image):
+		if  not (lightfield_image is None or self.lightfield_image == lightfield_image):
+			self.lightfield_image = lightfield_image
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store dimensions in the block data
-    def set_dimensions(self, width, height):
+	# store dimensions in the block data
+	def set_dimensions(self, width, height):
 
-        if (not width is None and width != self.width) or (not height is None and height != self.height):
+		if (not width is None and width != self.width) or (not height is None and height != self.height):
 
-            if not width is None:
-                self.width = int(width)
+			if not width is None:
+				self.width = int(width)
 
-            if not height is None:
-                self.height = int(height)
+			if not height is None:
+				self.height = int(height)
 
-            # free the offscreen object
-            if self.offscreen_canvas: self.offscreen_canvas.free()
+			# free the offscreen object
+			if self.offscreen_canvas: self.offscreen_canvas.free()
 
-            # create a new offscreen block is drawn in
-            self.offscreen_canvas = gpu.types.GPUOffScreen(self.width, self.height)
+			# create a new offscreen block is drawn in
+			self.offscreen_canvas = gpu.types.GPUOffScreen(self.width, self.height)
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # set the device type for this Block
-    def set_device(self, device):
+	# set the device type for this Block
+	def set_device(self, device):
 
-        if not (device is None or self.device == device):
-            self.device = device
+		if not (device is None or self.device == device):
+			self.device = device
 
-            # set the aspect and view cone
-            self.aspect = device.aspect
-            self.view_cone = device.viewCone
+			# set the aspect and view cone
+			self.aspect = device.aspect
+			self.view_cone = device.viewCone
 
-            # update shaders to include the new aspect ratio
-            self.__update_shaders()
+			# update shaders to include the new aspect ratio
+			self.__update_shaders()
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # set the quilt preset for this Block
-    def set_preset(self, preset):
+	# set the quilt preset for this Block
+	def set_preset(self, preset):
 
-        if not (preset is None or self.preset == preset):
-            self.preset = preset
+		if not (preset is None or self.preset == preset):
+			self.preset = preset
 
-            # get list of formats
-            self.qs = pylio.LookingGlassQuilt.formats.get()
+			# get list of formats
+			self.qs = pylio.LookingGlassQuilt.formats.get()
 
-            # free offscreen
-            if self.offscreen_view: self.offscreen_view.free()
+			# free offscreen
+			if self.offscreen_view: self.offscreen_view.free()
 
-            # create a new offscreen the view is drawn to
-            self.offscreen_view = gpu.types.GPUOffScreen(self.qs[self.preset]['view_width'], self.qs[self.preset]['view_height'])
+			# create a new offscreen the view is drawn to
+			self.offscreen_view = gpu.types.GPUOffScreen(self.qs[self.preset]['view_width'], self.qs[self.preset]['view_height'])
 
-            # update shaders to include the new aspect ratio
-            self.__update_shaders()
+			# update shaders to include the new aspect ratio
+			self.__update_shaders()
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store view in the block data
-    def set_view(self, view):
-        if not (view is None or self.view == view):
-            self.view = view
+	# store view in the block data
+	def set_view(self, view):
+		if not (view is None or self.view == view):
+			self.view = view
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store view cone in the block data
-    def set_view_cone(self, view_cone):
-        if not (view_cone is None or self.view_cone == view_cone):
-            self.view_cone = view_cone
+	# store view cone in the block data
+	def set_view_cone(self, view_cone):
+		if not (view_cone is None or self.view_cone == view_cone):
+			self.view_cone = view_cone
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store angle in the block data
-    def set_angle(self, angle):
-        if not (angle is None or self.angle == angle):
-            self.angle = angle
+	# store angle in the block data
+	def set_angle(self, angle):
+		if not (angle is None or self.angle == angle):
+			self.angle = angle
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store activity value in the block data
-    def set_active(self, active):
-        if not (active is None or self.active == active):
-            self.active = active
+	# store activity value in the block data
+	def set_active(self, active):
+		if not (active is None or self.active == active):
+			self.active = active
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store aspect ratio of the views in the block data
-    def set_aspect(self, aspect):
-        if not (aspect is None or self.aspect == aspect):
-            self.aspect = aspect
+	# store aspect ratio of the views in the block data
+	def set_aspect(self, aspect):
+		if not (aspect is None or self.aspect == aspect):
+			self.aspect = aspect
 
-            # update shaders to include the new aspect ratio
-            self.__update_shaders()
+			# update shaders to include the new aspect ratio
+			self.__update_shaders()
 
-            # block has changed
-            self.changed = True
+			# block has changed
+			self.changed = True
 
-    # store border_width value in the block data
-    def set_border_width(self, border_width):
-        if not border_width is None:
-            self.border_width = border_width
+	# store border_width value in the block data
+	def set_border_width(self, border_width):
+		if not border_width is None:
+			self.border_width = border_width
 
-    # store border_color value in the block data
-    def set_border_color(self, border_color):
-        if not border_color is None:
-            self.border_color = border_color
+	# store border_color value in the block data
+	def set_border_color(self, border_color):
+		if not border_color is None:
+			self.border_color = border_color
 
-    # update the block by rendering it in its own offscreen
-    def update(self, context):
+	# update the block by rendering it in its own offscreen
+	def update(self, context):
 
-        # if the block has a view texture
-        if self.offscreen_view:
+		# if the block has a view texture
+		if self.offscreen_view:
 
-            # update matrices
-            self.__update_matrices(context)
+			# update matrices
+			self.__update_matrices(context)
 
 			# update shading type variable
-            if hasattr(context.space_data, 'shading'): self.shading_type = context.space_data.shading.type
+			if hasattr(context.space_data, 'shading'): self.shading_type = context.space_data.shading.type
 
-            # start drawing into the preview offscreen
-            with self.offscreen_canvas.bind():
+			# start drawing into the preview offscreen
+			with self.offscreen_canvas.bind():
 
-                # get active frame buffer
-                framebuffer = gpu.state.active_framebuffer_get()
+				# get active frame buffer
+				framebuffer = gpu.state.active_framebuffer_get()
 
-                # clear the framebuffer
-                framebuffer.clear(color=(0.0, 0.0, 0.0, 0.0))
+				# clear the framebuffer
+				framebuffer.clear(color=(0.0, 0.0, 0.0, 0.0))
 
-                # update shader uniforms
-                from struct import pack
-                self.shader.bind()
-                self.shader.uniform_float("modelMatrix", self.view_matrix)
-                self.shader.uniform_float("viewProjectionMatrix", self.projection_matrix)
-                #self.shader.uniform_float("aspect", self.aspect)
-                self.shader.uniform_vector_float(self.shader.uniform_from_name("dimensions"), pack("2f", self.width, self.height), 2)
-                #self.shader.uniform_float("border_width", self.border_width)
-                #self.shader.uniform_float("border_color", self.border_color)
-                if context.space_data.type == 'VIEW_3D':
-                    if self.active: self.shader.uniform_float("alpha", 1.0)
-                    if not self.active: self.shader.uniform_float("alpha", context.scene.addon_settings.viewport_block_alpha)
-                if context.space_data.type == 'IMAGE_EDITOR':
-                    self.shader.uniform_float("alpha", 1.0)
-                self.shader.uniform_sampler("view_texture", self.offscreen_view.texture_color)
+				# update shader uniforms
+				from struct import pack
+				self.shader.bind()
+				self.shader.uniform_float("modelMatrix", self.view_matrix)
+				self.shader.uniform_float("viewProjectionMatrix", self.projection_matrix)
+				#self.shader.uniform_float("aspect", self.aspect)
+				self.shader.uniform_vector_float(self.shader.uniform_from_name("dimensions"), pack("2f", self.width, self.height), 2)
+				#self.shader.uniform_float("border_width", self.border_width)
+				#self.shader.uniform_float("border_color", self.border_color)
+				if context.space_data.type == 'VIEW_3D':
+					if self.active: self.shader.uniform_float("alpha", 1.0)
+					if not self.active: self.shader.uniform_float("alpha", context.scene.addon_settings.viewport_block_alpha)
+				if context.space_data.type == 'IMAGE_EDITOR':
+					self.shader.uniform_float("alpha", 1)
+				self.shader.uniform_sampler("view_texture", self.offscreen_view.texture_color)
 
-                # draw the block image
-                self.batch.draw(self.shader)
+				# draw the block image
+				self.batch.draw(self.shader)
 
 	# free the block and all its resources
-    def free(self):
+	def free(self):
 
-        # make sure the block is not drawn
-        self.changed = False
+		# make sure the block is not drawn
+		self.changed = False
 
 		# free shader and batch
-        if hasattr(self, "shader"): del self.shader
-        if hasattr(self, "batch"): del self.batch
+		if hasattr(self, "shader"): del self.shader
+		if hasattr(self, "batch"): del self.batch
 
 		# free offscreens
-        try: 
-            self.offscreen_view.free()
-            self.offscreen_canvas.free()
-        finally:
-            return
+		try: 
+			self.offscreen_view.free()
+			self.offscreen_canvas.free()
+		finally:
+			return
 
 # Class for rendering a Looking Glass Block in Blenders 3D viewport for live preview
 class BlockRenderer:
 
-    # ------------ KEYMAP OPERATOR FOR BLOCK RENDERER UPDATES -------------
-    class LOOKINGGLASS_OT_update_block_renderer(bpy.types.Operator):
-        """ This operator updates the block renderer"""
-        bl_idname = "wm.update_block_renderer"
-        bl_label = "Alice/LG: Block Renderer Update"
+	# ------------ KEYMAP OPERATOR FOR BLOCK RENDERER UPDATES -------------
+	class LOOKINGGLASS_OT_update_block_renderer(bpy.types.Operator):
+		""" This operator updates the block renderer"""
+		bl_idname = "wm.update_block_renderer"
+		bl_label = "Alice/LG: Block Renderer Update"
 
-        def invoke(self, context, event):
+		def invoke(self, context, event):
 
-            if (context is None) or (event is None) or (not context is None and context.area is None) or not hasattr(context.scene, "addon_settings"):
-                return {'PASS_THROUGH'}
+			if (context is None) or (event is None) or (not context is None and context.area is None) or not hasattr(context.scene, "addon_settings"):
+				return {'PASS_THROUGH'}
 
-            # if the hologram preview is not active
-            if context.space_data.type == "VIEW_3D" and not context.scene.addon_settings.viewport_block_show:
-                return {'PASS_THROUGH'}
+			# if the hologram preview is not active
+			if context.space_data.type == "VIEW_3D" and not context.scene.addon_settings.viewport_block_show:
+				return {'PASS_THROUGH'}
 
-            # if the hologram preview is not active
-            if context.space_data.type == 'IMAGE_EDITOR' and not context.scene.addon_settings.imageeditor_block_show:
-                return {'PASS_THROUGH'}
+			# if the hologram preview is not active
+			if context.space_data.type == 'IMAGE_EDITOR' and not context.scene.addon_settings.imageeditor_block_show:
+				return {'PASS_THROUGH'}
 
-            # mouse position in window
-            LookingGlassAddon.mouse_window_x = event.mouse_x
-            LookingGlassAddon.mouse_window_y = event.mouse_y
+			# mouse position in window
+			LookingGlassAddon.mouse_window_x = event.mouse_x
+			LookingGlassAddon.mouse_window_y = event.mouse_y
 
-            # if the mouse is not in this area
-            if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
-                return {'PASS_THROUGH'}
+			# if the mouse is not in this area
+			if not ((LookingGlassAddon.mouse_window_x >= context.area.x and LookingGlassAddon.mouse_window_x <= context.area.x + context.area.width) and (LookingGlassAddon.mouse_window_y >= context.area.y and LookingGlassAddon.mouse_window_y <= context.area.y + context.area.height)):
+				return {'PASS_THROUGH'}
 
-            # mouse position in current context region
-            LookingGlassAddon.mouse_region_x = event.mouse_x - context.region.x
-            LookingGlassAddon.mouse_region_y = event.mouse_y - context.region.y
+			# mouse position in current context region
+			LookingGlassAddon.mouse_region_x = event.mouse_x - context.region.x
+			LookingGlassAddon.mouse_region_y = event.mouse_y - context.region.y
 
-            # for 3D viewports
-            if context.space_data.type == "VIEW_3D":
+			# for 3D viewports
+			if context.space_data.type == "VIEW_3D":
 
-                # if the settings are to be taken from device selection AND a device is active
-                if context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+				# if the settings are to be taken from device selection AND a device is active
+				if context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
 
-                    # currently selected device
-                    device = pylio.DeviceManager.get_active()
+					# currently selected device
+					device = pylio.DeviceManager.get_active()
 
-                else:
+				else:
 
-                    # make the emulated device the active device, if one was found
-                    device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.render_device_type))
+					# make the emulated device the active device, if one was found
+					device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.render_device_type))
 
-                # get the viewport block
-                block = LookingGlassAddon.ViewportBlockRenderer.get_viewport_block()
-                if block and device:
+				# get the viewport block
+				block = LookingGlassAddon.ViewportBlockRenderer.get_viewport_block()
+				if block and device:
 
-                    # infer the current view
-                    if context.region.type != 'HEADER' and block.is_mouse_over(context):
+					# infer the current view
+					if context.region.type != 'HEADER' and block.is_mouse_over(context):
 
-                        # for left positioned blocks
-                        if context.scene.addon_settings.viewport_block_alignment == 'left':
-                            # calculate the view number and angle
-                            view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
-                            angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
+						# for left positioned blocks
+						if context.scene.addon_settings.viewport_block_alignment == 'left':
+							# calculate the view number and angle
+							view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
+							angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
 
-                        # for right positioned blocks
-                        elif context.scene.addon_settings.viewport_block_alignment == 'right':
+						# for right positioned blocks
+						elif context.scene.addon_settings.viewport_block_alignment == 'right':
 
-                            # calculate the view number and angle
-                            view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width))
-                            angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x - 50)) / block.width - 0.5))
+							# calculate the view number and angle
+							view = floor(block.qs[block.preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x)) / block.width))
+							angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - (context.area.width - block.width - block.x - 50)) / block.width - 0.5))
 
-                        # update state variables
-                        block.set_active(True)
-                        block.set_device(device)
-                        block.set_view(view)
-                        block.set_angle(angle)
+						# update state variables
+						block.set_active(True)
+						block.set_device(device)
+						block.set_view(view)
+						block.set_angle(angle)
 
-                        # redraw region
-                        context.area.tag_redraw()
+						# redraw region
+						context.area.tag_redraw()
 
-                        return {'PASS_THROUGH'}
+						return {'PASS_THROUGH'}
 
-            # for Image Editors
-            elif context.space_data.type == "IMAGE_EDITOR":
+			# for Image Editors
+			elif context.space_data.type == "IMAGE_EDITOR":
 
-                # get the selected device
-                device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
+				# get the selected device
+				device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
 
-                # get the image
-                image = context.space_data.image
+				# get the image
+				image = context.space_data.image
 
-                # get the image editor block
-                block = LookingGlassAddon.ImageBlockRenderer.get_imageeditor_block()
-                if block and device and image:
+				# get the image editor block
+				block = LookingGlassAddon.ImageBlockRenderer.get_imageeditor_block()
+				if block and device and image:
 
-                    # get image name
-                    image_name = image.name
-                    preset, quilt_format = LookingGlassAddon.ImageBlockRenderer.detect_from_quilt_suffix(context, image_name)
-                    if preset:
+					# get image name
+					image_name = image.name
+					preset, quilt_format = LookingGlassAddon.ImageBlockRenderer.detect_from_quilt_suffix(context, image_name)
+					if preset:
 
-                        # set the preset
-                        block.set_preset(preset)
+						# set the preset
+						block.set_preset(preset)
 
-                        # update dimensions
-                        block.set_dimensions(int(device.width * context.space_data.zoom[0]), int(device.height * context.space_data.zoom[1]))
+						# update dimensions
+						block.set_dimensions(int(device.width * context.space_data.zoom[0]), int(device.height * context.space_data.zoom[1]))
 
-                        # infer the current view
-                        if context.region.type != 'HEADER' and block.is_mouse_over(context):
+						# infer the current view
+						if context.region.type != 'HEADER' and block.is_mouse_over(context):
 
-                            # calculate the view number and angle
-                            view = floor(block.qs[preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
-                            angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
+							# calculate the view number and angle
+							view = floor(block.qs[preset]["total_views"] * (1 - (LookingGlassAddon.mouse_region_x - block.x) / block.width))
+							angle = -floor(device.viewCone * ((LookingGlassAddon.mouse_region_x - block.x) / block.width - 0.5))
 
-                            # update state variables
-                            block.set_device(device)
-                            block.set_view(view)
-                            block.set_angle(angle)
+							# update state variables
+							block.set_device(device)
+							block.set_view(view)
+							block.set_angle(angle)
 
-                            # redraw region
-                            context.area.tag_redraw()
+							# redraw region
+							context.area.tag_redraw()
 
-                            return {'PASS_THROUGH'}
+							return {'PASS_THROUGH'}
 
-            # otherwise show centered view as default
-            if block and device and block.preset:
+			# otherwise show centered view as default
+			if block and device and block.preset:
 
-                # if the mouse is outside the area use the center view
-                view = floor(block.qs[block.preset]["total_views"] / 2)
-                angle = floor(0)
+				# if the mouse is outside the area use the center view
+				view = floor(block.qs[block.preset]["total_views"] / 2)
+				angle = floor(0)
 
-                # update state variables
-                block.set_active(False)
-                block.set_device(device)
-                block.set_view(view)
-                block.set_angle(angle)
+				# update state variables
+				block.set_active(False)
+				block.set_device(device)
+				block.set_view(view)
+				block.set_angle(angle)
 
-                # redraw region
-                context.area.tag_redraw()
+				# redraw region
+				context.area.tag_redraw()
 
-            return {'PASS_THROUGH'}
-
-
-
-    # ------------ BLOCK RENDERER -------------
-    # Inititalize the block renderer
-    def __init__(self):
-
-	    # renderer type and state
-	    self.__type = None
-	    self.__is_running = False
-
-	    # drawing handlers
-	    self.__block_draw_view_view3d_handler = None
-	    self.__block_draw_block_view3d_handler = None
-	    self.__block_depsgraph_handler = None
-	    self.__block_frame_change_handler = None
-	    self.__block_draw_view_imageeditor_handler = None
-	    self.__block_draw_block_imageeditor_handler = None
-	    self.__block_imageeditor_autodetected = False
-
-	    # private class properties
-	    self.__blocks = {}
-	    self.__last_id = 0
-
-	    # active blocks
-	    self.__viewport3d_block = None
-	    self.__imageeditor_block = None
-
-	    # active presets
-	    self.__viewport3d_preset = 0
-	    self.__imageeditor_preset = 0
-
-	    # context override
-	    self.__override = None
+			return {'PASS_THROUGH'}
 
 
 
-    # deinititalize the block renderer
-    def __del__(self):
+	# ------------ BLOCK RENDERER -------------
+	# Inititalize the block renderer
+	def __init__(self):
 
-		# if this is for the viewport
-        if self.__type == 'VIEW_3D':
+		# renderer type and state
+		self.__type = None
+		self.__is_running = False
 
-	        # remove the draw handlers
-	        if self.__block_draw_view_view3d_handler:
-	            bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view_view3d_handler, 'WINDOW')
-	            self.__block_draw_view_view3d_handler = None
+		# drawing handlers
+		self.__block_draw_view_view3d_handler = None
+		self.__block_draw_block_view3d_handler = None
+		self.__block_depsgraph_handler = None
+		self.__block_frame_change_handler = None
+		self.__block_draw_view_imageeditor_handler = None
+		self.__block_draw_block_imageeditor_handler = None
+		self.__block_imageeditor_autodetected = False
 
-	        if self.__block_draw_block_view3d_handler:
-	            bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_block_view3d_handler, 'WINDOW')
-	            self.__block_draw_block_view3d_handler = None
+		# private class properties
+		self.__blocks = {}
+		self.__last_id = 0
+
+		# active blocks
+		self.__viewport3d_block = None
+		self.__imageeditor_block = None
+
+		# active presets
+		self.__viewport3d_preset = 0
+		self.__imageeditor_preset = 0
+
+		# context override
+		self.__override = None
+
+
+
+	# deinititalize the block renderer
+	def __del__(self):
 
 		# if this is for the viewport
-        if self.__type == 'IMAGE_EDITOR':
+		if self.__type == 'VIEW_3D':
 
-	        # remove the draw handlers
-	        if self.__block_draw_view_imageeditor_handler:
-	            bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_view_imageeditor_handler, 'WINDOW')
-	            self.__block_draw_view_imageeditor_handler = None
+			# remove the draw handlers
+			if self.__block_draw_view_view3d_handler:
+				bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view_view3d_handler, 'WINDOW')
+				self.__block_draw_view_view3d_handler = None
 
-	        if self.__block_draw_block_imageeditor_handler:
-	            bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_block_imageeditor_handler, 'WINDOW')
-	            self.__block_draw_block_imageeditor_handler = None
+			if self.__block_draw_block_view3d_handler:
+				bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_block_view3d_handler, 'WINDOW')
+				self.__block_draw_block_view3d_handler = None
 
-        # free all blocks
-        for id, block in self.__blocks.items():
-            block.free()
+		# if this is for the viewport
+		if self.__type == 'IMAGE_EDITOR':
+
+			# remove the draw handlers
+			if self.__block_draw_view_imageeditor_handler:
+				bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_view_imageeditor_handler, 'WINDOW')
+				self.__block_draw_view_imageeditor_handler = None
+
+			if self.__block_draw_block_imageeditor_handler:
+				bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_block_imageeditor_handler, 'WINDOW')
+				self.__block_draw_block_imageeditor_handler = None
+
+		# free all blocks
+		for id, block in self.__blocks.items():
+			block.free()
 
 
 
-    # status of the block renderer
-    def is_running(self):
-        return self.__is_running
+	# status of the block renderer
+	def is_running(self):
+		return self.__is_running
 
 
 
-    # start the block renderer
-    def start(self, context):
+	# start the block renderer
+	def start(self, context):
 
-        # if the renderer is NOT running
-        if not self.is_running():
+		# if the renderer is NOT running
+		if not self.is_running():
 
 			# renderer type
-            self.__type = context.space_data.type
+			self.__type = context.space_data.type
 
-            # create a context override
-            self.__override = ContextOverride(context)
-
-			# if this is for the viewport
-            if self.__type == 'VIEW_3D':
-
-	            # setup the viewport block
-	            self.add_block(0, 10, 10, 420, 560)
-	            self.set_viewport_block(0)
-
-	            # add depsgraph update handler to react to scene changes
-	            self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
-
-	            # add update handler to react to frame changes
-	            self.__block_frame_change_handler = bpy.app.handlers.frame_change_post.append(self.__depsgraph_changes)
-
-	            # add draw handler to display the frustum of the Looking Glass camera
-	            # after everything else has been drawn in the view
-	            self.__block_draw_view_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_view, (context,), 'WINDOW', 'POST_PIXEL')
-	            self.__block_draw_block_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_block, (context,), 'WINDOW', 'POST_PIXEL')
+			# create a context override
+			self.__override = ContextOverride(context)
 
 			# if this is for the viewport
-            if self.__type == 'IMAGE_EDITOR':
+			if self.__type == 'VIEW_3D':
 
-	            # setup the image editor block
-	            self.add_block(0, 0, 0, 420, 560)
-	            self.set_imageeditor_block(0)
+				# setup the viewport block
+				self.add_block(0, 10, 10, 420, 560)
+				self.set_viewport_block(0)
 
-	            # add draw handler to display the frustum of the Looking Glass camera
-	            # after everything else has been drawn in the view
-	            self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
-	            self.__block_draw_block_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
+				# add depsgraph update handler to react to scene changes
+				self.__block_depsgraph_handler = bpy.app.handlers.depsgraph_update_post.append(self.__depsgraph_changes)
 
-            # update status
-            self.__is_running = True
+				# add update handler to react to frame changes
+				self.__block_frame_change_handler = bpy.app.handlers.frame_change_post.append(self.__depsgraph_changes)
 
-            # log info
-            LookingGlassAddonLogger.info("Hologram preview started.")
-
-        # keep the modal operator running
-        return (self.__block_draw_block_view3d_handler, self.__block_draw_view_imageeditor_handler, self.__block_draw_block_imageeditor_handler)
-
-    # stop the block renderer
-    def stop(self):
-
-        # if the renderer is running
-        if self.is_running():
-
-            # free all blocks
-            for id, block in self.__blocks.items():
-                block.free()
+				# add draw handler to display the frustum of the Looking Glass camera
+				# after everything else has been drawn in the view
+				self.__block_draw_view_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_view, (context,), 'WINDOW', 'POST_PIXEL')
+				self.__block_draw_block_view3d_handler = bpy.types.SpaceView3D.draw_handler_add(self.__viewport_render_block, (context,), 'WINDOW', 'POST_PIXEL')
 
 			# if this is for the viewport
-            if self.__type == 'VIEW_3D':
+			if self.__type == 'IMAGE_EDITOR':
 
-	            # remove the draw handlers
-	            if self.__block_draw_view_view3d_handler:
-	                bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view_view3d_handler, 'WINDOW')
-	                self.__block_draw_view_view3d_handler = None
+				# setup the image editor block
+				self.add_block(0, 0, 0, 420, 560)
+				self.set_imageeditor_block(0)
 
-	            # remove the draw handlers
-	            if self.__block_draw_block_view3d_handler:
-	                bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_block_view3d_handler, 'WINDOW')
-	                self.__block_draw_block_view3d_handler = None
+				# add draw handler to display the frustum of the Looking Glass camera
+				# after everything else has been drawn in the view
+				self.__block_draw_view_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_view, (context,), 'WINDOW', 'PRE_VIEW')
+				self.__block_draw_block_imageeditor_handler = bpy.types.SpaceImageEditor.draw_handler_add(self.__imageeditor_render_block, (context,), 'WINDOW', 'POST_PIXEL')
+
+			# update status
+			self.__is_running = True
+
+			# log info
+			LookingGlassAddonLogger.info("Hologram preview started.")
+
+		# keep the modal operator running
+		return (self.__block_draw_block_view3d_handler, self.__block_draw_view_imageeditor_handler, self.__block_draw_block_imageeditor_handler)
+
+	# stop the block renderer
+	def stop(self):
+
+		# if the renderer is running
+		if self.is_running():
+
+			# free all blocks
+			for id, block in self.__blocks.items():
+				block.free()
 
 			# if this is for the viewport
-            if self.__type == 'IMAGE_EDITOR':
+			if self.__type == 'VIEW_3D':
 
-	            if self.__block_draw_view_imageeditor_handler:
-	                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_view_imageeditor_handler, 'WINDOW')
-	                self.__block_draw_view_imageeditor_handler = None
+				# remove the draw handlers
+				if self.__block_draw_view_view3d_handler:
+					bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_view_view3d_handler, 'WINDOW')
+					self.__block_draw_view_view3d_handler = None
 
-	            if self.__block_draw_block_imageeditor_handler:
-	                bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_block_imageeditor_handler, 'WINDOW')
-	                self.__block_draw_block_imageeditor_handler = None
+				# remove the draw handlers
+				if self.__block_draw_block_view3d_handler:
+					bpy.types.SpaceView3D.draw_handler_remove(self.__block_draw_block_view3d_handler, 'WINDOW')
+					self.__block_draw_block_view3d_handler = None
 
-            # update status
-            self.__is_running = False
+			# if this is for the viewport
+			if self.__type == 'IMAGE_EDITOR':
 
-            # log info
-            LookingGlassAddonLogger.info("Hologram preview stopped.")
+				if self.__block_draw_view_imageeditor_handler:
+					bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_view_imageeditor_handler, 'WINDOW')
+					self.__block_draw_view_imageeditor_handler = None
 
-        # return None since this is expected by the operator
-        return None
+				if self.__block_draw_block_imageeditor_handler:
+					bpy.types.SpaceImageEditor.draw_handler_remove(self.__block_draw_block_imageeditor_handler, 'WINDOW')
+					self.__block_draw_block_imageeditor_handler = None
 
-    # add a block to the block renderer
-    def add_block(self, id, x, y, width, height):
+			# update status
+			self.__is_running = False
 
-        # add the block to the dictionary
-        self.__blocks[id] = Block(x, y, width, height)
+			# log info
+			LookingGlassAddonLogger.info("Hologram preview stopped.")
 
-    # set the block to be rendered in the Blender viewport
-    def set_viewport_block(self, id):
+		# return None since this is expected by the operator
+		return None
 
-        # set the active VIEW3D block
-        self.__viewport3d_block = id
+	# add a block to the block renderer
+	def add_block(self, id, x, y, width, height):
+
+		# add the block to the dictionary
+		self.__blocks[id] = Block(x, y, width, height)
+
+	# set the block to be rendered in the Blender viewport
+	def set_viewport_block(self, id):
+
+		# set the active VIEW3D block
+		self.__viewport3d_block = id
 
 		# get the block
-        block = self.get_viewport_block()
+		block = self.get_viewport_block()
 
-        # if the settings are to be taken from device selection AND a device is active
-        if bpy.context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+		# if the settings are to be taken from device selection AND a device is active
+		if bpy.context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
 
-            # currently selected device
-            block.set_device(pylio.DeviceManager.get_active())
+			# currently selected device
+			block.set_device(pylio.DeviceManager.get_active())
 
-            # set selected preset for this block
-            block.set_preset(int(bpy.context.scene.addon_settings.quiltPreset))
+			# set selected preset for this block
+			block.set_preset(int(bpy.context.scene.addon_settings.quiltPreset))
 
-        else:
+		else:
 
-            # set the selected emulated device as device for this block
-            block.set_device(pylio.DeviceManager.get_device(key='index', value=int(bpy.context.scene.addon_settings.render_device_type)))
+			# set the selected emulated device as device for this block
+			block.set_device(pylio.DeviceManager.get_device(key='index', value=int(bpy.context.scene.addon_settings.render_device_type)))
 
-            # set selected preset for this block
-            block.set_preset(int(bpy.context.scene.addon_settings.render_quilt_preset))
+			# set selected preset for this block
+			block.set_preset(int(bpy.context.scene.addon_settings.render_quilt_preset))
 
-    # get the block to be rendered in the Blender viewport
-    def get_viewport_block(self):
-        if not self.__viewport3d_block is None:
-            return self.__blocks[self.__viewport3d_block]
+	# get the block to be rendered in the Blender viewport
+	def get_viewport_block(self):
+		if not self.__viewport3d_block is None:
+			return self.__blocks[self.__viewport3d_block]
 
-    # set the block to be rendered in the image editor
-    def set_imageeditor_block(self, id):
+	# set the block to be rendered in the image editor
+	def set_imageeditor_block(self, id):
 
-        # set the active IMAGE_EDITOR block
-        self.__imageeditor_block = id
+		# set the active IMAGE_EDITOR block
+		self.__imageeditor_block = id
 
-        # if the settings are to be taken from device selection AND a device is active
-        if bpy.context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
+		# if the settings are to be taken from device selection AND a device is active
+		if bpy.context.scene.addon_settings.render_use_device == True and pylio.DeviceManager.get_active() is not None:
 
-            # currently selected device
-            self.__blocks[self.__imageeditor_block].set_device(pylio.DeviceManager.get_active())
+			# currently selected device
+			self.__blocks[self.__imageeditor_block].set_device(pylio.DeviceManager.get_active())
 
-        else:
+		else:
 
-            # set the selected emulated device as device for this block
-            self.__blocks[self.__imageeditor_block].set_device(pylio.DeviceManager.get_device(key='index', value=int(bpy.context.scene.addon_settings.render_device_type)))
+			# set the selected emulated device as device for this block
+			self.__blocks[self.__imageeditor_block].set_device(pylio.DeviceManager.get_device(key='index', value=int(bpy.context.scene.addon_settings.render_device_type)))
 
-    # get the block to be rendered in the image editor
-    def get_imageeditor_block(self):
-        if not self.__imageeditor_block is None:
-            return self.__blocks[self.__imageeditor_block]
+	# get the block to be rendered in the image editor
+	def get_imageeditor_block(self):
+		if not self.__imageeditor_block is None:
+			return self.__blocks[self.__imageeditor_block]
 
-    # check if the quilt and device format for the image editor have been
-    # automatically detected
-    def is_imageeditor_detected(self):
-        if not self.__imageeditor_block is None:
-            return self.__block_imageeditor_autodetected
+	# check if the quilt and device format for the image editor have been
+	# automatically detected
+	def is_imageeditor_detected(self):
+		if not self.__imageeditor_block is None:
+			return self.__block_imageeditor_autodetected
 
 
-    # Application handler that continously checks for changes of the depsgraph
-    def __depsgraph_changes(self, scene, depsgraph):
+	# Application handler that continously checks for changes of the depsgraph
+	def __depsgraph_changes(self, scene, depsgraph):
 
-        # if the block renderer is actively rendering
-        if scene.addon_settings.viewport_block_show:
+		# if the block renderer is actively rendering
+		if scene.addon_settings.viewport_block_show:
 
-            # if something in the scene has changed
-            if len(depsgraph.updates.values()) > 0:
+			# if something in the scene has changed
+			if len(depsgraph.updates.values()) > 0:
 
-                # select current viewport block
-                block = self.get_viewport_block()
-                if block is None or block.preset is None or block.offscreen_view is None:
-                    return
+				# select current viewport block
+				block = self.get_viewport_block()
+				if block is None or block.preset is None or block.offscreen_view is None:
+					return
 
-                # update the blocks status variable
-                block.changed = True
+				# update the blocks status variable
+				block.changed = True
 
 
-    # render the view for the block
-    def __viewport_render_view(self, context):
+	# render the view for the block
+	def __viewport_render_view(self, context):
 
-        # if a camera is selected AND the space is not in camera mode AND
-        # the block viewport preview shall be drawn
-        if self and context:
-            if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
-                if (context.space_data != None):
+		# if a camera is selected AND the space is not in camera mode AND
+		# the block viewport preview shall be drawn
+		if self and context:
+			if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
+				if (context.space_data != None):
 
-                    # if the cycles render engine is active in this viewport
-                    if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
-                        return
+					# if the cycles render engine is active in this viewport
+					if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
+						return
 
-                    # select correct block
-                    block = self.get_viewport_block()
-                    if block is None or block.preset is None or block.offscreen_view is None:
-                        return
+					# select correct block
+					block = self.get_viewport_block()
+					if block is None or block.preset is None or block.offscreen_view is None:
+						return
 
-                    # currently selected device
-                    device = block.device
+					# currently selected device
+					device = block.device
 
-                    # if the device exists
-                    if device:
+					# if the device exists
+					if device:
 
-                        # update dimensions
-                        if device.aspect < 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor * device.aspect), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor))
-                        if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor / device.aspect))
+						# update dimensions
+						if device.aspect < 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor * device.aspect), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor))
+						if device.aspect >= 1: block.set_dimensions(int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor), int(sqrt(context.area.width * context.area.height) * context.scene.addon_settings.viewport_block_scaling_factor / device.aspect))
 
-                    # if the block changed
-                    if block.has_changed(context):
+					# if the block changed
+					if block.has_changed(context):
 
-                        # select camera that belongs to the view
-                        camera = context.scene.addon_settings.lookingglassCamera
+						# select camera that belongs to the view
+						camera = context.scene.addon_settings.lookingglassCamera
 
-                        # PREPARE THE MODELVIEW AND PROJECTION MATRICES
-                        # if a camera is selected
-                        if camera != None:
+						# PREPARE THE MODELVIEW AND PROJECTION MATRICES
+						# if a camera is selected
+						if camera != None:
 
-                            # copy context
-                            context_copy = context.copy()
+							# copy context
+							context_copy = context.copy()
 
-                            # set the context for the override
-                            self.__override.set_context(context)
+							# set the context for the override
+							self.__override.set_context(context)
 
-                            # update all viewport shading and overlay settings
-                            self.__override.updateViewportSettings(context_copy['space_data'], force_context_data=True)
+							# update all viewport shading and overlay settings
+							self.__override.updateViewportSettings(context_copy['space_data'], force_context_data=True)
 
-                            # get camera's modelview matrix
-                            view_matrix = camera.matrix_world.copy()
+							# get camera's modelview matrix
+							view_matrix = camera.matrix_world.copy()
 
-                            # correct for the camera scaling
-                            view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
-                            view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
-                            view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
+							# correct for the camera scaling
+							view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.x, 4, (1, 0, 0))
+							view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.y, 4, (0, 1, 0))
+							view_matrix = view_matrix @ Matrix.Scale(1/camera.scale.z, 4, (0, 0, 1))
 
-                            # calculate the inverted view matrix because this is what the draw_view_3D function requires
-                            camera_view_matrix = view_matrix.inverted_safe()
+							# calculate the inverted view matrix because this is what the draw_view_3D function requires
+							camera_view_matrix = view_matrix.inverted_safe()
 
-                            # get the camera's projection matrix
-                            camera_projection_matrix = camera.calc_matrix_camera(
-                            	    depsgraph=context.view_layer.depsgraph,
-                                    x = block.qs[block.preset]["view_width"],
-                                    y = block.qs[block.preset]["view_height"],
-                                    scale_x = 1.0,
-                                    scale_y = (block.qs[block.preset]["rows"] / block.qs[block.preset]["columns"]) / block.aspect,
-                                )
+							# get the camera's projection matrix
+							camera_projection_matrix = camera.calc_matrix_camera(
+									depsgraph=context.view_layer.depsgraph,
+									x = block.qs[block.preset]["view_width"],
+									y = block.qs[block.preset]["view_height"],
+									scale_x = 1.0,
+									scale_y = (block.qs[block.preset]["rows"] / block.qs[block.preset]["columns"]) / block.aspect,
+								)
 
 
-                            # RENDER THE VIEW
-                            # ++++++++++++++++++++++++++++++++++++++++++++++++
-                            with block.offscreen_view.bind():
+							# RENDER THE VIEW
+							# ++++++++++++++++++++++++++++++++++++++++++++++++
+							with block.offscreen_view.bind():
 
-                                # calculate the offset-projection of the current view
-                                view_matrix, projection_matrix = self.__override.setupVirtualCameraForView(block.view, block.qs[block.preset]["total_views"], block.view_cone, block.aspect, camera_view_matrix.copy(), camera_projection_matrix.copy())
+								# calculate the offset-projection of the current view
+								view_matrix, projection_matrix = self.__override.setupVirtualCameraForView(block.view, block.qs[block.preset]["total_views"], block.view_cone, block.aspect, camera_view_matrix.copy(), camera_projection_matrix.copy())
 
-                                # draw the viewport rendering to the offscreen for the current view
-                                block.offscreen_view.draw_view3d(
-                                    # we use the "Scene" and the "View Layer" that is active in the Window
-                                    # the user currently works in
-                                    scene=context.scene,
-                                    view_layer=context.view_layer,
-                                    view3d=context.space_data,
-                                    region=context.region,
-                                    view_matrix=view_matrix,
-                                    projection_matrix=projection_matrix,
-                                    do_color_management = False)
+								# draw the viewport rendering to the offscreen for the current view
+								block.offscreen_view.draw_view3d(
+									# we use the "Scene" and the "View Layer" that is active in the Window
+									# the user currently works in
+									scene=context.scene,
+									view_layer=context.view_layer,
+									view3d=context.space_data,
+									region=context.region,
+									view_matrix=view_matrix,
+									projection_matrix=projection_matrix,
+									do_color_management = False)
 
-                        # restore all viewport shading and overlay settings
-                        self.__override.restoreViewportSettings()
+						# restore all viewport shading and overlay settings
+						self.__override.restoreViewportSettings()
 
-                        # reset status variable
-                        block.changed = False
+						# reset status variable
+						block.changed = False
 
 
 
-    # render the block into the viewport
-    def __viewport_render_block(self, context):
+	# render the block into the viewport
+	def __viewport_render_block(self, context):
 
-        # if a camera is selected AND the space is not in camera mode AND
-        # the block viewport preview shall be drawn
-        if self and context:
-            if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
-                if (context.space_data != None):
+		# if a camera is selected AND the space is not in camera mode AND
+		# the block viewport preview shall be drawn
+		if self and context:
+			if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.lookingglassCamera in [obj for obj in context.view_layer.objects] and context.scene.addon_settings.viewport_block_show:
+				if (context.space_data != None):
 
-                    # if the cycles render engine is active in this viewport
-                    if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
-                        return
+					# if the cycles render engine is active in this viewport
+					if context.space_data.shading.type == 'RENDERED' and context.engine == 'CYCLES':
+						return
 
-                    # select correct block
-                    block = self.get_viewport_block()
-                    if block is None or block.preset is None or block.offscreen_view is None:
-                        return
+					# select correct block
+					block = self.get_viewport_block()
+					if block is None or block.preset is None or block.offscreen_view is None:
+						return
 
-                    # update the block
-                    block.update(context)
+					# update the block
+					block.update(context)
 
-                    #gpu.state.depth_test_set('LESS_EQUAL')
-                    gpu.state.depth_mask_set(True)
-                    gpu.state.blend_set('ALPHA')
+					#gpu.state.depth_test_set('LESS_EQUAL')
+					gpu.state.depth_mask_set(True)
+					gpu.state.blend_set('ALPHA')
 
-                    # if the block is drawn in a SpaceView3D
-                    if context.space_data.type == 'VIEW_3D' and context.space_data.region_3d != None:
+					# if the block is drawn in a SpaceView3D
+					if context.space_data.type == 'VIEW_3D' and context.space_data.region_3d != None:
 
-                        if context.scene.addon_settings.viewport_block_alignment == 'left': draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
-                        if context.scene.addon_settings.viewport_block_alignment == 'right': draw_texture_2d(block.offscreen_canvas.texture_color, (context.area.width - block.width - block.x - 50, block.y), block.width, block.height)
+						if context.scene.addon_settings.viewport_block_alignment == 'left': draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+						if context.scene.addon_settings.viewport_block_alignment == 'right': draw_texture_2d(block.offscreen_canvas.texture_color, (context.area.width - block.width - block.x - 50, block.y), block.width, block.height)
 
-                    gpu.state.depth_mask_set(False)
-                    gpu.state.blend_set('NONE')
-                    #print("blend_set")
+					gpu.state.depth_mask_set(False)
+					gpu.state.blend_set('NONE')
+					#print("blend_set")
 
 
-    def detect_from_quilt_suffix(self, context, quilt_name):
-        import re
+	def detect_from_quilt_suffix(self, context, quilt_name):
+		import re
 
-        # select correct block
-        block = self.get_imageeditor_block()
+		# select correct block
+		block = self.get_imageeditor_block()
 
-        # values from the metadata
-        columns = None
-        rows = None
-        aspect = None
+		# values from the metadata
+		columns = None
+		rows = None
+		aspect = None
 
-        # if a quilt name was given
-        if quilt_name:
+		# if a quilt name was given
+		if quilt_name:
 
-            # try to extract some metadata information from the quiltname
-            try:
+			# try to extract some metadata information from the quiltname
+			try:
 
-                columns = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
-                rows = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
-                aspect = float(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
+				columns = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
+				rows = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
+				aspect = float(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
 
-            except AttributeError:
+			except AttributeError:
 
-                try:
+				try:
 
-                    columns = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(1))
-                    rows = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(2))
+					columns = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(1))
+					rows = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(2))
 
-                except AttributeError:
+				except AttributeError:
 
-                    pass
+					pass
 
-            # for each supported quilt format
-            for preset, qf in pylio.LookingGlassQuilt.formats.get().items():
+			# for each supported quilt format
+			for preset, qf in pylio.LookingGlassQuilt.formats.get().items():
 
-                # if the quilt
-                if not (columns is None or rows is None or aspect is None) and columns == qf['columns'] and rows == qf['rows']:
+				# if the quilt
+				if not (columns is None or rows is None or aspect is None) and columns == qf['columns'] and rows == qf['rows']:
 
 					# update status variable
-                    self.__block_imageeditor_autodetected = True
+					self.__block_imageeditor_autodetected = True
 
 					# update UI
-                    if context.scene.addon_settings.imageeditor_block_quilt_preset != str(preset):
-                        context.scene.addon_settings.imageeditor_block_quilt_preset = str(preset)
+					if context.scene.addon_settings.imageeditor_block_quilt_preset != str(preset):
+						context.scene.addon_settings.imageeditor_block_quilt_preset = str(preset)
 
-                    return preset, qf
+					return preset, qf
 
 		# return preset and format from the settings
-        self.__block_imageeditor_autodetected = False
-        return int(context.scene.addon_settings.imageeditor_block_quilt_preset), block.qs[int(context.scene.addon_settings.imageeditor_block_quilt_preset)]
+		self.__block_imageeditor_autodetected = False
+		return int(context.scene.addon_settings.imageeditor_block_quilt_preset), block.qs[int(context.scene.addon_settings.imageeditor_block_quilt_preset)]
 
 
-    # render the view into the offscreen
-    def __imageeditor_render_view(self, context):
+	# render the view into the offscreen
+	def __imageeditor_render_view(self, context):
 
-        # if a camera is selected AND the space is not in camera mode
-        if self and context:
-            if hasattr(context.scene, "addon_settings"):
-                if (context.space_data != None and context.space_data.type == 'IMAGE_EDITOR'):
+		# if a camera is selected AND the space is not in camera mode
+		if self and context:
+			if hasattr(context.scene, "addon_settings"):
+				if (context.space_data != None and context.space_data.type == 'IMAGE_EDITOR'):
 
-                    # get the image loaded in the image editor
-                    image = context.space_data.image
-                    if not image is None and image.type != "RENDER_RESULT":
+					# get the image loaded in the image editor
+					image = context.space_data.image
+					if not image is None and image.type != "RENDER_RESULT":
 
-	    	            # select correct block
-                        block = self.get_imageeditor_block()
+						# select correct block
+						block = self.get_imageeditor_block()
 
-                        # get the selected device
-                        device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
+						# get the selected device
+						device = pylio.DeviceManager.get_device(key='index', value=int(context.scene.addon_settings.imageeditor_block_device_type))
 
-                        # get quilt preset and format parameters
-                        preset, quilt_format = self.detect_from_quilt_suffix(context, image.name)
-                        if quilt_format:
+						# get quilt preset and format parameters
+						preset, quilt_format = self.detect_from_quilt_suffix(context, image.name)
+						if quilt_format:
 
-	                        # update dimensions
-	                        block.set_dimensions(int(device.width * context.space_data.zoom[0]), int(device.height * context.space_data.zoom[1]))
+							# update dimensions
+							block.set_dimensions(int(device.width * context.space_data.zoom[0]), int(device.height * context.space_data.zoom[1]))
 
 						# if the block mode is activated
-                        if context.scene.addon_settings.imageeditor_block_show:
+						if context.scene.addon_settings.imageeditor_block_show:
 
-	                        # if the block changed
-	                        if block.changed and block.offscreen_view:
+							# if the block changed
+							if block.changed and block.offscreen_view:
 
-	                            # create a texture from the image
-	                            #if not block.image_texture:
-	                            block.image_texture = gpu.texture.from_image(image)
+								# create a texture from the image
+								#if not block.image_texture:
+								block.image_texture = gpu.texture.from_image(image)
 
-	                            # if the texture was created
-	                            if block.image_texture:
+								# if the texture was created
+								if block.image_texture:
 
-	                                # calculate view grid indices in the quilt
-	                                view_ix = block.view % block.qs[block.preset]['columns']
-	                                view_iy = floor(block.view / block.qs[block.preset]['columns'])
+									# calculate view grid indices in the quilt
+									view_ix = block.view % block.qs[block.preset]['columns']
+									view_iy = floor(block.view / block.qs[block.preset]['columns'])
 
-	                                # RENDER THE VIEW
-	                                # ++++++++++++++++++++++++++++++++++++++++++++++++
-	                                with block.offscreen_view.bind():
+									# RENDER THE VIEW
+									# ++++++++++++++++++++++++++++++++++++++++++++++++
+									with block.offscreen_view.bind():
 
-	                                    # get the current projection matrix
-	                                    viewMatrix = gpu.matrix.get_model_view_matrix()
-	                                    projectionMatrix = gpu.matrix.get_projection_matrix()
+										# get the current projection matrix
+										viewMatrix = gpu.matrix.get_model_view_matrix()
+										projectionMatrix = gpu.matrix.get_projection_matrix()
 
-	                                    with gpu.matrix.push_pop():
+										with gpu.matrix.push_pop():
 
-	                                        # reset matrices -> use normalized device coordinates [-1, 1]
-	                                        gpu.matrix.load_matrix(Matrix.Identity(4))
-	                                        gpu.matrix.load_projection_matrix(Matrix.Identity(4))
+											# reset matrices -> use normalized device coordinates [-1, 1]
+											gpu.matrix.load_matrix(Matrix.Identity(4))
+											gpu.matrix.load_projection_matrix(Matrix.Identity(4))
 
-	                                        gpu.state.depth_test_set('GREATER_EQUAL')
-	                                        gpu.state.depth_mask_set(True)
-	                                        gpu.state.blend_set('ALPHA')
+											gpu.state.depth_test_set('GREATER_EQUAL')
+											gpu.state.depth_mask_set(True)
+											gpu.state.blend_set('ALPHA')
 
-	                                        # draw the viewport rendering to the offscreen for the current view
-	                                        draw_texture_2d(block.image_texture, (-1 - 2 * view_ix, -1 - 2 * view_iy), 2 * block.qs[block.preset]['columns'], 2 * block.qs[block.preset]['rows'])
+											# draw the viewport rendering to the offscreen for the current view
+											draw_texture_2d(block.image_texture, (-1 - 2 * view_ix, -1 - 2 * view_iy), 2 * block.qs[block.preset]['columns'], 2 * block.qs[block.preset]['rows'])
 
-	                                        gpu.state.blend_set('NONE')
-	                                        gpu.state.depth_mask_set(False)
-	                                        gpu.state.depth_test_set('NONE')
+											gpu.state.blend_set('NONE')
+											gpu.state.depth_mask_set(False)
+											gpu.state.depth_test_set('NONE')
 
-	                                        # reload original matrices
-	                                        gpu.matrix.load_matrix(viewMatrix)
-	                                        gpu.matrix.load_projection_matrix(projectionMatrix)
+											# reload original matrices
+											gpu.matrix.load_matrix(viewMatrix)
+											gpu.matrix.load_projection_matrix(projectionMatrix)
 
-	                            # reset status variable
-	                            block.changed = False
+								# reset status variable
+								block.changed = False
 
-						        # update the block
-	                            block.update(context)
+								# update the block
+								block.update(context)
 
-	                        # convert view2d coordinates of the image center to
-	                        # region corrdinates
-	                        view_2d_x, view_2d_y = context.region.view2d.view_to_region(0.5, 0.5)
+							# convert view2d coordinates of the image center to
+							# region corrdinates
+							view_2d_x, view_2d_y = context.region.view2d.view_to_region(0.5, 0.5)
 
-	                        # center the block
-	                        block.x = view_2d_x - block.width / 2
-	                        block.y = view_2d_y - block.height / 2
+							# center the block
+							block.x = view_2d_x - block.width / 2
+							block.y = view_2d_y - block.height / 2
 
-    # render the block into the image editor
-    def __imageeditor_render_block(self, context):
+	# render the block into the image editor
+	def __imageeditor_render_block(self, context):
 
-        # if a camera is selected AND the space is not in camera mode
-        if self and context:
-	        if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.imageeditor_block_show:
-	        	if not context.space_data is None:
+		# if a camera is selected AND the space is not in camera mode
+		if self and context:
+			if hasattr(context.scene, "addon_settings") and context.scene.addon_settings.imageeditor_block_show:
+				if not context.space_data is None:
 
-	        		# get the image loaded in the image editor
-	        		image = context.space_data.image
-	        		if not image is None and image.type != "RENDER_RESULT":
+					# get the image loaded in the image editor
+					image = context.space_data.image
+					if not image is None and image.type != "RENDER_RESULT":
 
-	        			# select correct block
-	        			block = self.get_imageeditor_block()
-	        			if block:
+						# select correct block
+						block = self.get_imageeditor_block()
+						if block:
 
 							# get active frame buffer
-					        framebuffer = gpu.state.active_framebuffer_get()
-					        with framebuffer.bind():
+							framebuffer = gpu.state.active_framebuffer_get()
+							with framebuffer.bind():
 
-						        # clear the framebuffer
-						        c = context.preferences.themes[0].image_editor.grid
-						        framebuffer.clear(color=(c[0] * 0.15, c[1] * 0.15, c[2] * 0.15, c[3]))
+								# clear the framebuffer
+								c = context.preferences.themes[0].image_editor.grid
+								framebuffer.clear(color=(c[0] * 0.15, c[1] * 0.15, c[2] * 0.15, c[3]))
 
-						        gpu.state.depth_test_set('GREATER_EQUAL')
-						        gpu.state.depth_mask_set(True)
-						        gpu.state.blend_set('ALPHA')
+								gpu.state.depth_mask_set(True)
+								gpu.state.blend_set('ALPHA')
 
-		                        # draw the block
-						        draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+								# for Blender versions prior to BGL deprecation
+								if bpy.app.version < (3, 4, 0):
+								    gpu.state.depth_test_set('GREATER_EQUAL')
 
-						        gpu.state.blend_set('NONE')
-						        gpu.state.depth_mask_set(False)
-						        gpu.state.depth_test_set('NONE')
+								# draw the block
+								draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
+
+								gpu.state.blend_set('NONE')
+								gpu.state.depth_mask_set(False)
+
+								# for Blender versions prior to BGL deprecation
+								if bpy.app.version < (3, 4, 0):
+									gpu.state.depth_test_set('NONE')
