@@ -38,7 +38,7 @@ This add-on was created for the use of Blender with the Looking Glass holographi
 
 ## How to Use
 
-The following provides some basic information which is going to help you to get started. But make sure, you also check out the [Getting Started Guide](https://docs.lookingglassfactory.com/artist-tools/blender) as well as the [very helpful tutorial](https://learn.lookingglassfactory.com/tutorials/blender) on the Looking Glass Factory website!
+The following provides some basic information which is going to help you to get started. But make sure, you also check out the [Getting Started Guide](https://docs.lookingglassfactory.com/artist-tools/blender) as well as the [very helpful tutorial](https://lookingglassfactory.com/tutorial/blender) on the Looking Glass Factory website!
 
 ### Add-on Controls
 
