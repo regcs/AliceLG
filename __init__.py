@@ -24,7 +24,7 @@ bl_info = {
 	"version": (2, 2, 0),
 	"blender": (2, 93, 6),
 	"location": "View3D > Looking Glass Tab",
-	"description": "Alice/LG takes your artworks through the Looking Glass (lightfield displays)",
+	"description": "Alice/LG takes your artworks through the Looking Glass (light field displays)",
 	"category": "View",
 	"warning": "",
 	"doc_url": "https://github.com/regcs/AliceLG/blob/master/README.md",

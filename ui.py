@@ -70,7 +70,7 @@ class LookingGlassAddonUI:
 				if (not device.emulated or LookingGlassAddon.debugging_use_dummy_device):
 
 					# add an entry in the item list
-					items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
+					items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for light field preview rendering.'))
 
 			# FOR DEBUGGING ONLY
 			if LookingGlassAddon.debugging_use_dummy_device:
@@ -82,7 +82,7 @@ class LookingGlassAddonUI:
 					if (not device.emulated or LookingGlassAddon.debugging_use_dummy_device):
 
 						# add an entry in the item list
-						items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for lightfield rendering.'))
+						items.append((str(device.id), 'Display ' + str(device.index) + ': ' + device.name, 'Use this Looking Glass for light field preview rendering.'))
 
 		else:
 
@@ -111,7 +111,7 @@ class LookingGlassAddonUI:
 				if device.emulated:
 
 					# add an entry in the item list
-					items.append((str(device.index), device.name, 'Use this Looking Glass type for lightfield rendering.'))
+					items.append((str(device.index), device.name, 'Use this Looking Glass type for light field rendering.'))
 
 		else:
 
@@ -136,7 +136,7 @@ class LookingGlassAddonUI:
 			if not pylio.LookingGlassQuilt.formats.is_hidden(id=idx):
 
 				# add an entry in the item list
-				items.append((str(idx), preset['description'], 'Use this Looking Glass for lightfield rendering.'))
+				items.append((str(idx), preset['description'], 'Sets the resolution for light field preview.'))
 
 
 		# return the item list
@@ -651,13 +651,13 @@ class LookingGlassAddonUI:
 						if space.type == 'VIEW_3D':
 
 							# add an item to the item list
-							items.append((str(space), 'Viewport ' + str(len(items) + 1), 'The Blender viewport to which the Looking Glass adjusts'))
+							items.append((str(space), 'Viewport ' + str(len(items) + 1), 'The Blender viewport to which the Looking Glass adjusts.'))
 
 		# if no spaces were found
 		if len(items) == 0:
 
 			# add a dummy entry to the item list
-			items.append(('None', 'None', 'The Blender viewport to which the Looking Glass adjusts'))
+			items.append(('None', 'None', 'The Blender viewport to which the Looking Glass adjusts.'))
 
 		# return the item list
 		return items
@@ -830,7 +830,7 @@ class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 	# a boolean to toogle the render window on or off
 	ShowLightfieldWindow: bpy.props.BoolProperty(
 											name="Lightfield Window",
-											description = "Creates a window for the lightfield rendering on the current Looking Glass device",
+											description = "Creates a window for the light field rendering on the current Looking Glass device",
 											default = False,
 											)
 
@@ -838,7 +838,7 @@ class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 	# UI elements for user control
 	renderMode: bpy.props.EnumProperty(
 										items = [('0', 'Viewport', 'Viewport rendering of the current scene within the Looking Glass', 'VIEW3D', 0),
-												 ('1', 'Quilt Viewer', 'Display a prerendered quilt image in the Looking Glass', 'RENDER_RESULT', 1)],
+												 ('1', 'Quilt Viewer', 'Display a pre-rendered quilt image in the Looking Glass', 'RENDER_RESULT', 1)],
 										default='0',
 										name="Render Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
@@ -846,23 +846,23 @@ class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 
 	# Lightfield Viewport Modes
 	lightfieldMode: bpy.props.EnumProperty(
-										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the lightfield viewport'),
-												 ('1', 'Refresh Mode: Manual', 'Refresh the lightfield viewport manually')],
+										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the light field viewport'),
+												 ('1', 'Refresh Mode: Manual', 'Manually refresh the light field viewport')],
 										default='1',
-										name="Lightfield Viewport Modes",
+										name="Light Field Viewport Modes",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
 
 	# Lightfield Preview Resolution in Auto lightfield mode
 	lightfield_preview_mode: bpy.props.EnumProperty(
-										items = [('0', 'No Preview', 'Lightfield window updates are performed after (not during) user interactions.'),
+										items = [('0', 'No Preview', 'Light field window updates are performed after (not during) user interactions.'),
 												 ('1', 'Low-resolution Preview', '1024x1024 quilt, 32 views'),
 												 ('2', 'Skipped-views Preview I', 'Skip every second view'),
 												 ('3', 'Skipped-views Preview II', 'Skip every third view'),
 												 ('4', 'Restricted Viewcone Preview', 'Render only a restricted view cone'),
 												 ],
 										default='0',
-										name="Lightfield Preview Mode",
+										name="Light Field Preview Mode",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
 										)
 
@@ -877,13 +877,13 @@ class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 
 	viewport_use_preview_mode: bpy.props.BoolProperty(
 										name="Use Preview Mode",
-										description="If enabled, a simplified lightfield is rendered during scene changes (for higher render speed)",
+										description="If enabled, a simplified light field is rendered during scene changes (for higher render speed)",
 										default = True,
 										)
 
 	viewport_manual_refresh: bpy.props.BoolProperty(
 										name="Refresh Looking Glass",
-										description="Redraw the lightfield in the Looking Glass",
+										description="Redraw the light field in the Looking Glass",
 										default = False,
 										)
 
@@ -941,7 +941,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										precision = 1,
 										step = 5,
 										unit = "LENGTH",
-										description = "Far clipping plane of the Looking Glass frustum.",
+										description = "Far clipping plane of the Looking Glass frustum",
 										update = LookingGlassAddonUI.update_camera_setting,
 										get = LookingGlassAddonUI.clip_start_getter,
 										set = LookingGlassAddonUI.clip_start_setter,
@@ -954,7 +954,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 										precision = 1,
 										step = 5,
 										unit = "LENGTH",
-										description = "Far clipping plane of the Looking Glass frustum.",
+										description = "Far clipping plane of the Looking Glass frustum",
 										update = LookingGlassAddonUI.update_camera_setting,
 										get = LookingGlassAddonUI.clip_end_getter,
 										set = LookingGlassAddonUI.clip_end_setter,
@@ -1000,7 +1000,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 	# Add a suffix with metadata to the file name
 	render_add_suffix: bpy.props.BoolProperty(
 										name="Add Metadata",
-										description="If enabled, metadata will be added to the quilt filename as a suffix. That metadata is used by Holoplay Studio and other applications in the Looking Glass ecosystem to automatically determine the correct settings for displaying or editing the quilt.",
+										description="If enabled, metadata will be added to the quilt filename as a suffix. That metadata is used by Looking Glass Studio, Blocks, and other applications in the Looking Glass ecosystem to automatically determine the correct settings for displaying or editing the quilt",
 										default = True,
 										update=LookingGlassAddonUI.update_render_setting_without_preset,
 										)
@@ -1196,7 +1196,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 	# a boolean to toogle the block viewport preview on or off
 	viewport_block_show: bpy.props.BoolProperty(
 		name="Hologram preview",
-		description = "Displays a looking glass hologram preview in the Blender viewport (not supported for Cycles)",
+		description = "Displays a Looking Glass hologram preview in the Blender viewport (not supported for Cycles)",
 		default = False,
 		update=LookingGlassAddonUI.update_viewport_block_settings,
 		)
@@ -1205,7 +1205,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 	viewport_block_alignment: bpy.props.EnumProperty(
 										items = [('left', 'Left', 'The block is rendered on the lower left corner of the viewport'),
 												 ('right', 'Right', 'The block is rendered on the lower right corner of the viewport')],
-										default='right',
+										default='left',
 										name="Block Alignment",
 										update=LookingGlassAddonUI.update_viewport_block_settings,
 										)
@@ -1231,11 +1231,11 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 		)
 
 
-	# PANEL: IMAGE EDITIR BLOCKS SETTINGS
+	# PANEL: IMAGE EDITOR BLOCKS SETTINGS
 	# a boolean to toogle the block viewport preview on or off
 	imageeditor_block_show: bpy.props.BoolProperty(
-		name="Hologram preview",
-		description = "Displays a looking glass hologram preview for this quilt",
+		name="Hologram Preview",
+		description = "Displays a Looking Glass hologram preview for this quilt",
 		default = False,
 		update=LookingGlassAddonUI.update_imageeditor_block_settings,
 		)
@@ -1260,7 +1260,7 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_display_list"
 	bl_label = "Refresh list"
-	bl_description = "Refreshes the list of connected Looking Glass deviced from Looking Glass Bridge"
+	bl_description = "Refreshes the list of connected Looking Glass devices from Looking Glass Bridge"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 	def execute(self, context):
@@ -1332,8 +1332,8 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 # an operator that controls lightfield window opening and closing
 class LOOKINGGLASS_OT_lightfield_window(bpy.types.Operator):
 	bl_idname = "lookingglass.lightfield_window"
-	bl_label = "Lightfield Window"
-	bl_description = "Creates a window for the lightfield rendering on the current Looking Glass device"
+	bl_label = "Light Field Window"
+	bl_description = "Creates a window for the light field rendering on the current Looking Glass device"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 
@@ -1660,7 +1660,7 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 # Operator for manual redrawing of the Looking Glass (for manual Live View Mode)
 class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 	bl_idname = "lookingglass.refresh_lightfield"
-	bl_label = "Refresh the lightfield window."
+	bl_label = "Refresh the Light Field window."
 	bl_description = "Render the current view directly in your Looking Glass"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
@@ -1673,7 +1673,7 @@ class LOOKINGGLASS_OT_refresh_lightfield(bpy.types.Operator):
 
 class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 	bl_idname = "LOOKINGGLASS_PT_panel_lightfield" # unique identifier for buttons and menu items to reference.
-	bl_label = "Lightfield Window" # display name in the interface.
+	bl_label = "Light Field Window" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "UI"
 	bl_category = "Looking Glass"
@@ -1721,7 +1721,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 
 			# Lightfield rendering mode & refresh button
 			row_orientation = column.row()
-			row_orientation.label(text="Lightfield Viewport Modes:")
+			row_orientation.label(text="Light Field Viewport Modes:")
 			row_preset = column.row()
 			row_preset.prop(context.window_manager.addon_settings, "lightfieldMode", text="")
 			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
@@ -1916,7 +1916,7 @@ class LOOKINGGLASS_PT_panel_overlays_shading(bpy.types.Panel):
 # ------------- Buttons & elements in region headers ----------------
 # Button for the blocks viewport preview
 class LOOKINGGLASS_HT_button_viewport_blocks(bpy.types.Header):
-	bl_label = "Blocks viewport preview" # display name in the interface.
+	bl_label = "Hologram Preview" # display name in the interface.
 	bl_space_type = "VIEW_3D"
 	bl_region_type = "HEADER"
 
@@ -1944,7 +1944,7 @@ class LOOKINGGLASS_PT_panel_blocks_viewport_options(bpy.types.Panel):
 
 	def draw(self, context):
 		layout = self.layout
-		layout.label(text="Blocks Preview")
+		layout.label(text="Hologram Preview")
 		layout.active = context.scene.addon_settings.viewport_block_show
 
 		# define a column of UI elements
@@ -1968,7 +1968,7 @@ class LOOKINGGLASS_PT_panel_blocks_viewport_options(bpy.types.Panel):
 
 # Button for the blocks display in the image editor
 class LOOKINGGLASS_HT_button_imageeditor_blocks(bpy.types.Header):
-	bl_label = "Blocks image editor preview" # display name in the interface.
+	bl_label = "Hologram Image Editor Preview" # display name in the interface.
 	bl_space_type = "IMAGE_EDITOR"
 	bl_region_type = "HEADER"
 
@@ -1987,12 +1987,12 @@ class LOOKINGGLASS_HT_button_imageeditor_blocks(bpy.types.Header):
 class LOOKINGGLASS_PT_panel_blocks_imageeditor_options(bpy.types.Panel):
 	bl_space_type = 'IMAGE_EDITOR'
 	bl_region_type = 'HEADER'
-	bl_label = "Display as block"
+	bl_label = "Display hologram preview"
 	bl_ui_units_x = 13
 
 	def draw(self, context):
 		layout = self.layout
-		layout.label(text="Block Display")
+		layout.label(text="Hologram Preview")
 		layout.active = context.scene.addon_settings.imageeditor_block_show
 
 		# was the quilt and device type automatically detected
