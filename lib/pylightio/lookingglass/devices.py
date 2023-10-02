@@ -291,8 +291,8 @@ class LookingGlass4kGen2(LookingGlassDeviceMixin, BaseDeviceType):
 
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type = "4k_gen2"                      # the unique identifier string of this device type
-    name = "4k Gen2 Looking Glass"        # name of this device type
+    type = "4k_gen2"                 # the unique identifier string of this device type
+    name = "Looking Glass 16''"      # name of this device type
     formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -332,8 +332,8 @@ class LookingGlass8kGen2(LookingGlassDeviceMixin, BaseDeviceType):
 
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type = "8k_gen2"                      # the unique identifier string of this device type
-    name = "8k Gen2 Looking Glass"        # name of this device type
+    type = "8k_gen2"                 # the unique identifier string of this device type
+    name = "Looking Glass 32''"      # name of this device type
     formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -367,6 +367,46 @@ class LookingGlass8kGen2(LookingGlassDeviceMixin, BaseDeviceType):
     #       device type implementations
 
     # This type uses the LookingGlassBaseType and has no special requirements
+
+# Looking Glass 65"
+class LookingGlass65(LookingGlassDeviceMixin, BaseDeviceType):
+    #PUBLIC MEMBERS
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "65_gen2"                    # the unique identifier string of this device type
+    name = "Looking Glass 65'' "        # name of this device type
+    formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
+    emulated_configuration = {          # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'configVersion': '1.0',
+                                    'serial': 'LKG-65-DUMMY',
+                                    'DPI': 280.0,
+                                    'screenH': 4320.0,
+                                    'screenW': 7680.0,
+                                    'viewCone': 40.0,
+                                    'aspect': 1.77777777,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 1.77777777,
+                                    'quiltX': 8192,
+                                    'quiltY': 8192,
+                                    'tileX': 8,
+                                    'tileY': 9
+                                },
+                'hardwareVersion': '65',
+                'hwid': 'LKG0008DUMMY',
+                'index': -8,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+    
 
 # Standard: 8.9'' Looking Glass
 class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
@@ -497,7 +537,7 @@ class LookingGlass8k(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "8k"                      # the unique identifier string of this device type
-    name = "8k Looking Glass"        # name of this device type
+    name = "Looking Glass 8k"        # name of this device type
     formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
