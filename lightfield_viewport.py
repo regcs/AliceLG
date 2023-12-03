@@ -1071,9 +1071,11 @@ class FrustumRenderer:
 				(10, 11, 8)
 			)
 
-
 		# compile the shader that will be used for drawing
-		self.frustum_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
+		if sys.version_info.major >= 4 or (sys.version_info.major >= 0 and sys.version_info.minor >= 0):
+			self.frustum_shader = gpu.shader.from_builtin('UNIFORM_COLOR')
+		else:
+			self.frustum_shader = gpu.shader.from_builtin('3D_UNIFORM_COLOR')
 
 
 

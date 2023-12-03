@@ -352,12 +352,13 @@ def LookingGlassAddonInitHandler(dummy1, dummy2):
 				# set the "use device" checkbox in quilt setup to False
 				# (because there is no device we could take the settings from)
 				bpy.context.scene.addon_settings.render_use_device = False
-			
+
 			# update the Looking Glass camera synchronization
 			# NOTE: Looks weird, but is a way to trigger update function of the property, 
-			#		which sets the app handlers if required. If not done, app handlers may stay
-			#		inactive when a file was loaded although they should be active.
+			#       which sets the app handlers if required. If not done, app handlers may stay
+			#       inactive when a file was loaded although they should be active.
 			bpy.context.scene.addon_settings.toggleCameraSync = bpy.context.scene.addon_settings.toggleCameraSync
+
 
 
 
@@ -366,10 +367,9 @@ def register():
 
 	# extract the arguments Blender was called with
 	try:
-	    index = sys.argv.index("--") + 1
-
+		index = sys.argv.index("--") + 1
 	except ValueError:
-	    index = len(sys.argv)
+		index = len(sys.argv)
 
 	# separate the passed arguments into Blender arguments (before "--") and
 	# add-on arguments (after "--")
