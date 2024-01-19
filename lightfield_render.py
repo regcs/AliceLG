@@ -148,8 +148,8 @@ class RenderJob:
 	# return the filename of the quilt file
 	def get_quilt_suffix(self):
 
-		# metadata for HoloPlay Studio etc. is stored in the file name as a suffix
-		# example of the format convention: quiltfilename_qs5x9a1.6.png
+		# metadata for Looking Glass Studio etc. is stored in the file name as a suffix
+		# example of the format convention: quiltfilename_qs5x9a1.5.png
 		if self.add_suffix:
 			if len(str(self.quilt_aspect)) > 3:
 				return f'_qs{self.columns}x{self.rows}a{self.quilt_aspect:.2f}'
@@ -1319,7 +1319,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 	bl_idname = "render.quilt"
 	bl_label = "Render"
-	bl_description = "Render a quilt (animation) using the current scene and active camera."
+	bl_description = "Render a quilt (or quilt animation) using the current scene and active camera"
 	bl_options = {'REGISTER', 'INTERNAL'}
 
 	# OPERATOR ARGUMENTS

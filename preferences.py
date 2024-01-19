@@ -137,7 +137,7 @@ class LOOKINGGLASS_PT_install_dependencies(AddonPreferences):
 			row = layout.row(align=True)
 			row.alignment = 'EXPAND'
 			row.scale_y = 0.5
-			row.label(text="required to communicate with HoloPlay Service. If you click the button below,")
+			row.label(text="required to communicate with Looking Glass Bridge. If you click the button below,")
 			row = layout.row(align=True)
 			row.alignment = 'EXPAND'
 			row.scale_y = 0.5
