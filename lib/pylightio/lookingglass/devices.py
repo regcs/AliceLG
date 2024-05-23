@@ -244,6 +244,47 @@ class LookingGlassDeviceMixin(object):
 
 # SPECIFIC LOOKING GLASS DEVICE TYPES
 ###############################################
+# Looking Glass Go
+class LookingGlassGo(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "go_p"                # the unique identifier string of this device type
+    name = "Looking Glass Go"  # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'DPI': 491.0,
+                                    'configVersion': '1.0',
+                                    'screenH': 2560.0,
+                                    'screenW': 1440.0,
+                                    'serial': 'LKG-EDUMMY',
+                                    'viewCone': 40.0,
+                                    'aspect': 0.5625,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 0.5625,
+                                    'quiltX': 4092,
+                                    'quiltY': 4092,
+                                    'tileX': 11,
+                                    'tileY': 6
+                                },
+                'hardwareVersion': 'go_p',
+                'hwid': 'LKG0009DUMMY',
+                'index': 0,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
 
 # Looking Glass Portrait
 class LookingGlassPortrait(LookingGlassDeviceMixin, BaseDeviceType):
@@ -286,6 +327,7 @@ class LookingGlassPortrait(LookingGlassDeviceMixin, BaseDeviceType):
     #       device type implementations
 
     # This type uses the LookingGlassBaseType and has no special requirements
+
 # 4K Gen2: 4K Gen2 Looking Glass
 class LookingGlass4kGen2(LookingGlassDeviceMixin, BaseDeviceType):
 

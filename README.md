@@ -1,4 +1,4 @@
-# Alice/LG 2.2 - The Blender Add-on for Looking Glass Displays
+# Alice/LG 2.3 - The Blender Add-on for Looking Glass Displays
 
 ### Let [Alice/LG](https://github.com/regcs/AliceLG/releases) take your Blender artworks through the Looking Glass! This short guide is to get you started.
 
@@ -13,7 +13,7 @@ This add-on was created for the use of Blender with the Looking Glass holographi
 - decide if you want to keep the separate view files or just the final quilt
 - support for multiple scenes and view layers
 - camera & quilt settings are saved with your Blender file
-- support for all available Looking Glass displays (including the new Looking Glass Portrait)
+- support for all available Looking Glass displays (including the new Looking Glass Go)
 - _Experimental feature:_ Detect incomplete render jobs (see below for details)
 
 ## System Requirements
