@@ -64,6 +64,8 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
             #Looking Glass Portrait
             4: {'description': "Portrait, 48 Views", 'quilt_width': 3360, 'quilt_height': 3360, 'view_width': 420, 'view_height': 560, 'columns': 8, 'rows': 6, 'total_views': 48, 'hidden': False },
 
+            # third gen devices
+            5: {'description': "Go, 66 Views", 'quilt_width': 4092, 'quilt_height': 4092, 'view_width': 372, 'view_height': 682, 'columns': 11, 'rows': 6, 'total_views': 66, 'hidden': False },
         }
 
         @classmethod
