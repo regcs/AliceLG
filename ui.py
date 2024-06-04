@@ -276,9 +276,9 @@ class LookingGlassAddonUI:
 				elif not device or not preset:
 
 					# fallback solution, if the default quilt is not found:
-					# We use the Looking Glass Portrait standard quilt (48 views)
-					if bpy.context.scene.addon_settings.render_quilt_preset != "4":
-						bpy.context.scene.addon_settings.render_quilt_preset = "4"
+					# We use the Looking Glass Go standard quilt (48 views)
+					if bpy.context.scene.addon_settings.render_quilt_preset != "5":
+						bpy.context.scene.addon_settings.render_quilt_preset = "5"
 
 		return None
 
@@ -1322,9 +1322,9 @@ class LOOKINGGLASS_OT_refresh_display_list(bpy.types.Operator):
 					context.scene.addon_settings.quiltPreset = str(preset)
 
 				# fallback solution, if the default quilt is not found:
-				# We use the Looking Glass Portrait standard quilt (48 views)
+				# We use the Looking Glass Go standard quilt (48 views)
 				else:
-					context.scene.addon_settings.quiltPreset = "4"
+					context.scene.addon_settings.quiltPreset = "5"
 
 		return {'FINISHED'}
 
