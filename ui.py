@@ -48,7 +48,20 @@ import pylightio as pylio
 import logging
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 
-
+# ---------------- STRING CACHE --------------------------
+# see: https://blender.stackexchange.com/questions/299978/how-to-fix-unicodedecodeerror
+_alicelg_string_cache = {}
+def intern_enum_items(items):
+	def intern_string(s):
+		if not isinstance(s, str):
+			return s
+		global _alicelg_string_cache
+		if s not in _alicelg_string_cache:
+			_alicelg_string_cache[s] = s
+			print(len(_alicelg_string_cache))
+			# print(s)
+		return _alicelg_string_cache[s]
+	return [tuple(intern_string(s) for s in item) for item in items]
 
 # ------------- Add-on UI -------------
 # Class that contains all functions relevant for the UI
@@ -92,7 +105,7 @@ class LookingGlassAddonUI:
 
 
 		# return the item list
-		return items
+		return intern_enum_items(items)
 
 
 	# This callback is required to be able to update the list of emulated Looking Glass devices
@@ -121,7 +134,7 @@ class LookingGlassAddonUI:
 
 
 		# return the item list
-		return items
+		return intern_enum_items(items)
 
 	# This callback is required to be able to update the list of presets
 	def quilt_preset_list_callback(self, context):
@@ -140,7 +153,7 @@ class LookingGlassAddonUI:
 
 
 		# return the item list
-		return items
+		return intern_enum_items(items)
 
 	# poll function for the Looking Glass camera selection
 	# this prevents that an object is picked or listed, which is no camera
@@ -444,6 +457,7 @@ class LookingGlassAddonUI:
 
 	# Application handler that continously checks for changes of the depsgraph
 	def synchronize_active_camera(scene, depsgraph):
+		print(type(scene).__name__)
 
 		# if the active camera changed AND the active camera is not the "_quilt_render_cam"
 		if scene.addon_settings.lookingglassCamera != scene.camera and scene.camera.name != "_quilt_render_cam":
@@ -631,7 +645,7 @@ class LookingGlassAddonUI:
 			items.append((workspace, workspace, 'The workspace the desired viewport is found.'))
 
 		# return the item list
-		return items
+		return intern_enum_items(items)
 
 
 
@@ -660,7 +674,7 @@ class LookingGlassAddonUI:
 			items.append(('None', 'None', 'The Blender viewport to which the Looking Glass adjusts'))
 
 		# return the item list
-		return items
+		return intern_enum_items(items)
 
 
 
