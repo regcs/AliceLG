@@ -329,3 +329,18 @@ class LookingGlassAddon:
 
 			else:
 				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")
+
+# STRING CACHE
+##################################################################	
+# see: https://blender.stackexchange.com/questions/299978/how-to-fix-unicodedecodeerror
+_alicelg_string_cache = {}
+def intern_enum_items(items):
+	def intern_string(s):
+		if not isinstance(s, str):
+			return s
+		global _alicelg_string_cache
+		if s not in _alicelg_string_cache:
+			_alicelg_string_cache[s] = s
+			print(len(_alicelg_string_cache))
+		return _alicelg_string_cache[s]
+	return [tuple(intern_string(s) for s in item) for item in items]
