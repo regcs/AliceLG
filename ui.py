@@ -49,6 +49,7 @@ import logging
 LookingGlassAddonLogger = logging.getLogger('Alice/LG')
 
 
+
 # ------------- Add-on UI -------------
 # Class that contains all functions relevant for the UI
 class LookingGlassAddonUI:
