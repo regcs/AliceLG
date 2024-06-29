@@ -92,7 +92,7 @@ class LookingGlassAddonUI:
 
 
 		# return the item list
-		return items
+		return LookingGlassAddon.enum_string_cache_items(items)
 
 
 	# This callback is required to be able to update the list of emulated Looking Glass devices
@@ -121,7 +121,7 @@ class LookingGlassAddonUI:
 
 
 		# return the item list
-		return items
+		return LookingGlassAddon.enum_string_cache_items(items)
 
 	# This callback is required to be able to update the list of presets
 	def quilt_preset_list_callback(self, context):
@@ -140,7 +140,7 @@ class LookingGlassAddonUI:
 
 
 		# return the item list
-		return items
+		return LookingGlassAddon.enum_string_cache_items(items)
 
 	# poll function for the Looking Glass camera selection
 	# this prevents that an object is picked or listed, which is no camera
@@ -631,7 +631,7 @@ class LookingGlassAddonUI:
 			items.append((workspace, workspace, 'The workspace the desired viewport is found.'))
 
 		# return the item list
-		return items
+		return LookingGlassAddon.enum_string_cache_items(items)
 
 
 
@@ -660,7 +660,7 @@ class LookingGlassAddonUI:
 			items.append(('None', 'None', 'The Blender viewport to which the Looking Glass adjusts'))
 
 		# return the item list
-		return items
+		return LookingGlassAddon.enum_string_cache_items(items)
 
 
 

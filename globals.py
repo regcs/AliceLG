@@ -329,3 +329,26 @@ class LookingGlassAddon:
 
 			else:
 				LookingGlassAddonLogger.error("Could not update the lightfield window. No LightfieldImage was given.")
+
+
+	# Internal string cache as workaround for UnicodeDecodeError reported in issue #114
+	# see: https://blender.stackexchange.com/questions/299978/how-to-fix-unicodedecodeerror
+	#
+	# NOTE: https://blender.stackexchange.com/a/245145
+	# 		"The downside is the strings in STRING_CACHE will never be GCed (sort of the opposite of the original problem).
+	# 		 For most people though, I doubt the cache will grow large enough for it to become an issue."
+	_enum_string_cache = {}
+
+	@classmethod
+	def enum_string_cache_items(cls, items):
+		def intern_string(s):
+
+			if not isinstance(s, str):
+				return s
+			
+			if s not in cls._enum_string_cache:
+				cls._enum_string_cache[s] = s
+
+			return cls._enum_string_cache[s]
+		
+		return [tuple(intern_string(s) for s in item) for item in items]
