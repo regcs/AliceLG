@@ -273,7 +273,7 @@ class LookingGlassGo(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'go_p',
                 'hwid': 'LKG0009DUMMY',
-                'index': 0,
+                'index': -1,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -315,12 +315,219 @@ class LookingGlassPortrait(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'portrait',
                 'hwid': 'LKG0005DUMMY',
-                'index': -1,
+                'index': -2,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
 
 
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+
+# Looking Glass 16 Landscape
+class LookingGlass16Landscape(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "16_gen3_l"                # the unique identifier string of this device type
+    name = "Looking Glass 16 Landscape"  # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'DPI': 283.0,
+                                    'configVersion': '3.0',
+                                    'screenH': 2160.0,
+                                    'screenW': 3840.0,
+                                    'serial': 'LKG-JDUMMY',
+                                    'viewCone': 40.0,
+                                    'aspect': 1.77777777,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 1.77777777,
+                                    'quiltX': 5999,
+                                    'quiltY': 5999,
+                                    'tileX': 7,
+                                    'tileY': 7
+                                },
+                'hardwareVersion': '16_gen3_l',
+                'hwid': 'LKG0010DUMMY',
+                'index': -3,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+
+# Looking Glass 16 Portrait
+class LookingGlass16Portrait(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "16_gen3_p"                # the unique identifier string of this device type
+    name = "Looking Glass 16 Portrait"  # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'DPI': 283.0,
+                                    'configVersion': '1.0',
+                                    'screenH': 3840.0,
+                                    'screenW': 2160.0,
+                                    'serial': 'LKG-HDUMMY',
+                                    'viewCone': 40.0,
+                                    'aspect': 0.5625,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 0.5625,
+                                    'quiltX': 5995,
+                                    'quiltY': 6000,
+                                    'tileX': 11,
+                                    'tileY': 6
+                                },
+                'hardwareVersion': '16_gen3_p',
+                'hwid': 'LKG0011DUMMY',
+                'index': -4,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+
+# Looking Glass 32 Landscape
+class LookingGlass32Landscape(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "32_gen3_l"                # the unique identifier string of this device type
+    name = "Looking Glass 32 Landscape"  # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'DPI': 280.0,
+                                    'configVersion': '1.0',
+                                    'screenH': 4320.0,
+                                    'screenW': 7680.0,
+                                    'serial': 'LKG-LDUMMY',
+                                    'viewCone': 40.0,
+                                    'aspect': 1.77777777,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 1.77777777,
+                                    'quiltX': 8190,
+                                    'quiltY': 8190,
+                                    'tileX': 7,
+                                    'tileY': 7
+                                },
+                'hardwareVersion': '32_gen3_l',
+                'hwid': 'LKG0012DUMMY',
+                'index': -5,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+
+# Looking Glass 32 Portrait
+class LookingGlass32Portrait(LookingGlassDeviceMixin, BaseDeviceType):
+
+    # PUBLIC MEMBERS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "32_gen3_p"                # the unique identifier string of this device type
+    name = "Looking Glass 32 Portrait"  # name of this device type
+    formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
+    emulated_configuration = {       # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'DPI': 280.0,
+                                    'configVersion': '1.0',
+                                    'screenH': 7680.0,
+                                    'screenW': 4320.0,
+                                    'serial': 'LKG-KDUMMY',
+                                    'viewCone': 40.0,
+                                    'aspect': 0.5625,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 0.5625,
+                                    'quiltX': 8184,
+                                    'quiltY': 8184,
+                                    'tileX': 11,
+                                    'tileY': 6
+                                },
+                'hardwareVersion': '32_gen3_p',
+                'hwid': 'LKG0012DUMMY',
+                'index': -6,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
+
+
+    # INSTANCE METHODS
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # NOTE: Here is the place to define methods required by the BaseClass for any
+    #       device type implementations
+
+    # This type uses the LookingGlassBaseType and has no special requirements
+
+# Looking Glass 65"
+class LookingGlass65(LookingGlassDeviceMixin, BaseDeviceType):
+    #PUBLIC MEMBERS
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    type = "65_gen2"                    # the unique identifier string of this device type
+    name = "Looking Glass 65'' "        # name of this device type
+    formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
+    emulated_configuration = {          # configuration used for emulated devices of this type
+                'buttons': [0, 0, 0, 0],
+                'calibration': {
+                                    'configVersion': '1.0',
+                                    'serial': 'LKG-65-DUMMY',
+                                    'DPI': 280.0,
+                                    'screenH': 4320.0,
+                                    'screenW': 7680.0,
+                                    'viewCone': 40.0,
+                                    'aspect': 1.77777777,
+                                    'invView': True
+                                },
+                'defaultQuilt': {
+                                    'quiltAspect': 1.77777777,
+                                    'quiltX': 8192,
+                                    'quiltY': 8190,
+                                    'tileX': 8,
+                                    'tileY': 9
+                                },
+                'hardwareVersion': '65',
+                'hwid': 'LKG0008DUMMY',
+                'index': -7,
+                'joystickIndex': -1,
+                'state': 'ok',
+            }
     # INSTANCE METHODS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # NOTE: Here is the place to define methods required by the BaseClass for any
@@ -357,7 +564,7 @@ class LookingGlass4kGen2(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': '4k_gen2',
                 'hwid': 'LKG0007DUMMY',
-                'index': -2,
+                'index': -8,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -398,7 +605,7 @@ class LookingGlass8kGen2(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': '8k_gen2',
                 'hwid': 'LKG0006DUMMY',
-                'index': -3,
+                'index': -9,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -409,46 +616,6 @@ class LookingGlass8kGen2(LookingGlassDeviceMixin, BaseDeviceType):
     #       device type implementations
 
     # This type uses the LookingGlassBaseType and has no special requirements
-
-# Looking Glass 65"
-class LookingGlass65(LookingGlassDeviceMixin, BaseDeviceType):
-    #PUBLIC MEMBERS
-    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    type = "65_gen2"                    # the unique identifier string of this device type
-    name = "Looking Glass 65'' "        # name of this device type
-    formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
-    emulated_configuration = {          # configuration used for emulated devices of this type
-                'buttons': [0, 0, 0, 0],
-                'calibration': {
-                                    'configVersion': '1.0',
-                                    'serial': 'LKG-65-DUMMY',
-                                    'DPI': 280.0,
-                                    'screenH': 4320.0,
-                                    'screenW': 7680.0,
-                                    'viewCone': 40.0,
-                                    'aspect': 1.77777777,
-                                    'invView': True
-                                },
-                'defaultQuilt': {
-                                    'quiltAspect': 1.77777777,
-                                    'quiltX': 8192,
-                                    'quiltY': 8192,
-                                    'tileX': 8,
-                                    'tileY': 9
-                                },
-                'hardwareVersion': '65',
-                'hwid': 'LKG0008DUMMY',
-                'index': -8,
-                'joystickIndex': -1,
-                'state': 'ok',
-            }
-    # INSTANCE METHODS
-    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    # NOTE: Here is the place to define methods required by the BaseClass for any
-    #       device type implementations
-
-    # This type uses the LookingGlassBaseType and has no special requirements
-    
 
 # Standard: 8.9'' Looking Glass
 class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
@@ -479,7 +646,7 @@ class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'standard',
                 'hwid': 'LKG0001DUMMY',
-                'index': -4,
+                'index': -10,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -520,7 +687,7 @@ class LookingGlassLarge(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'large',
                 'hwid': 'LKG0002DUMMY',
-                'index': -5,
+                'index': -11,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -561,7 +728,7 @@ class LookingGlassLargePro(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': 'pro',
                 'hwid': 'LKG0003DUMMY',
-                'index': -6,
+                'index': -12,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
@@ -602,7 +769,7 @@ class LookingGlass8k(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'hardwareVersion': '8k',
                 'hwid': 'LKG0004DUMMY',
-                'index': -7,
+                'index': -13,
                 'joystickIndex': -1,
                 'state': 'ok',
             }
