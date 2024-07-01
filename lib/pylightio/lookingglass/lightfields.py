@@ -66,6 +66,12 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
 
             # third gen devices
             5: {'description': "Go, 66 Views", 'quilt_width': 4092, 'quilt_height': 4092, 'view_width': 372, 'view_height': 682, 'columns': 11, 'rows': 6, 'total_views': 66, 'hidden': False },
+            6: {'description': "16 Landscape, 49 Views", 'quilt_width': 5999, 'quilt_height': 5999, 'view_width': 857, 'view_height': 857, 'columns': 7, 'rows': 7, 'total_views': 49, 'hidden': False },
+            7: {'description': "16 Portrait, 66 Views", 'quilt_width': 5995, 'quilt_height': 6000, 'view_width': 545, 'view_height': 1000, 'columns': 11, 'rows': 6, 'total_views': 66, 'hidden': False },
+            8: {'description': "32 Landscape, 49 Views", 'quilt_width': 8190, 'quilt_height': 8190, 'view_width': 1170, 'view_height': 1170, 'columns': 7, 'rows': 7, 'total_views': 49, 'hidden': False },
+            9: {'description': "32 Portrait, 66 Views", 'quilt_width': 8184, 'quilt_height': 8184, 'view_width': 744, 'view_height': 1364, 'columns': 11, 'rows': 6, 'total_views': 66, 'hidden': False },
+            10: {'description': "65, 72 views", 'quilt_width': 8192, 'quilt_height': 8190, 'view_width': 1024, 'view_height': 910, 'columns': 8, 'rows': 9, 'total_views': 72, 'hidden': False },
+
         }
 
         @classmethod
