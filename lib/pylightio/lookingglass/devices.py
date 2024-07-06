@@ -376,7 +376,7 @@ class LookingGlass16Portrait(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "16_gen3_p"                # the unique identifier string of this device type
-    name = "Looking Glass 16'' Portrait"  # name of this device type
+    name = "Looking Glass 16'' Portrait (Gen3)"  # name of this device type
     formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -460,7 +460,7 @@ class LookingGlass32Portrait(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "32_gen3_p"                # the unique identifier string of this device type
-    name = "Looking Glass 32'' Portrait"  # name of this device type
+    name = "Looking Glass 32'' Portrait (Gen3)"  # name of this device type
     formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -501,7 +501,7 @@ class LookingGlass65(LookingGlassDeviceMixin, BaseDeviceType):
     #PUBLIC MEMBERS
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "65_gen2"                    # the unique identifier string of this device type
-    name = "Looking Glass 65'' "        # name of this device type
+    name = "Looking Glass 65'' (Gen2)"        # name of this device type
     formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -623,7 +623,7 @@ class LookingGlassStandard(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "standard"                   # the unique identifier string of this device type
-    name = "8.9'' Looking Glass"        # name of this device type
+    name = "8.9'' Looking Glass (Gen1)"        # name of this device type
     formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -664,7 +664,7 @@ class LookingGlassLarge(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "large"                      # the unique identifier string of this device type
-    name = "15.6'' Looking Glass"       # name of this device type
+    name = "15.6'' Looking Glass (Gen1)"       # name of this device type
     formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -705,7 +705,7 @@ class LookingGlassLargePro(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "pro"                        # the unique identifier string of this device type
-    name = "15.6'' Pro Looking Glass"   # name of this device type
+    name = "15.6'' Pro Looking Glass (Gen1)"   # name of this device type
     formats = [LookingGlassQuilt]       # list of lightfield image formats that are supported
     emulated_configuration = {          # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
@@ -746,7 +746,7 @@ class LookingGlass8k(LookingGlassDeviceMixin, BaseDeviceType):
     # PUBLIC MEMBERS
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     type = "8k"                      # the unique identifier string of this device type
-    name = "Looking Glass 8k"        # name of this device type
+    name = "Looking Glass 8k (Gen1)"        # name of this device type
     formats = [LookingGlassQuilt]    # list of lightfield image formats that are supported
     emulated_configuration = {       # configuration used for emulated devices of this type
                 'buttons': [0, 0, 0, 0],
