@@ -1917,6 +1917,8 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# pass event through
 		return {'PASS_THROUGH'}
+
+
 # ADD THIS AFTER THE LOOKINGGLASS_OT_render_quilt CLASS (around line 1300+)
 
 # Modal operator for generating separate cameras for render farm usage
@@ -2045,6 +2047,18 @@ class LOOKINGGLASS_OT_generate_separate_cameras(bpy.types.Operator):
 			camera_data.clip_start = base_camera.data.clip_start
 			camera_data.clip_end = base_camera.data.clip_end
 			camera_data.type = base_camera.data.type
+			
+			# Copy Depth of Field settings
+			camera_data.dof.use_dof = base_camera.data.dof.use_dof
+			camera_data.dof.focus_distance = base_camera.data.dof.focus_distance
+			camera_data.dof.aperture_fstop = base_camera.data.dof.aperture_fstop
+			camera_data.dof.aperture_blades = base_camera.data.dof.aperture_blades
+			camera_data.dof.aperture_rotation = base_camera.data.dof.aperture_rotation
+			camera_data.dof.aperture_ratio = base_camera.data.dof.aperture_ratio
+			
+			# Copy focus object if it exists
+			if base_camera.data.dof.focus_object:
+				camera_data.dof.focus_object = base_camera.data.dof.focus_object
 			
 			# Calculate camera position using same logic as render_quilt operator
 			# Start at view_cone * 0.5 and go to -view_cone * 0.5
