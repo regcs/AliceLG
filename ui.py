@@ -1592,6 +1592,32 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 				render_quilt.animation = True
 				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
 
+			# ADD NEW BUTTON: Generate Separate Cameras
+			# Only show when not rendering
+			if not LookingGlassAddon.RenderInvoked:
+				# Add some spacing
+				layout.separator()
+				
+				# Generate Separate Cameras button
+				row_generate_cameras = layout.row(align = True)
+				row_generate_cameras.operator("lookingglass.generate_separate_cameras", 
+											text="Generate Separate Cameras", 
+											icon='CAMERA_DATA')
+				
+				# Show collection status if QuiltCameras exists
+				if "QuiltCameras" in bpy.data.collections:
+					collection = bpy.data.collections["QuiltCameras"]
+					camera_count = len([obj for obj in collection.objects if obj.type == 'CAMERA'])
+					if camera_count > 0:
+						box = layout.box()
+						box.scale_y = 0.8
+						box.label(text=f"QuiltCameras: {camera_count} cameras ready", icon='INFO')
+						
+						# Add a small note about render farm usage
+						sub_box = box.box()
+						sub_box.scale_y = 0.7
+						sub_box.label(text="Render farm ready - each camera can render separately")
+
 
 		# if a lockfile was detected on start-up
 		else:
@@ -1641,6 +1667,9 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_output.enabled = False
 			row_render_still.enabled = False
 			row_render_animation.enabled = False
+			# Also disable the generate cameras button
+			if not LookingGlassAddon.RenderInvoked:
+				row_generate_cameras.enabled = False
 
 		# if the settings are to be taken from device selection
 		elif context.scene.addon_settings.render_use_device == True:
