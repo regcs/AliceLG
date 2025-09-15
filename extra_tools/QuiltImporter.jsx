@@ -186,8 +186,17 @@
                 if (firstFile) {
                     var importOptions = new ImportOptions(firstFile);
                     importOptions.sequence = true;
+                    if (forceSquarePixels) {
+                        importOptions.forceAlphabetical = true;
+                    }
                     var sequence = app.project.importFile(importOptions);
                     sequence.name = baseName + "_Camera_" + String(camNum).padStart(2, '0');
+                    
+                    // Force square pixels if option is checked
+                    if (forceSquarePixels) {
+                        sequence.pixelAspect = 1.0;
+                    }
+                    
                     importedSequences[camNum] = sequence;
                 }
             }
