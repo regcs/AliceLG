@@ -416,6 +416,7 @@ def register():
 
 		# Looking Glass quilt rendering
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_quilt)
+		bpy.utils.register_class(LOOKINGGLASS_OT_generate_separate_cameras)
 
 		# Looking Glass viewport
 		bpy.utils.register_class(LOOKINGGLASS_OT_render_viewport)
@@ -575,6 +576,7 @@ def unregister():
 
 		# Looking Glass quilt rendering
 		bpy.utils.unregister_class(LOOKINGGLASS_OT_render_quilt)
+		bpy.utils.unregister_class(LOOKINGGLASS_OT_generate_separate_cameras)
 
 		# remove the keymap
 		keyconfigs_addon = bpy.context.window_manager.keyconfigs.addon

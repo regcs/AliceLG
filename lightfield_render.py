@@ -1917,3 +1917,188 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 		# pass event through
 		return {'PASS_THROUGH'}
+
+
+# ADD THIS AFTER THE LOOKINGGLASS_OT_render_quilt CLASS (around line 1300+)
+
+# Modal operator for generating separate cameras for render farm usage
+class LOOKINGGLASS_OT_generate_separate_cameras(bpy.types.Operator):
+	bl_idname = "lookingglass.generate_separate_cameras"
+	bl_label = "Generate Separate Cameras"
+	bl_description = "Create individual cameras for each quilt view that can be rendered separately on a render farm"
+	bl_options = {'REGISTER', 'UNDO'}
+
+	# OPERATOR ARGUMENTS
+	collection_name: bpy.props.StringProperty(
+		name="Collection Name",
+		description="Name for the collection containing quilt cameras",
+		default="QuiltCameras"
+	)
+	
+	replace_existing: bpy.props.BoolProperty(
+		name="Replace Existing",
+		description="Replace existing QuiltCameras collection if it exists",
+		default=True
+	)
+
+	# check if everything is correctly set up
+	@classmethod
+	def poll(self, context):
+		# Check if a Looking Glass camera is selected
+		scene = context.scene
+		if hasattr(scene, 'addon_settings') and scene.addon_settings.lookingglassCamera:
+			return True
+		return False
+
+	def execute(self, context):
+		scene = context.scene
+		addon_settings = scene.addon_settings
+		
+		# Get the current Looking Glass camera
+		lg_camera = addon_settings.lookingglassCamera
+		if not lg_camera:
+			self.report({'ERROR'}, "No Looking Glass camera selected")
+			return {'CANCELLED'}
+		
+		try:
+			# Get quilt settings from the addon - using same pattern as render_quilt operator
+			
+			# Get active Looking Glass device or selected emulated device
+			if addon_settings.render_use_device == True and pylio.DeviceManager.get_active():
+				device = pylio.DeviceManager.get_active()
+				quilt_preset = addon_settings.quiltPreset
+			else:
+				device = pylio.DeviceManager.get_device(key="index", value=int(addon_settings.render_device_type))
+				quilt_preset = addon_settings.render_quilt_preset
+			
+			# Get quilt format settings
+			qs = pylio.LookingGlassQuilt.formats.get()
+			quilt_settings = qs[int(quilt_preset)]
+			
+			# Extract quilt parameters
+			view_width = quilt_settings["view_width"]
+			view_height = quilt_settings["view_height"] 
+			rows = quilt_settings["rows"]
+			columns = quilt_settings["columns"]
+			total_views = quilt_settings["total_views"]
+			
+			# Camera parameters from addon settings
+			fov = lg_camera.data.angle
+			camera_distance = addon_settings.focalPlane
+			view_cone = device.viewCone
+			
+		except (AttributeError, KeyError, IndexError) as e:
+			self.report({'ERROR'}, f"Could not access quilt settings: {str(e)}")
+			return {'CANCELLED'}
+		
+		# Create or replace the QuiltCameras collection
+		if self.collection_name in bpy.data.collections:
+			if self.replace_existing:
+				# Remove existing collection and its cameras
+				old_collection = bpy.data.collections[self.collection_name]
+				for obj in list(old_collection.objects):
+					if obj.type == 'CAMERA':
+						# Remove camera data
+						camera_data = obj.data
+						bpy.data.objects.remove(obj, do_unlink=True)
+						bpy.data.cameras.remove(camera_data, do_unlink=True)
+				
+				# Remove collection
+				bpy.data.collections.remove(old_collection)
+			else:
+				self.report({'WARNING'}, f"Collection '{self.collection_name}' already exists")
+				return {'CANCELLED'}
+		
+		# Create new collection
+		quilt_collection = bpy.data.collections.new(self.collection_name)
+		context.scene.collection.children.link(quilt_collection)
+		
+		# Get the base camera's transform - using same logic as render_quilt
+		base_camera = lg_camera
+		
+		# Get camera's modelview matrix (same as render_quilt logic)
+		view_matrix = base_camera.matrix_world.copy()
+		
+		# Correct for camera scaling (same as render_quilt)
+		view_matrix = view_matrix @ Matrix.Scale(1/base_camera.scale.x, 4, (1, 0, 0))
+		view_matrix = view_matrix @ Matrix.Scale(1/base_camera.scale.y, 4, (0, 1, 0))
+		view_matrix = view_matrix @ Matrix.Scale(1/base_camera.scale.z, 4, (0, 0, 1))
+		
+		# Calculate inverted view matrix
+		view_matrix_inv = view_matrix.inverted_safe()
+		
+		# Calculate camera size from distance and FOV (same as render_quilt)
+		camera_size = camera_distance * tan(fov / 2)
+		
+		# Generate cameras for each quilt view
+		cameras_created = 0
+		
+		LookingGlassAddonLogger.info(f"Generating {total_views} separate cameras for quilt ({columns}x{rows})")
+		
+		for view in range(total_views):
+			# Create camera data and object
+			camera_data = bpy.data.cameras.new(f"QuiltCam_{view:02d}")
+			camera_obj = bpy.data.objects.new(f"QuiltCamera_{view:02d}", camera_data)
+			
+			# Copy camera settings from the original Looking Glass camera
+			camera_data.lens = base_camera.data.lens
+			camera_data.sensor_width = base_camera.data.sensor_width
+			camera_data.sensor_height = base_camera.data.sensor_height
+			camera_data.clip_start = base_camera.data.clip_start
+			camera_data.clip_end = base_camera.data.clip_end
+			camera_data.type = base_camera.data.type
+			
+			# Copy Depth of Field settings
+			camera_data.dof.use_dof = base_camera.data.dof.use_dof
+			camera_data.dof.focus_distance = base_camera.data.dof.focus_distance
+			camera_data.dof.aperture_fstop = base_camera.data.dof.aperture_fstop
+			camera_data.dof.aperture_blades = base_camera.data.dof.aperture_blades
+			camera_data.dof.aperture_rotation = base_camera.data.dof.aperture_rotation
+			camera_data.dof.aperture_ratio = base_camera.data.dof.aperture_ratio
+			
+			# Copy focus object if it exists
+			if base_camera.data.dof.focus_object:
+				camera_data.dof.focus_object = base_camera.data.dof.focus_object
+			
+			# Calculate camera position using same logic as render_quilt operator
+			# Start at view_cone * 0.5 and go to -view_cone * 0.5
+			offset_angle = (0.5 - view / (total_views - 1)) * radians(view_cone)
+			
+			# Calculate the offset that the camera should move
+			offset = camera_distance * tan(offset_angle)
+			
+			# Apply camera position (same transformation as render_quilt)
+			camera_obj.matrix_world = view_matrix @ (Matrix.Translation((-offset, 0, 0)) @ (view_matrix_inv @ base_camera.matrix_world.copy()))
+			
+			# Apply shift (same as render_quilt)
+			camera_data.shift_x = base_camera.data.shift_x + 0.5 * offset / camera_size
+			camera_data.shift_y = base_camera.data.shift_y
+			
+			# Add custom properties for render farm identification
+			camera_obj["quilt_view_index"] = view
+			camera_obj["quilt_position_x"] = view % columns
+			camera_obj["quilt_position_y"] = view // columns
+			camera_obj["quilt_width"] = columns
+			camera_obj["quilt_height"] = rows
+			camera_obj["quilt_total_views"] = total_views
+			camera_obj["is_quilt_camera"] = True
+			camera_obj["view_cone"] = view_cone
+			camera_obj["focal_plane"] = camera_distance
+			
+			# Store original camera reference
+			camera_obj["original_camera"] = base_camera.name
+			
+			# Link to collection
+			quilt_collection.objects.link(camera_obj)
+			cameras_created += 1
+			
+			LookingGlassAddonLogger.debug(f" [#] Created camera {view:02d}: offset={offset:.3f}, angle={degrees(offset_angle):.2f}°")
+		
+		LookingGlassAddonLogger.info(f"Created {cameras_created} cameras in collection '{self.collection_name}'")
+		
+		self.report({'INFO'}, f"Created {cameras_created} cameras in collection '{self.collection_name}' - Ready for render farm")
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		# Show a popup with options
+		return context.window_manager.invoke_props_dialog(self)
