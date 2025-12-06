@@ -26,14 +26,13 @@ from .globals import *
 
 # ------------------- EXTERNAL MODULES -------------------
 import sys, platform
-import bpy, bgl
+import bpy
 import gpu
 import time, timeit
 from math import *
 from mathutils import *
 from gpu_extras.batch import batch_for_shader
-from gpu_extras.presets import draw_texture_2d, draw_circle_2d
-from bpy_extras.view3d_utils import location_3d_to_region_2d, region_2d_to_origin_3d, region_2d_to_vector_3d
+from gpu_extras.presets import draw_texture_2d
 import numpy as np
 
 # append the add-on's path to Blender's python PATH
@@ -750,6 +749,8 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 			#		 ANYMORE, THE bgl.* CALLS SHOULD BE REMOVED
 			# for Blender versions earlier than 3.0 (prior to the major BGL changes)
 			if bpy.app.version < (3, 0, 0):
+
+				import bgl
 
 				# activate the texture
 				bgl.glActiveTexture(bgl.GL_TEXTURE0)
@@ -2201,7 +2202,7 @@ class BlockRenderer:
 									region=context.region,
 									view_matrix=view_matrix,
 									projection_matrix=projection_matrix,
-									do_color_management = False)
+									do_color_management = (bpy.app.version >= (5, 0, 0))) # Blender 5.0+ requires this flag to be set due to changes in the color management system
 
 						# restore all viewport shading and overlay settings
 						self.__override.restoreViewportSettings()
@@ -2336,6 +2337,7 @@ class BlockRenderer:
 
 								# if the texture was created
 								if block.image_texture:
+									print(f"Texture created: {block.image_texture.width}x{block.image_texture.height}, Format: {block.image_texture.format}")
 
 									# calculate view grid indices in the quilt
 									view_ix = block.view % block.qs[block.preset]['columns']
@@ -2355,11 +2357,16 @@ class BlockRenderer:
 											gpu.matrix.load_matrix(Matrix.Identity(4))
 											gpu.matrix.load_projection_matrix(Matrix.Identity(4))
 
-											gpu.state.depth_test_set('GREATER_EQUAL')
+											# for Blender versions prior to BGL deprecation
+											if bpy.app.version < (3, 4, 0):
+												gpu.state.depth_test_set('GREATER_EQUAL')
+											else:
+												gpu.state.depth_test_set('NONE')
+												
 											gpu.state.depth_mask_set(True)
 											gpu.state.blend_set('ALPHA')
 
-											# draw the viewport rendering to the offscreen for the current view
+											# draw the correct view from the quilt texture											
 											draw_texture_2d(block.image_texture, (-1 - 2 * view_ix, -1 - 2 * view_iy), 2 * block.qs[block.preset]['columns'], 2 * block.qs[block.preset]['rows'])
 
 											gpu.state.blend_set('NONE')
@@ -2413,7 +2420,7 @@ class BlockRenderer:
 
 								# for Blender versions prior to BGL deprecation
 								if bpy.app.version < (3, 4, 0):
-								    gpu.state.depth_test_set('GREATER_EQUAL')
+									gpu.state.depth_test_set('GREATER_EQUAL')
 
 								# draw the block
 								draw_texture_2d(block.offscreen_canvas.texture_color, (block.x, block.y), block.width, block.height)
