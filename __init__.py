@@ -21,7 +21,7 @@
 bl_info = {
 	"name": "Alice/LG",
 	"author": "Christian Stolze",
-	"version": (2, 3, 0),
+	"version": (2, 3, 1),
 	"blender": (2, 93, 6),
 	"location": "View3D > Looking Glass Tab",
 	"description": "Alice/LG takes your artworks through the Looking Glass (light field displays)",
