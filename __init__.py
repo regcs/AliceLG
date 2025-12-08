@@ -76,7 +76,7 @@ def log_exhook(exc_type, exc_value, exc_traceback):
 
 	# log that an unhandled exception occured in Alice/LG's log file
 	LookingGlassAddonLogger.critical("An unhandled error occured. Here is the traceback:\n", exc_info=(exc_type, exc_value, exc_traceback))
-	
+
 	# then continue with the system behavior
 	sys.__excepthook__(exc_type, exc_value, exc_traceback)
 

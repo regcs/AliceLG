@@ -284,7 +284,6 @@ class LookingGlassAddonUI:
 
 	# update function for property updates concerning render settings (WITHOUT quilt preset)
 	def update_render_setting_without_preset(self, context):
-
 		# if a device is selected by the user
 		if int(context.window_manager.addon_settings.activeDisplay) != -1:	pylio.DeviceManager.set_active(int(context.window_manager.addon_settings.activeDisplay))
 		else:						 										pylio.DeviceManager.reset_active()
@@ -348,7 +347,6 @@ class LookingGlassAddonUI:
 				bpy.ops.wm.update_block_renderer('INVOKE_DEFAULT')
 
 		return None
-
 
 	# update settings for the viewport editor blocks
 	def update_viewport_block_settings(self, context):
@@ -457,9 +455,7 @@ class LookingGlassAddonUI:
 
 			if not LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.depsgraph_update_post: bpy.app.handlers.depsgraph_update_post.append(LookingGlassAddonUI.synchronize_active_camera)
 			if not LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.frame_change_post: bpy.app.handlers.frame_change_post.append(LookingGlassAddonUI.synchronize_active_camera)
-		
 		elif not context.scene.addon_settings.toggleCameraSync:
-
 			if LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.depsgraph_update_post: bpy.app.handlers.depsgraph_update_post.remove(LookingGlassAddonUI.synchronize_active_camera)
 			if LookingGlassAddonUI.synchronize_active_camera in bpy.app.handlers.frame_change_post: bpy.app.handlers.frame_change_post.remove(LookingGlassAddonUI.synchronize_active_camera)
 
@@ -489,7 +485,7 @@ class LookingGlassAddonUI:
 
 				if not (bpy.context.scene.addon_settings.clip_start < bpy.context.scene.addon_settings.focalPlane < bpy.context.scene.addon_settings.clip_end):
 					bpy.context.scene.addon_settings.focalPlane = 5
-				
+
 				# set flag
 				context.scene.addon_settings.lookingglassCamera.data.is_lightfield = True
 
@@ -584,7 +580,7 @@ class LookingGlassAddonUI:
 			if camera:
 				if self.get('focalPlane', 5) != camera.data.dof.focus_distance:
 					bpy.context.scene.addon_settings.focalPlane = camera.data.dof.focus_distance
-		
+
 		return self.get('focalPlane', 5)
 
 	# setter for the focalPlane
@@ -1022,10 +1018,36 @@ class LookingGlassAddonSettingsScene(bpy.types.PropertyGroup):
 	# File handling
 	render_output: bpy.props.EnumProperty(
 									items = [('0', 'View and Quilt Files', 'Each view is rendered to a separate file in the output directory in addition to the quilt.'),
-											 ('1', 'Only Quilt File', 'Each view is rendered to a temporary file in the output directory. These files are deleted after the quilt is complete.')],
-									default='1',
+											 ('1', 'Only Quilt File', 'Each view is rendered to a temporary file in the output directory. These files are deleted after the quilt is complete.'),
+											 ('2', 'Only View Files', 'Each view is rendered to a separate file in the output directory.')],
+									default='0',
 									name="Output",
 									)
+
+	# Use custom view range or not
+	render_use_view_range: bpy.props.BoolProperty(
+										name="Use View Range",
+										description="Enables and disables using custom view ranges",
+										default = False,
+										)
+
+	# View range start
+	render_view_start: bpy.props.IntProperty(
+										name = "View Start",
+										default = 0,
+										min = 0,
+										step = 1,
+										description = "The starting viewing angle for the render.",
+										)
+
+	# View range end
+	render_view_end: bpy.props.IntProperty(
+										name = "View End",
+										default = 65,
+										min = 0,
+										step = 1,
+										description = "The last viewing angle for the render.",
+										)
 
 	# Progress bar
 	render_progress: bpy.props.FloatProperty(
@@ -1479,7 +1501,6 @@ class LOOKINGGLASS_PT_panel_camera(bpy.types.Panel):
 		# display the clipping settings
 		camera = context.scene.addon_settings.lookingglassCamera
 		if camera:
-
 			column.separator()
 			row_clip_start = column.row(align = True)
 			row_clip_start.prop(context.scene.addon_settings, "clip_start")
@@ -1537,6 +1558,10 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		row_metadata = row_general_options.row(align = True)
 		render_add_suffix = row_metadata.prop(context.scene.addon_settings, "render_add_suffix")
 
+		# Use custom view range or not
+		row_use_view_range = row_general_options.row(align = True)
+		render_use_view_range = row_use_view_range.prop(context.scene.addon_settings, "render_use_view_range")
+
 		# Render orientation
 		row_orientation = layout.row(align = True)
 		column_1 = row_orientation.row(align = True)
@@ -1556,13 +1581,36 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 		column_2.scale_x = 0.7
 
 		# Output file handling
-		row_output = layout.row(align = True)
-		column_1 = row_output.row(align = True)
-		column_1.label(text="Output:")
-		column_1.scale_x = 0.3
-		column_2 = row_output.row(align = True)
-		column_2.prop(context.scene.addon_settings, "render_output", text="")
-		column_2.scale_x = 0.7
+		# If the user wants to specify the view range, the program cannot create a quilt with incomplete data
+		# so 'veiws only' will be selected by the program
+		if not context.scene.addon_settings.render_use_view_range:
+			row_output = layout.row(align = True)
+			column_1 = row_output.row(align = True)
+			column_1.label(text="Output:")
+			column_1.scale_x = 0.3
+			column_2 = row_output.row(align = True)
+			column_2.prop(context.scene.addon_settings, "render_output", text="")
+			column_2.scale_x = 0.7
+
+		# Start view
+		# If the user has selected to use a view range
+		if context.scene.addon_settings.render_use_view_range:
+			row_view_start = layout.row(align = True)
+			column_1 = row_view_start.row(align = True)
+			column_1.label(text="Start View:")
+			column_1.scale_x = 0.3
+			column_2 = row_view_start.row(align = True)
+			column_2.prop(context.scene.addon_settings, "render_view_start", text="")
+			column_2.scale_x = 0.7
+
+			# End view
+			row_view_end = layout.row(align = True)
+			column_1 = row_view_end.row(align = True)
+			column_1.label(text="End View:")
+			column_1.scale_x = 0.3
+			column_2 = row_view_end.row(align = True)
+			column_2.prop(context.scene.addon_settings, "render_view_end", text="")
+			column_2.scale_x = 0.7
 
 		# if no lockfile was detected on start-up OR the render job is running
 		if not LookingGlassAddon.has_lockfile or LookingGlassAddon.RenderInvoked:
@@ -1576,9 +1624,9 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			else:
 				# Button to start rendering a single quilt using the current render settings
 				row_render_still = layout.row(align = True)
-				render_quilt = row_render_still.operator("render.quilt", text="Render Quilt", icon='RENDER_STILL')
+				render_quilt = row_render_still.operator("render.quilt", text="Start Render" if (context.scene.addon_settings.render_use_view_range or context.scene.addon_settings.render_output == "2") else "Render Quilt", icon='RENDER_STILL')
 				render_quilt.animation = False
-				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
+				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1' and context.scene.addon_settings.render_view_start != context.scene.addon_settings.render_view_end)
 
 			if LookingGlassAddon.RenderInvoked == True and LookingGlassAddon.RenderAnimation == True:
 				# Show the corresponding progress bar for the rendering process
@@ -1588,9 +1636,9 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			else:
 				# Button to start rendering a animation quilt using the current render settings
 				row_render_animation = layout.row(align = True)
-				render_quilt = row_render_animation.operator("render.quilt", text="Render Animation Quilt", icon='RENDER_ANIMATION')
+				render_quilt = row_render_animation.operator("render.quilt", text="Render Animation" if (context.scene.addon_settings.render_use_view_range or context.scene.addon_settings.render_output == "2") else"Render Animation Quilts", icon='RENDER_ANIMATION')
 				render_quilt.animation = True
-				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
+				render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1' and context.scene.addon_settings.render_view_start != context.scene.addon_settings.render_view_end)
 
 
 		# if a lockfile was detected on start-up
@@ -1600,8 +1648,14 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_metadata.enabled = False
 			row_use_device.enabled = False
 			row_orientation.enabled = False
+			row_use_view_range.enabled = False
 			row_preset.enabled = False
-			row_output.enabled = False
+			# can't disable if not drawn
+			if not context.scene.addon_settings.render_use_view_range:
+				row_output.enabled = False
+			else:
+				row_view_start.enabled = False
+				row_view_end.enabled = False
 
 			# inform the user and provide options to continue or to discard
 			row_render_still = layout.row(align = True)
@@ -1616,16 +1670,19 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			render_quilt.use_multiview = (context.preferences.addons[__package__].preferences.camera_mode == '1')
 			render_quilt.discard_lockfile = True
 
-
-
-
 		# disable the render settings, if a rendering process is running
 		if LookingGlassAddon.RenderInvoked == True:
 			row_metadata.enabled = False
 			row_use_device.enabled = False
 			row_orientation.enabled = False
+			row_use_view_range.enabled = False
 			row_preset.enabled = False
-			row_output.enabled = False
+			# can't disable if not drawn
+			if not context.scene.addon_settings.render_use_view_range:
+				row_output.enabled = False
+			else:
+				row_view_start.enabled = False
+				row_view_end.enabled = False
 
 			if LookingGlassAddon.RenderAnimation == True: row_render_still.enabled = False
 			if LookingGlassAddon.RenderAnimation == False: row_render_animation.enabled = False
@@ -1637,8 +1694,14 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			row_metadata.enabled = False
 			row_use_device.enabled = False
 			row_orientation.enabled = False
+			row_use_view_range.enabled = False
 			row_preset.enabled = False
-			row_output.enabled = False
+			# can't disable if not drawn
+			if not context.scene.addon_settings.render_use_view_range:
+				row_output.enabled = False
+			else:
+				row_view_start.enabled = False
+				row_view_end.enabled = False
 			row_render_still.enabled = False
 			row_render_animation.enabled = False
 
@@ -1648,6 +1711,12 @@ class LOOKINGGLASS_PT_panel_render(bpy.types.Panel):
 			# disable all elements
 			row_orientation.enabled = False
 			row_preset.enabled = False
+			row_use_view_range.enabled = False
+			# can't disable if not drawn
+			if context.scene.addon_settings.render_use_view_range:
+				row_view_start.enabled = False
+				row_view_end.enabled = False
+
 
 		# if no Looking Glass was detected AND debug mode is not activated
 		if not pylio.DeviceManager.count() and not LookingGlassAddon.debugging_use_dummy_device:
@@ -1725,6 +1794,7 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			row_preset = column.row()
 			row_preset.prop(context.window_manager.addon_settings, "lightfieldMode", text="")
 			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
+			#WHAT
 
 			# Preview settings
 			row_output = column.row(align = True)
@@ -2011,6 +2081,8 @@ class LOOKINGGLASS_PT_panel_blocks_imageeditor_options(bpy.types.Panel):
 		column_2.prop(context.scene.addon_settings, "imageeditor_block_device_type", text="")
 		column_2.scale_x = 0.7
 
+
+		#huh
 		# Quilt settings
 		row_preset = layout.row(align = True)
 		row_preset.enabled = (not LookingGlassAddon.ImageBlockRenderer.is_imageeditor_detected())

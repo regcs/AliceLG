@@ -80,6 +80,7 @@ class RenderJob:
 		self.rows = None
 		self.columns = None
 		self.total_views = None
+		self.used_views = None
 		self.quilt_aspect = None
 		self.view_cone = None
 
@@ -183,7 +184,7 @@ class RenderJob:
 
 		# if an animation is rendered
 		if self.animation:
-			return os.path.join(self.file_dirname, self.file_basename + "_f" + str(frame).zfill(len(str(self.scene.frame_end))) + self.get_quilt_suffix() + "_v" + str(view).zfill(len(str(self.total_views - 1))) + self.file_extension)
+			return os.path.join(self.file_dirname, self.file_basename + "_f" + str(frame).zfill(len(str(self.scene.frame_end))) + self.get_quilt_suffix() + "_v" + str(view).zfill(len(str(self.used_views))) + self.file_extension)
 
 		# if an animation is rendered
 		elif not self.animation:
@@ -262,7 +263,7 @@ class RenderJob:
 	# setup the camera (system) for rendering
 	def setup_camera(self):
 
-		# check, if there is an active camera marker in this frame	
+		# check, if there is an active camera marker in this frame
 		marker_camera_found = False
 		marker_cameras = [marker for marker in bpy.context.scene.timeline_markers if marker.camera is not None]
 		if marker_cameras:
@@ -333,8 +334,8 @@ class RenderJob:
 				#		required for single cameras. Rendering still works,
 				#		which is nice, because the camera remains invisible.
 				#		Leave this here for debugging purposes.
-				# # add this camera to the master collection of the scene
-				# self.scene.collection.objects.link(self._camera_active)
+				# add this camera to the master collection of the scene
+				#self.scene.collection.objects.link(self._camera_active)
 
 
 			# CAMERA SETTINGS: APPLY POSITION AND SHIFT
@@ -406,13 +407,13 @@ class RenderJob:
 				self._view_matrix_inv = self._view_matrix.inverted_safe()
 
 				# loop through all views
-				for view in range(self.view_start, self.view_end):
+				for view in range(self.view_start, self.view_end + 1):
 
 					# COPY CAMERA
 					# +++++++++++++++++++++++++++++++++++++++++++++++
 
 					# if the cameras not already exist
-					if not len(self._camera_temp) == self.total_views:
+					if not len(self._camera_temp) == self.used_views:
 
 						# create a new, temporary camera using a copy of the original camera
 						self._camera_temp.append(bpy.data.objects.new(self._camera_temp_basename + "_v" + str(view).zfill(len(str(self.total_views - 1))), self._camera_active.data.copy()))
@@ -623,7 +624,7 @@ class RenderJob:
 
 		LookingGlassAddonLogger.info("Cleaning up camera setup.")
 
-		# if there is an active camera marker in this frame	
+		# if there is an active camera marker in this frame
 		marker_camera_found = False
 		marker_cameras = [marker for marker in bpy.context.scene.timeline_markers if marker.camera is not None]
 		if marker_cameras:
@@ -644,7 +645,7 @@ class RenderJob:
 
 			# if no marker camera was found
 			if not marker_camera_found:
-				
+
 				# restore the original active camera
 				self.scene.camera = self._camera_original
 
@@ -679,9 +680,9 @@ class RenderJob:
 				bpy.data.cameras.remove(camera.data, do_unlink=True, do_id_user=True, do_ui_user=True)
 
 				# remove the corresponding temporary multiview data block
-				if self.scene.render.views.find(self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1)))) != -1:
-					LookingGlassAddonLogger.info(" [#] Delete render view: %s" % (self.scene.render.views[self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1)))]))
-					self.scene.render.views.remove(self.scene.render.views[self._multiview_view_basename + str(view).zfill(len(str(self.total_views - 1)))])
+				if self.scene.render.views.find(self._multiview_view_basename + str(view + self.view_start).zfill(len(str(self.total_views - 1)))) != -1:
+					LookingGlassAddonLogger.info(" [#] Delete render view: %s" % (self.scene.render.views[self._multiview_view_basename + str(view + self.view_start).zfill(len(str(self.total_views - 1)))]))
+					self.scene.render.views.remove(self.scene.render.views[self._multiview_view_basename + str(view + self.view_start).zfill(len(str(self.total_views - 1)))])
 
 			# clear the list
 			self._camera_temp.clear()
@@ -692,7 +693,7 @@ class RenderJob:
 			# set to view format to
 			self.scene.render.views_format = 'STEREO_3D'
 
-			# deactivate 'left' and 'right' view
+			# re-activate 'left' and 'right' view
 			self.scene.render.views['left'].use = True
 			self.scene.render.views['right'].use = True
 
@@ -706,11 +707,11 @@ class RenderJob:
 
 			# if a single frame shall be rendered
 			if self.animation == False:
-				return int(self.view / ((self.total_views - 1)) * 100)
+				return int(self.view / ((self.used_views)) * 100)
 
 			# for animations
 			else:
-				return int(((self.frame - self.scene.frame_start) * (self.total_views - 1) + self.view) / ((self.total_views - 1) * (self.scene.frame_end - self.scene.frame_start + 1)) * 100)
+				return int(((self.frame - self.scene.frame_start) * (self.used_views) + self.view) / ((self.used_views) * (self.scene.frame_end - self.scene.frame_start + 1)) * 100)
 
 		# MULTIVIEW CAMERA RENDERING
 		# ++++++++++++++++++++++++++++++++++
@@ -718,11 +719,11 @@ class RenderJob:
 
 			# if a single frame shall be rendered
 			if self.animation == False:
-				return int(self.view / ((self.total_views - 1)) * 100)
+				return int(self.view / ((self.used_views)) * 100)
 
 			# for animations
 			else:
-				return int(((self.frame - self.scene.frame_start) * (self.total_views - 1) + self.view) / ((self.total_views - 1) * (self.scene.frame_end - self.scene.frame_start + 1)) * 100)
+				return int(((self.frame - self.scene.frame_start) * (self.used_views) + self.view) / ((self.used_views) * (self.scene.frame_end - self.scene.frame_start + 1)) * 100)
 
 	# CALLBACK FUNCTIONS / APPLICATION HANDLERS
 	# +++++++++++++++++++++++++++++++++++++++++++++++
@@ -858,7 +859,7 @@ class RenderSettings:
 					# deactivate the "Add Metadata option"
 					self.scene.addon_settings.render_add_suffix = False
 
-				# if an starting frame was specified
+				# if a starting frame was specified
 				if "-s" in LookingGlassAddon.addon_arguments or "--frame-start" in LookingGlassAddon.addon_arguments:
 
 					# get the file name position
@@ -920,7 +921,7 @@ class RenderSettings:
 						# set the current frame
 						self.scene.frame_current = int(LookingGlassAddon.addon_arguments[index])
 
-				# if a rendering frame was specified
+        		# if a rendering view was specified
 				if "-v" in LookingGlassAddon.addon_arguments or "--render-view" in LookingGlassAddon.addon_arguments:
 
 					# get the view index
@@ -944,7 +945,6 @@ class RenderSettings:
 
 					# set the current frame
 					self.view_end = int(LookingGlassAddon.addon_arguments[index + 1]) + 1
-
 
 			# INITIALIZATION
 			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -991,10 +991,28 @@ class RenderSettings:
 			# get all quilt presets from pylio
 			self._qs = pylio.LookingGlassQuilt.formats.get()
 
-			# set view range to default if None was given
-			if self.view_start is None: self.view_start = 0
-			if self.view_end is None: self.view_end = self._qs[int(self._quilt_preset)]["total_views"]
+			if self.addon_settings.render_use_view_range:
+				# The quilt will fail if all needed views are not made so select 'views only'
+				self.addon_settings.render_output = '2'
 
+				# check start and end are within range
+				if self.addon_settings.render_view_start < self._qs[int(self._quilt_preset)]["total_views"]:
+					self.view_start = self.addon_settings.render_view_start
+				else:
+					LookingGlassAddonLogger.warning(f"View start is greater than total number of views supported by selected device ({self._qs[int(self._quilt_preset)]['total_views']-1})")
+
+				if self.addon_settings.render_view_end < self._qs[int(self._quilt_preset)]["total_views"] and self.view_start <= self.addon_settings.render_view_end:
+					self.view_end = self.addon_settings.render_view_end
+				else:
+					if self.view_start <= self.addon_settings.render_view_end:
+						LookingGlassAddonLogger.warning(f"View end is greater than total number of views supported by selected device ({self._qs[int(self._quilt_preset)]['total_views']-1})")
+					else:
+						LookingGlassAddonLogger.warning(f"View end is greater than view start")
+
+			# set view range to default if None was given or was invalid
+			if self.view_start is None: self.view_start = 0
+			if self.view_end is None: self.view_end = self._qs[int(self._quilt_preset)]["total_views"] -1
+			self.job.used_views = self.view_end + 1 - self.view_start
 
 			# PATH SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1006,14 +1024,12 @@ class RenderSettings:
 			self.job.lockfile_path = bpy.path.abspath(LookingGlassAddon.tmp_path + os.path.basename(bpy.data.filepath) + ".lock")
 
 
-
 			# ORIGINAL SETTINGS
 			# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 			# store a copy of the original bpy.types.RenderSettings as a
 			# dictionary for recovery
 			self.original = self.copy()
-
 
 
 			# RENDER JOB SETTINGS
@@ -1051,6 +1067,8 @@ class RenderSettings:
 				self.job.rows = self._qs[int(self._quilt_preset)]["rows"]
 				self.job.columns = self._qs[int(self._quilt_preset)]["columns"]
 				self.job.total_views = self._qs[int(self._quilt_preset)]["total_views"]
+
+
 
 				# set view range to render
 				self.job.view_start = self.view_start
@@ -1090,7 +1108,7 @@ class RenderSettings:
 	# NOTE: This function is largely taken from https://stackoverflow.com/a/1118038
 	def to_dict(self, obj, classkey=None):
 
-		# if this is an dictionary
+		# if this is a dictionary
 		if isinstance(obj, dict):
 			data = {}
 			for (k, v) in obj.items():
@@ -1376,11 +1394,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 
 
+
 		# CLEAR IMAGE & PIXEL DATA
 		# +++++++++++++++++++++++++
 		self.render_settings.job._view_image = None
 		self.render_settings.job._quilt_image = None
 		self.render_settings.job._view_images_pixels.clear()
+
 
 
 
@@ -1405,6 +1425,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 				#  delete its views
 				self.render_settings.job.delete_files()
+
 
 
 
@@ -1605,11 +1626,11 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 		if bpy.context.scene.render.use_compositing and not bpy.context.scene.render.use_sequencer:
 			# notify user
 			self.report({"WARNING"}, "The compositor is active. This might cause issues during quilt rendering.")
-		
+
 		elif not bpy.context.scene.render.use_compositing and bpy.context.scene.render.use_sequencer:
 			# notify user
 			self.report({"WARNING"}, "The sequencer is active. This might cause issues during quilt rendering.")
-		
+
 		elif bpy.context.scene.render.use_compositing and bpy.context.scene.render.use_sequencer:
 			# notify user
 			self.report({"WARNING"}, "The compositor and sequencer are active. This might cause issues during quilt rendering.")
@@ -1743,13 +1764,13 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						if self.render_settings.job.animation == False:
 
 							# notify user
-							self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " ..")
+							self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.view_end) + " ..")
 
 						# if an animation shall be rendered
 						elif self.render_settings.job.animation == True:
 
 							# notify user
-							self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.total_views) + " of frame " + str(self.render_settings.job.frame) +  " ..")
+							self.report({"INFO"},"Rendering view " + str(self.render_settings.job.view + 1) + "/" + str(self.render_settings.job.view_end) + " of frame " + str(self.render_settings.job.frame) +  " ..")
 
 				# pass event through
 				return {'PASS_THROUGH'}
@@ -1765,43 +1786,46 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				# QUILT ASSEMBLY
 				# ++++++++++++++++++++++++++++++++++++++++++++
 				# if this was the last view OR a multiview render
-				if self.render_settings.job.view == (self.render_settings.job.view_end - 1) or self.use_multiview:
+				if self.render_settings.job.view == (self.render_settings.job.view_end) or self.use_multiview:
 					start = time.time()
 
-					# assemble the quilt from the view data
-					if not self.render_settings.job.assemble_quilt():
+					# if 'views only' is selected, don't render the quilt
+					if self.render_settings.addon_settings.render_output != '2':
 
-						# cancel the operator
-						self.render_settings.addon_settings.render_stop = True
+						# assemble the quilt from the view data
+						if not self.render_settings.job.assemble_quilt():
 
-						# force the operator to keep the view Files
-						self.file_force_keep = True
+							# cancel the operator
+							self.render_settings.addon_settings.render_stop = True
 
-						# notify user
-						self.cancel_sign = "ERROR"
-						self.cancel_message = "Render job can not be continued. Missing view file(s) of the previously failed render job."
+							# force the operator to keep the view Files
+							self.file_force_keep = True
+
+							# notify user
+							self.cancel_sign = "ERROR"
+							self.cancel_message = "Render job can not be continued. Missing view file(s) of the previously failed render job."
 
 
-					# QUILT DISPLAY AS RENDER RESULT
-					# ++++++++++++++++++++++++++++++++++++++++++++
-					for window in context.window_manager.windows:
-						for area in window.screen.areas:
+						# QUILT DISPLAY AS RENDER RESULT
+						# ++++++++++++++++++++++++++++++++++++++++++++
+						for window in context.window_manager.windows:
+							for area in window.screen.areas:
 
-							if area.type == 'IMAGE_EDITOR':
+								if area.type == 'IMAGE_EDITOR':
 
-								if area.spaces.active != None:
+									if area.spaces.active != None:
 
-									if area.spaces.active.image != None:
+										if area.spaces.active.image != None:
 
-										if area.spaces.active.image.name == "Render Result":
+											if area.spaces.active.image.name == "Render Result":
 
-											# and change the active image shown here to the quilt
-											area.spaces.active.image = self.render_settings.job._quilt_image
+												# and change the active image shown here to the quilt
+												area.spaces.active.image = self.render_settings.job._quilt_image
 
-											# fit the zoom factor in this window to show the complete quilt
-											# bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
+												# fit the zoom factor in this window to show the complete quilt
+												# bpy.ops.image.view_all({'window': window, 'screen': window.screen, 'area': area})
 
-											break
+												break
 
 
 				# UPDATE LOCKFILE
@@ -1821,7 +1845,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				if self.render_settings.job.animation == False:
 
 					# if this was not the last view AND the multiview mechanism is NOT used
-					if self.render_settings.job.view < (self.render_settings.job.view_end - 1) and not self.use_multiview:
+					if self.render_settings.job.view < (self.render_settings.job.view_end) and not self.use_multiview:
 
 						# increase view count
 						self.render_settings.job.view += 1
@@ -1834,8 +1858,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 						# notify user
 						self.cancel_sign = "INFO"
-						self.cancel_message = "Complete quilt rendered."
-
+						self.cancel_message = "Complete quilt rendered." if self.render_settings.addon_settings.render_output != '2' else "Render complete"
 						# stop the operator
 						self.render_settings.addon_settings.render_stop = True
 
@@ -1844,7 +1867,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 				elif self.render_settings.job.animation == True:
 
 					# if this was not the last view AND the multiview mechanism is NOT used
-					if self.render_settings.job.view < (self.render_settings.job.view_end - 1) and not self.use_multiview:
+					if self.render_settings.job.view < (self.render_settings.job.view_end) and not self.use_multiview:
 
 						# increase view count
 						self.render_settings.job.view += 1
@@ -1853,7 +1876,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 						self.render_settings.job._state = "INVOKE_RENDER"
 
 					# if this was the last view OR the multiview mechanism is used
-					elif self.render_settings.job.view == (self.render_settings.job.view_end - 1) or self.use_multiview:
+					elif self.render_settings.job.view == (self.render_settings.job.view_end) or self.use_multiview:
 
 						# but if this was not the last frame
 						if self.render_settings.job.frame < self.render_settings.job.scene.frame_end:
@@ -1866,7 +1889,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 							# if the view files shall not be kept
 							if ((self.render_settings.addon_settings.render_output == '1') and self.render_settings.job.file_force_keep == False):
-
+#
 								# delete views of the rendered frame
 								self.render_settings.job.delete_files(self.render_settings.job.frame)
 
@@ -1893,7 +1916,7 @@ class LOOKINGGLASS_OT_render_quilt(bpy.types.Operator):
 
 							# notify user
 							self.cancel_sign = "INFO"
-							self.cancel_message = "Complete animation quilt rendered."
+							self.cancel_message = "Complete animation quilt rendered." if self.render_settings.addon_settings.render_output != '2' else "animation render complete"
 
 				# log debug info
 				LookingGlassAddonLogger.debug("Render job completed.")
