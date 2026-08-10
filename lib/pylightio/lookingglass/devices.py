@@ -350,10 +350,10 @@ class LookingGlass16Landscape(LookingGlassDeviceMixin, BaseDeviceType):
                                 },
                 'defaultQuilt': {
                                     'quiltAspect': 1.77777777,
-                                    'quiltX': 5999,
-                                    'quiltY': 5999,
-                                    'tileX': 7,
-                                    'tileY': 7
+                                    'quiltX': 7680,
+                                    'quiltY': 4320,
+                                    'tileX': 8,
+                                    'tileY': 6
                                 },
                 'hardwareVersion': '16_gen3_l',
                 'hwid': 'LKG0010DUMMY',
