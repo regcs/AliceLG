@@ -4,3 +4,23 @@
 *.DS_Store
 /.vs
 /tmp
+
+# pip-installed runtime dependencies for Blender 5.2 (Python 3.13),
+# installed into lib/ (not tracked in git)
+/lib/_cffi_backend*.so
+/lib/cffi/
+/lib/cffi-*.dist-info/
+/lib/pycparser/
+/lib/pycparser-*.dist-info/
+/lib/pynng/
+/lib/pynng-*.dist-info/
+/lib/sniffio/
+/lib/sniffio-*.dist-info/
+/lib/cv2/
+/lib/opencv_python-*.dist-info/
+/lib/bin/
+/lib/numpy/
+/lib/numpy-*.dist-info/
+__pycache__/
+logs/*.log
+logs/*.log.*

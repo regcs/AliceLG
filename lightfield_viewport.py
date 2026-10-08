@@ -314,6 +314,9 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 	skip_views = 1
 	restricted_viewcone_limit = 0
 
+	# timestamp of the last render in continuous (active) refresh mode
+	last_continuous_render = 0.0
+
 	# DEBUGING VARIABLES
 	start_multi_view = 0
 
@@ -527,6 +530,39 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 		# if the TIMER event for the lightfield rendering is called AND the automatic render mode is active
 		if event.type == 'TIMER' or event.type == 'Z':
 
+			# CONTINUOUS (ACTIVE) REFRESH MODE
+			# ++++++++++++++++++++++++++++++++++++++++++++++++
+			# re-render on every timer tick, regardless of whether something
+			# in the scene has changed (i.e., not driven by depsgraph updates)
+			if int(self.addon_settings_window_manager.renderMode) == 0 and int(self.addon_settings_window_manager.lightfieldMode) == 2:
+
+				# throttle the refresh rate: since each render blocks Blender's
+				# main thread, unlimited refresh makes the UI unresponsive
+				fps = max(1, self.addon_settings_window_manager.continuous_refresh_fps)
+				if (time.time() - self.last_continuous_render) < (1.0 / fps):
+
+					# skip this timer tick
+					return {'RUNNING_MODAL'}
+
+				# remember the time of this render
+				self.last_continuous_render = time.time()
+
+				# update the viewport settings
+				self.updateViewportSettings(context)
+
+				# select the preview / full-quality settings for this render
+				self.applyContinuousRenderSettings(context.scene)
+
+				# render the views
+				self.render_view(context)
+
+				# update the lightfield displayed on the device
+				if self.lightfield_image:
+					LookingGlassAddon.update_lightfield_window(0, self.lightfield_image)
+
+				# running modal
+				return {'RUNNING_MODAL'}
+
 			# if something has changed OR the user requested a manual redrawing
 			if self.modal_redraw or (not self.modal_redraw and ((self.depsgraph_update_time > 0 and time.time() - self.depsgraph_update_time > LookingGlassAddon.low_resolution_preview_timout) or context.window_manager.addon_settings.viewport_manual_refresh == True)):
 
@@ -576,6 +612,43 @@ class LOOKINGGLASS_OT_render_viewport(bpy.types.Operator):
 
 		# pass event through
 		return {'PASS_THROUGH'}
+
+	# Select the quilt preset and view skipping settings for a render in
+	# continuous (active) refresh mode, based on the chosen preview mode
+	def applyContinuousRenderSettings(self, scene):
+
+		# reset to the currently chosen quality
+		self.preset = int(scene.addon_settings.quiltPreset)
+		self.skip_views = 1
+		self.restricted_viewcone_limit = 0
+
+		# if a preview mode is activated, apply its settings
+		if self.addon_settings_window_manager.viewport_use_preview_mode:
+
+			# low resolution preview
+			if self.addon_settings_window_manager.lightfield_preview_mode == '1':
+
+				# use the low-resolution preview quilt preset
+				# NOTE: This is always the last preset in the list
+				self.preset = int(list(pylio.LookingGlassQuilt.formats.get().keys())[-1])
+
+			# skip views preview I
+			elif self.addon_settings_window_manager.lightfield_preview_mode == '2':
+
+				# skip every second view during rendering
+				self.skip_views = 2
+
+			# skip views preview II
+			elif self.addon_settings_window_manager.lightfield_preview_mode == '3':
+
+				# skip every third view during rendering
+				self.skip_views = 3
+
+			# restricted viewcone preview
+			elif self.addon_settings_window_manager.lightfield_preview_mode == '4':
+
+				# only show the center 33% of all views
+				self.restricted_viewcone_limit = int(self.qs[self.preset]["total_views"] / 3)
 
 	# Application handler that continously checks for changes of the depsgraph
 	def trackDepsgraphUpdates(self, scene, depsgraph):
@@ -1737,7 +1810,9 @@ class BlockRenderer:
 
 		def invoke(self, context, event):
 
-			if (context is None) or (event is None) or (not context is None and context.area is None) or not hasattr(context.scene, "addon_settings"):
+			# never swallow events: if anything is unexpected, pass the event
+			# through so viewport interaction (e.g. G/S/R transforms) keeps working
+			if (context is None) or (event is None) or (not context is None and (context.area is None or context.region is None or context.space_data is None)) or not hasattr(context.scene, "addon_settings"):
 				return {'PASS_THROUGH'}
 
 			# if the hologram preview is not active
@@ -2265,16 +2340,16 @@ class BlockRenderer:
 			# try to extract some metadata information from the quiltname
 			try:
 
-				columns = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
-				rows = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
-				aspect = float(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
+				columns = int(re.search(r'_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
+				rows = int(re.search(r'_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
+				aspect = float(re.search(r'_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
 
 			except AttributeError:
 
 				try:
 
-					columns = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(1))
-					rows = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(2))
+					columns = int(re.search(r'_qs(\d+)x(\d+).', quilt_name).group(1))
+					rows = int(re.search(r'_qs(\d+)x(\d+).', quilt_name).group(2))
 
 				except AttributeError:
 

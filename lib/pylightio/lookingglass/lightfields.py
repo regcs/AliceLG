@@ -330,16 +330,16 @@ class LookingGlassQuilt(BaseLightfieldImageFormat):
             # try to extract some metadata information from the quiltname
             try:
 
-                rows = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
-                columns = int(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
-                aspect = float(re.search('_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
+                rows = int(re.search(r'_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(1))
+                columns = int(re.search(r'_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(2))
+                aspect = float(re.search(r'_qs(\d+)x(\d+)a(\d+.?\d*)', quilt_name).group(3))
 
             except AttributeError:
 
                 try:
 
-                    rows = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(1))
-                    columns = int(re.search('_qs(\d+)x(\d+).', quilt_name).group(2))
+                    rows = int(re.search(r'_qs(\d+)x(\d+).', quilt_name).group(1))
+                    columns = int(re.search(r'_qs(\d+)x(\d+).', quilt_name).group(2))
 
                 except AttributeError:
 

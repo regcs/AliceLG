@@ -528,6 +528,10 @@ class LookingGlassAddonUI:
 		camera = bpy.context.scene.addon_settings.lookingglassCamera
 		if camera:
 
+			# limit the value: the near clipping plane must stay in front of
+			# the camera and must not pass the far clipping plane
+			value = max(0.000001, min(value, camera.data.clip_end))
+
 			# update the clipping value
 			camera.data.clip_start = value
 
@@ -549,6 +553,10 @@ class LookingGlassAddonUI:
 		# display the clipping settings
 		camera = bpy.context.scene.addon_settings.lookingglassCamera
 		if camera:
+
+			# limit the value: the far clipping plane must not pass
+			# the near clipping plane
+			value = max(value, camera.data.clip_start)
 
 			# update the clipping value
 			camera.data.clip_end = value
@@ -596,6 +604,11 @@ class LookingGlassAddonUI:
 
 			# if the clipping planes are pinned to the focal plane
 			if bpy.context.scene.addon_settings.lockClippingPlanes:
+
+				# limit the value: the near clipping plane must stay
+				# in front of the camera when it moves with the focal plane
+				if camera.data.clip_start + (value - self['focalPlane']) <= 0.000001:
+					value = self['focalPlane'] - camera.data.clip_start + 0.000001
 
 				# make sure the new value is within the clipping range
 				camera.data.clip_start += (value - self['focalPlane'])
@@ -846,8 +859,9 @@ class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 
 	# Lightfield Viewport Modes
 	lightfieldMode: bpy.props.EnumProperty(
-										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the light field viewport'),
-												 ('1', 'Refresh Mode: Manual', 'Manually refresh the light field viewport')],
+										items = [('0', 'Refresh Mode: Automatic', 'Automatically refresh the light field viewport when the scene changes'),
+												 ('1', 'Refresh Mode: Manual', 'Manually refresh the light field viewport'),
+												 ('2', 'Refresh Mode: Continuous', 'Continuously re-render the light field viewport, even if nothing changed (active refresh)')],
 										default='1',
 										name="Light Field Viewport Modes",
 										update=LookingGlassAddonUI.update_lightfield_window_settings,
@@ -879,6 +893,15 @@ class LookingGlassAddonSettingsWM(bpy.types.PropertyGroup):
 										name="Use Preview Mode",
 										description="If enabled, a simplified light field is rendered during scene changes (for higher render speed)",
 										default = True,
+										)
+
+	# target frame rate of the continuous (active) refresh mode
+	continuous_refresh_fps: bpy.props.IntProperty(
+										name="Refresh Rate (FPS)",
+										description="Maximum frame rate of the continuous light field refresh. Lower values keep Blender's user interface more responsive",
+										default = 5,
+										min = 1,
+										max = 60,
 										)
 
 	viewport_manual_refresh: bpy.props.BoolProperty(
@@ -1725,6 +1748,11 @@ class LOOKINGGLASS_PT_panel_lightfield(bpy.types.Panel):
 			row_preset = column.row()
 			row_preset.prop(context.window_manager.addon_settings, "lightfieldMode", text="")
 			row_preset.operator("lookingglass.refresh_lightfield", text="", icon='FILE_REFRESH')
+
+			# refresh rate for the continuous (active) refresh mode
+			if context.window_manager.addon_settings.lightfieldMode == '2':
+				row_fps = column.row(align = True)
+				row_fps.prop(context.window_manager.addon_settings, "continuous_refresh_fps")
 
 			# Preview settings
 			row_output = column.row(align = True)
